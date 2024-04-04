@@ -36,6 +36,12 @@ class App extends React.Component<AppProps> {
         window.socketIoClient.emit('get-settings', 'update local settings')
         this.iFrameFocusHandler()
         this.contextMenuHandler()
+
+        const urlParams = new URLSearchParams(window.location.search)
+        const styleClass = urlParams.get('style')
+        if (styleClass) {
+            document.body.classList.add(styleClass)
+        }
     }
 
     public shouldComponentUpdate(nextProps: AppProps) {
