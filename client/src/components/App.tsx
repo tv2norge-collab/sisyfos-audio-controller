@@ -13,6 +13,9 @@ import { withTranslation } from 'react-i18next'
 import PagesSettings from './PagesSettings'
 import LabelSettings from './Labels'
 
+/** TV 2 Norge specific styling */
+import '../../../tv2norge/App.css'
+
 export interface AppProps {
     store: ReduxStore
     t: any

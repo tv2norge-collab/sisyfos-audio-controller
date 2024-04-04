@@ -1,0 +1,166 @@
+body.tv2norge {
+    font-size: 12px;
+    background-color: #1F1031;
+    overflow: hidden;
+    overflow-wrap: break-word;
+}
+.tv2norge .channels-body {
+    background-color: #1F1031;
+    height: 100vh;
+}
+.tv2norge .channels-body-inner {
+    overflow-y: hidden;
+}
+.tv2norge .channels-mix-body {
+    display: none;
+}
+.tv2norge .channel-vo-button {
+    display: none;
+}
+.tv2norge .channel-mute-button {
+    display: none;
+}
+.tv2norge .channel-control {
+    height: unset;
+    order: 3;
+    width: 100%;
+}
+.tv2norge .fader {
+    order: 2;
+    width: 100%;
+    overflow: hidden;
+}
+.tv2norge .channel-body {
+    height: 98vh;
+    background: #261A40;
+    min-width: 40px;
+    width: calc(100vw / 10);
+    max-width: 60px;
+}
+.tv2norge .channel-props {
+    width: 100%;
+}
+.tv2norge .vumeter-body {
+    height: calc(100% - 34px)!important;
+    width: 2px;
+    margin-left: 1px;
+    margin-right: 1px;
+}
+.tv2norge .vumeter-canvas {
+    height: 100%!important;
+    margin-left: 0px;
+    width: 6px;
+}
+.tv2norge .channel-ignore-button {
+    width: 100%;
+    height: 32px;
+    border-color: transparent;
+    padding: 0px;
+    margin: 0px;
+}
+.tv2norge .channel-pgm-button {
+    width: 100%;
+    height: 44px;
+    border-color: transparent;
+    margin-left: 0px;
+    margin-right: 0px;
+}
+.tv2norge .channel-pst-button {
+    width: 100%;
+    height: 32px;
+    border-color: transparent;
+    background-color: #3A2F5C;
+    margin: 0px;
+}
+.tv2norge .channel-pst-button.on {
+    background-color: rgb(34, 135, 20);
+}
+.tv2norge .channel-strip-button {
+    display: none;
+}
+.tv2norge .noUi-handle {
+    background: none!important;
+    border: none!important;
+
+    min-width: 30px;
+    width: calc(100vw / 10 - 10px);
+    max-width: 50px;
+
+    position: relative;
+    transform: translateX(calc(-50% - 4px));
+    left: 0;
+}
+.tv2norge .noUi-handle.noUi-active {
+    box-shadow: none;
+}
+.tv2norge .noUi-handle::before {
+    position: absolute;
+    content: ' ';
+    display: block;
+    top: 33%;
+    left: 0;
+    height: 33%;
+    width: 100%;
+    border: 1px solid #c5c2c2;
+    border-radius: 8px;
+    background: linear-gradient(to top, #828282 0%, #c2c2c2 20%, hsl(0, 0%, 57%) 50%, #00a 1px, #919191 52%, #c2c2c2 80%, #828282 100%);
+}
+.tv2norge .pgm-on .noUi-handle::before {
+    border: 1px solid rgb(253, 60, 60);
+    background: linear-gradient(
+        to top,
+        #3a1d1d 0%,
+        #c04d4d 20%,
+        #811919 50%,
+        #00a 1px,
+        #8a2626 52%,
+        #bd5151 80%,
+        #411f1f 100%
+    );
+}
+.tv2norge .vo-on .noUi-handle::before {
+    border: 1px solid rgb(252, 255, 86);
+    background: linear-gradient(
+        to top,
+        #353006 0%,
+        #c59327 20%,
+        #856b14 50%,
+        #00a 1px,
+        #866724 52%,
+        #cca22d 80%,
+        #463b0a 100%
+    );
+}
+.tv2norge .mute-on .noUi-handle::before {
+    border: 1px solid rgb(58, 58, 58);
+    background: linear-gradient(
+        to top,
+        #111111 0%,
+        #252525 20%,
+        #2b2b2b 50%,
+        rgb(56, 56, 56) 1px,
+        #292929 52%,
+        #222222 80%,
+        #222222 100%
+    );
+}
+.tv2norge .noUi-handle.noUi-active::before {
+    box-shadow: inset 0 0 1px #fff, inset 0 1px 7px #ddd, 0 3px 6px -3px #bbb;
+}
+.tv2norge .out-control {
+    width: 100%;
+}
+.tv2norge .out-control > br {
+    display: none;
+}
+.tv2norge .noUi-target {
+    box-shadow: none;
+}
+.tv2norge .channel-volume-fader {
+    margin: 30px clamp(10px, 100vw / 40, 20px);
+    height: calc(100% - 40px);
+}
+.tv2norge .channel-zero-button {
+    top: 25%;
+    margin-top: 50px;
+}
