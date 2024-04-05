@@ -1,5 +1,5 @@
 body.tv2norge {
-    font-size: 12px;
+    font-size: clamp(9px, 100vw / 50, 12px);
     background-color: #1F1031;
     overflow: hidden;
     overflow-wrap: break-word;
@@ -29,6 +29,7 @@ body.tv2norge {
     order: 2;
     width: 100%;
     overflow: hidden;
+    position: relative;
 }
 .tv2norge .channel-body {
     height: 98vh;
@@ -43,13 +44,17 @@ body.tv2norge {
 .tv2norge .vumeter-body {
     height: calc(100% - 34px)!important;
     width: 2px;
-    margin-left: 1px;
-    margin-right: 1px;
+    position: absolute;
+    top: 17px;
+    left: 0px;
+}
+.tv2norge .vumeter-body:nth-child(2) {
+    left: 4px;
 }
 .tv2norge .vumeter-canvas {
     height: 100%!important;
     margin-left: 0px;
-    width: 6px;
+    width: 3px;
 }
 .tv2norge .channel-ignore-button {
     width: 100%;
@@ -64,6 +69,7 @@ body.tv2norge {
     border-color: transparent;
     margin-left: 0px;
     margin-right: 0px;
+    padding: 2px;
 }
 .tv2norge .channel-pst-button {
     width: 100%;
@@ -162,5 +168,17 @@ body.tv2norge {
 }
 .tv2norge .channel-zero-button {
     top: 25%;
-    margin-top: 50px;
+    margin-top: -10px;
+    right: 0;
+    width: 100%;
+}
+.tv2norge .noUi-marker-vertical.noUi-marker-large {
+    width: 30px;
+    height: 1px;
+    margin-bottom: 1px;
+}
+.tv2norge .noUi-marker-vertical.noUi-marker-large::before {
+    width: 10px;
+    height: 1px;
+    left: -21px;
 }
