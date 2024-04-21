@@ -124,6 +124,9 @@ body.tv2norge {
         #411f1f 100%
     );
 }
+.tv2norge .vo-on .channel-pgm-button {
+    background-color: rgb(212, 152, 0);
+}
 .tv2norge .vo-on .noUi-handle::before {
     border: 1px solid rgb(252, 255, 86);
     background: linear-gradient(
