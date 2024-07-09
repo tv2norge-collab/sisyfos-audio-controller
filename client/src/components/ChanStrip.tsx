@@ -12,12 +12,11 @@ import {
     SOCKET_SET_FX,
     SOCKET_SET_AUX_LEVEL,
     SOCKET_SET_INPUT_GAIN,
-    SOCKET_SET_INPUT_SELECTOR,
 } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 import ReductionMeter from './ReductionMeter'
-import ClassNames from 'classnames'
 import { fxParamsList } from '../../../shared/src/constants/MixerProtocolInterface'
 import { getFaderLabel } from '../utils/labels'
+import { InputSelector } from './InputSelector'
 
 interface ChanStripInjectProps {
     label: string
@@ -54,11 +53,6 @@ class ChanStrip extends React.PureComponent<
         this.props.dispatch({
             type: SettingsActionTypes.TOGGLE_SHOW_CHAN_STRIP,
             channel: -1,
-        })        }
-    handleInputSelect(selected: number) {
-        window.socketIoClient.emit(SOCKET_SET_INPUT_SELECTOR, {
-            faderIndex: this.props.faderIndex,
-            selected: selected,
         })
     }
     handleInputGain(event: any) {
@@ -90,52 +84,6 @@ class ChanStrip extends React.PureComponent<
             auxIndex: this.props.auxSendIndex,
             level: parseFloat(event),
         })
-    }
-
-    inputSelectorButton(index: number) {
-        const isActive =
-            this.props.fader[this.props.faderIndex].inputSelector === index + 1
-        return (
-            <button
-                className={ClassNames('input-select', {
-                    active: isActive,
-                })}
-                // className={'input-select' + (isActive ? ' active' : '')}
-                onClick={() => {
-                    this.handleInputSelect(index + 1)
-                }}
-            >
-                {window.mixerProtocol.channelTypes[0].toMixer
-                    .CHANNEL_INPUT_SELECTOR
-                    ? window.mixerProtocol.channelTypes[0].toMixer
-                          .CHANNEL_INPUT_SELECTOR[index].label
-                    : null}
-            </button>
-        )
-    }
-
-    inputSelector() {
-        return (
-            <div
-                className={ClassNames('input-buttons', {
-                    disabled:
-                        this.props.fader[this.props.faderIndex].capabilities &&
-                        !this.props.fader[this.props.faderIndex].capabilities!
-                            .hasInputSelector,
-                })}
-            >
-                {window.mixerProtocol.channelTypes[0].toMixer
-                    .CHANNEL_INPUT_SELECTOR ? (
-                    <React.Fragment>
-                        {window.mixerProtocol.channelTypes[0].toMixer.CHANNEL_INPUT_SELECTOR.map(
-                            (none: any, index: number) => {
-                                return this.inputSelectorButton(index)
-                            }
-                        )}
-                    </React.Fragment>
-                ) : null}
-            </div>
-        )
     }
 
     inputGain() {
@@ -348,7 +296,7 @@ class ChanStrip extends React.PureComponent<
                                 <div className="item">
                                     <div className="title">INPUT</div>
                                     <div className="content">
-                                        {this.inputSelector()}
+                                        <InputSelector fader={this.props.fader[this.props.faderIndex]} faderIndex={this.props.faderIndex} />
                                         {this.inputGain()}
                                     </div>
                                 </div>

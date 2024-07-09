@@ -16,6 +16,7 @@ import { withTranslation } from 'react-i18next'
 import { MixerConnectionTypes, VuLabelConversionType } from '../../shared../../../shared/src/constants/MixerProtocolInterface'
 import { getFaderLabel } from '../utils/labels'
 import { Conversions } from '../../../shared/src/actions/utils/dbConversion'
+import { InputSelector } from './InputSelector'
 
 interface ChannelInjectProps {
     t: any
@@ -474,6 +475,7 @@ class Channel extends React.Component<
                     {/* TODO - amix and mute cannot be shown at the same time due to css. Depends on protocol right now. */}
                     {this.muteButton()}
                     {this.amixButton()}
+                    <InputSelector fader={this.props.fader} faderIndex={this.props.faderIndex} />
                 </div>
                 <div className="fader">
                     {this.handleVuMeter()}
