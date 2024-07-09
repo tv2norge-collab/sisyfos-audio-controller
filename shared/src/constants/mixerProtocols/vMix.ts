@@ -164,7 +164,7 @@ export const VMix: MixerProtocol = {
                 CHANNEL_INPUT_SELECTOR: [
                     {
                         mixerMessage: 'AudioChannelMatrixApplyPreset',
-                        label: 'LR',
+                        label: 'Stereo',
                         value: 'Default',
                     },
                     {
@@ -176,6 +176,11 @@ export const VMix: MixerProtocol = {
                         mixerMessage: 'AudioChannelMatrixApplyPreset',
                         label: 'RR',
                         value: 'RR',
+                    },
+                    {
+                        mixerMessage: 'AudioChannelMatrixApplyPreset',
+                        label: 'Mono',
+                        value: 'DualMono',
                     },
                 ],
                 CHANNEL_INPUT_GAIN: [
