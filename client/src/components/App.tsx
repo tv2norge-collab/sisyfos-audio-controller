@@ -3,7 +3,6 @@ import { connect } from 'react-redux'
 import { compose } from 'redux'
 import { ReduxStore } from '../../../shared/src/reducers/store'
 
-import '../assets/css/App.css'
 import Channels from './Channels'
 import Settings from './Settings'
 import Storage from './RoutingStorage'
@@ -12,9 +11,6 @@ import MicTally from './MicTally'
 import { withTranslation } from 'react-i18next'
 import PagesSettings from './PagesSettings'
 import LabelSettings from './Labels'
-
-/** TV 2 Norge specific styling */
-import '../../../tv2norge/App.css'
 
 export interface AppProps {
     store: ReduxStore

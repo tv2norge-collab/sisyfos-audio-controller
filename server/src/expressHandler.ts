@@ -13,6 +13,9 @@ const app = express()
 const server = new Server(app)
 const socketServer = new SocketServer(server, {
     path: SOCKET_SERVER_PATH,
+    cors: {
+        origin: '*',
+    }
 })
 const SERVER_PORT = 1176
 const staticPath = path.join(

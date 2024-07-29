@@ -475,7 +475,6 @@ class Channel extends React.Component<
                     {/* TODO - amix and mute cannot be shown at the same time due to css. Depends on protocol right now. */}
                     {this.muteButton()}
                     {this.amixButton()}
-                    <InputSelector fader={this.props.fader} faderIndex={this.props.faderIndex} />
                 </div>
                 <div className="fader">
                     {this.handleVuMeter()}

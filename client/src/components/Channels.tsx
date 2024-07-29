@@ -142,6 +142,7 @@ class Channels extends React.Component<ChannelsInjectProps & Store> {
                         onClick={() => {
                             this.handlePages(PageType.CustomPage, p.id)
                         }}
+                        key={p.id}
                     >
                         {p.label}
                     </button>
