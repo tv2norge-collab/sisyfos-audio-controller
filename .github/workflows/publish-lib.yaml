@@ -1,8 +1,13 @@
 name: Publish prerelease
 
+env:
+    node-version: 18
+    node-package-manager: yarn
+
 on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+  push:
 
 jobs:
   prerelease:
@@ -21,7 +26,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.node-version'
+          node-version: ${{ env.node-version }}
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
