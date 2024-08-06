@@ -1,4 +1,4 @@
-import { fxParamsList } from '../constants/MixerProtocolInterface'
+import { FxParam } from '../constants/MixerProtocolInterface'
 import { Fader, Faders } from '../reducers/fadersReducer'
 
 // Move all consts to this type
@@ -42,6 +42,7 @@ export enum FaderActionTypes {
     SET_AMIX = 'SET_AMIX',
     SET_CAPABILITY = 'SET_CAPABILITY',
     TOGGLE_ALL_MANUAL = 'TOGGLE_ALL_MANUAL',
+    TOGGLE_LINK = 'TOGGLE_LINK',
 }
 
 export type FaderActions =
@@ -87,7 +88,7 @@ export type FaderActions =
       }
     | {
           type: FaderActionTypes.SET_FADER_FX
-          fxParam: fxParamsList
+          fxParam: FxParam
           faderIndex: number
           level: number
       }
@@ -150,6 +151,7 @@ export type FaderActions =
           disabled: boolean
       }
     | { type: FaderActionTypes.TOGGLE_AMIX; faderIndex: number }
+    | { type: FaderActionTypes.TOGGLE_LINK; faderIndex: number }
     | { type: FaderActionTypes.SET_AMIX; faderIndex: number; state: boolean }
     | {
           type: FaderActionTypes.SET_CAPABILITY

@@ -5,18 +5,16 @@ import { remoteConnections } from '../../mainClasses'
 
 //Utils:
 import {
-    fxParamsList,
+    FxParam,
     MixerProtocol,
 } from '../../../../shared/src/constants/MixerProtocolInterface'
 import {
     FaderActionTypes,
 } from '../../../../shared/src/actions/faderActions'
 import { logger } from '../logger'
-import {
-    ChannelActionTypes,
-} from '../../../../shared/src/actions/channelActions'
+import { MixerConnection } from '.'
 
-export class StuderMixerConnection {
+export class StuderMixerConnection implements MixerConnection {
     mixerProtocol: MixerProtocol
     mixerIndex: number
     emberConnection: any
@@ -25,7 +23,6 @@ export class StuderMixerConnection {
 
     constructor(mixerProtocol: MixerProtocol, mixerIndex: number) {
         this.sendOutMessage = this.sendOutMessage.bind(this)
-        this.pingMixerCommand = this.pingMixerCommand.bind(this)
 
         this.emberNodeObject = new Array(200)
         this.mixerProtocol = mixerProtocol
@@ -64,7 +61,7 @@ export class StuderMixerConnection {
             })
     }
 
-    setupMixerConnection() {
+    private setupMixerConnection() {
         logger.info(
             'Ember connection established - setting up subscription of channels'
         )
@@ -90,16 +87,9 @@ export class StuderMixerConnection {
                         level: message.args[0]
                     });
         */
-
-        //Ping OSC mixer if mixerProtocol needs it.
-        if (this.mixerProtocol.pingTime > 0) {
-            let emberTimer = setInterval(() => {
-                this.pingMixerCommand()
-            }, this.mixerProtocol.pingTime)
-        }
     }
 
-    subscribeFaderLevel(
+    private subscribeFaderLevel(
         ch: number,
         typeIndex: number,
         channelTypeIndex: number
@@ -146,46 +136,7 @@ export class StuderMixerConnection {
             })
     }
 
-    subscribeChannelName(
-        ch: number,
-        typeIndex: number,
-        channelTypeIndex: number
-    ) {
-        this.emberConnection
-            .getNodeByPath(
-                this.mixerProtocol.channelTypes[
-                    typeIndex
-                ].fromMixer.CHANNEL_NAME[0].mixerMessage.replace(
-                    '{channel}',
-                    String(channelTypeIndex + 1)
-                )
-            )
-            .then((node: any) => {
-                this.emberConnection.subscribe(node, () => {
-                    store.dispatch({
-                        type: ChannelActionTypes.SET_CHANNEL_LABEL,
-                        mixerIndex: this.mixerIndex,
-                        channel: ch - 1,
-                        label: node.contents.value,
-                    })
-                })
-            })
-    }
-
-    pingMixerCommand() {
-        //Ping Ember mixer if mixerProtocol needs it.
-        return
-        this.mixerProtocol.pingCommand.map((command) => {
-            this.sendOutMessage(
-                command.mixerMessage,
-                0,
-                command.value,
-                command.type
-            )
-        })
-    }
-
-    sendOutMessage(
+    private sendOutMessage(
         mixerMessage: string,
         channel: number,
         value: string | number,
@@ -212,7 +163,7 @@ export class StuderMixerConnection {
         */
     }
 
-    sendOutLevelMessage(channel: number, value: number) {
+    private sendOutLevelMessage(channel: number, value: number) {
         let levelMessage: string
         let channelVal: number
         let channelType =
@@ -262,38 +213,6 @@ export class StuderMixerConnection {
         )
         this.emberConnection._client.socket.write(buf)
         logger.trace(`Send HEX: ${levelMessage}`)
-    }
-
-    sendOutRequest(mixerMessage: string, channel: number) {
-        let channelString = this.mixerProtocol.leadingZeros
-            ? ('0' + channel).slice(-2)
-            : channel.toString()
-        let message = mixerMessage.replace('{channel}', channelString)
-        if (message != 'none') {
-            /*
-            this.oscConnection.send({
-                address: message
-            });
-*/
-        }
-    }
-
-    updateOutLevel(channelIndex: number) {
-        let channelTypeIndex =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[
-                channelIndex
-            ].channelTypeIndex
-        let outputlevel =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[
-                channelIndex
-            ].outputLevel
-        let level = 20 * Math.log((1.3 * outputlevel) / 0.775)
-        if (level < -90) {
-            level = -90
-        }
-        // logger.debug(`Log level: ${level}`)
-
-        this.sendOutLevelMessage(channelTypeIndex + 1, level)
     }
 
     updateFadeIOLevel(channelIndex: number, outputLevel: number) {
@@ -358,7 +277,7 @@ export class StuderMixerConnection {
         return true
     }
 
-    updateFx(fxParam: fxParamsList, channelIndex: number, level: number) {
+    updateFx(channelIndex: number, fxParam: FxParam, level: number) {
         return true
     }
     updateAuxLevel(channelIndex: number, auxSendIndex: number, level: number) {
@@ -386,9 +305,7 @@ export class StuderMixerConnection {
 
     loadMixerPreset(presetName: string) {}
 
-    injectCommand(command: string[]) {
-        return true
-    }
+    injectCommand(command: string[]) {}
 
     updateAMixState(channelIndex: number, amixOn: boolean) {}
 

@@ -21,7 +21,7 @@ export function InputSelectorButton({index, handleInputSelect, activeInputSelect
     )
 }
 
-export function InputSelector({ faderIndex, fader } :{ faderIndex: number, fader: Fader }) {
+export function InputSelector({ faderIndex, fader }: { faderIndex: number, fader: Fader }) {
     const handleInputSelect = (selected: number) => {
         window.socketIoClient.emit(SOCKET_SET_INPUT_SELECTOR, {
             faderIndex: faderIndex,

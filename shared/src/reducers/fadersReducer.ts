@@ -31,6 +31,7 @@ export interface Fader {
     ignoreAutomation: boolean
     disabled: boolean
     assignedChannels?: ChannelReference[]
+    isLinked?: boolean
 
     /**
      * Assuming that the protocol has a "feature", can it be enabled on this fader?
@@ -39,6 +40,8 @@ export interface Fader {
     capabilities?: {
         hasAMix?: boolean
         hasInputSelector?: boolean
+        isLinkablePrimary?: boolean
+        isLinkableSecondary?: boolean
     }
 }
 
@@ -280,6 +283,20 @@ export const faders = (
         case FaderActionTypes.SET_AMIX: //channel
             nextState[0].fader[action.faderIndex].amixOn = action.state
             return nextState
+        case FaderActionTypes.TOGGLE_LINK: {//channel
+            const wasLinked = nextState[0].fader[action.faderIndex].isLinked
+            if (wasLinked) {
+                const channelToReassign = nextState[0].fader[action.faderIndex].assignedChannels.pop()
+                nextState[0].fader[action.faderIndex + 1].assignedChannels.push(channelToReassign)
+                nextState[0].fader[action.faderIndex + 1].faderLevel = nextState[0].fader[action.faderIndex].faderLevel
+            } else {
+                const channelToReassign = nextState[0].fader[action.faderIndex + 1].assignedChannels.pop()
+                nextState[0].fader[action.faderIndex].assignedChannels.push(channelToReassign)
+            }
+            nextState[0].fader[action.faderIndex].isLinked = !wasLinked
+            nextState[0].fader[action.faderIndex + 1].isLinked = !wasLinked
+            return nextState
+        }
         case FaderActionTypes.REMOVE_ALL_ASSIGNED_CHANNELS: //channel
             nextState[0].fader.forEach((fader) => {
                 fader.assignedChannels = []

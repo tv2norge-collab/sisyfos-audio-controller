@@ -14,7 +14,7 @@ import {
     SOCKET_SET_INPUT_GAIN,
 } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 import ReductionMeter from './ReductionMeter'
-import { fxParamsList } from '../../../shared/src/constants/MixerProtocolInterface'
+import { FxParam } from '../../../shared/src/constants/MixerProtocolInterface'
 import { getFaderLabel } from '../utils/labels'
 import { InputSelector } from './InputSelector'
 
@@ -64,13 +64,13 @@ class ChanStrip extends React.PureComponent<
 
     changeDelay(currentValue: number, addValue: number) {
         window.socketIoClient.emit(SOCKET_SET_FX, {
-            fxParam: fxParamsList.DelayTime,
+            fxParam: FxParam.DelayTime,
             faderIndex: this.props.faderIndex,
             level: currentValue + addValue,
         })
     }
 
-    handleFx(fxParam: fxParamsList, event: any) {
+    handleFx(fxParam: FxParam, event: any) {
         window.socketIoClient.emit(SOCKET_SET_FX, {
             fxParam: fxParam,
             faderIndex: this.props.faderIndex,
@@ -132,7 +132,7 @@ class ChanStrip extends React.PureComponent<
     delay() {
         return (
             <React.Fragment>
-                {this.fxParamFader(fxParamsList.DelayTime)}
+                {this.fxParamFader(FxParam.DelayTime)}
                 <div className="delayButtons">
                     {DEL_VALUES.map((value: number, index: number) => {
                         return (
@@ -142,7 +142,7 @@ class ChanStrip extends React.PureComponent<
                                 onClick={() => {
                                     this.changeDelay(
                                         this.props.fader[this.props.faderIndex][
-                                            fxParamsList.DelayTime
+                                            FxParam.DelayTime
                                         ]?.[0] || 0,
                                         value / 500
                                     )
@@ -158,7 +158,7 @@ class ChanStrip extends React.PureComponent<
         )
     }
 
-    fxParamFader(fxParam: fxParamsList) {
+    fxParamFader(fxParam: FxParam) {
         let maxLabel: number =
             window.mixerProtocol.channelTypes[0].fromMixer[fxParam]?.[0]
                 .maxLabel ?? 1
@@ -260,31 +260,31 @@ class ChanStrip extends React.PureComponent<
                     .CHANNEL_INPUT_SELECTOR
             const hasGainTrim =
                 window.mixerProtocol.channelTypes[0].toMixer[
-                    fxParamsList.GainTrim
+                    FxParam.GainTrim
                 ]
             const hasComp =
                 window.mixerProtocol.channelTypes[0].toMixer[
-                    fxParamsList.CompThrs
+                    FxParam.CompThrs
                 ] ||
                 window.mixerProtocol.channelTypes[0].toMixer[
-                    fxParamsList.CompRatio
+                    FxParam.CompRatio
                 ]
             const hasDelay =
                 window.mixerProtocol.channelTypes[0].toMixer[
-                    fxParamsList.DelayTime
+                    FxParam.DelayTime
                 ]
             const hasEq =
                 window.mixerProtocol.channelTypes[0].toMixer[
-                    fxParamsList.EqGain01
+                    FxParam.EqGain01
                 ] ||
                 window.mixerProtocol.channelTypes[0].toMixer[
-                    fxParamsList.EqGain02
+                    FxParam.EqGain02
                 ] ||
                 window.mixerProtocol.channelTypes[0].toMixer[
-                    fxParamsList.EqGain03
+                    FxParam.EqGain03
                 ] ||
                 window.mixerProtocol.channelTypes[0].toMixer[
-                    fxParamsList.EqGain04
+                    FxParam.EqGain04
                 ]
             const hasMonitorSends = this.props.channel.find(
                 (ch: any) => ch.auxLevel[this.props.auxSendIndex] >= 0
@@ -306,7 +306,7 @@ class ChanStrip extends React.PureComponent<
                                     <div className="title">INPUT</div>
                                     <div className="content">
                                         {this.fxParamFader(
-                                            fxParamsList.GainTrim
+                                            FxParam.GainTrim
                                         )}
                                     </div>
                                 </div>
@@ -316,11 +316,11 @@ class ChanStrip extends React.PureComponent<
                                     <div className="title">COMPRESSOR</div>
                                     <div className="content">
                                         {this.fxParamFader(
-                                            fxParamsList.CompThrs
+                                            FxParam.CompThrs
                                         )}
                                         <p className="zero-comp">______</p>
                                         {this.fxParamFader(
-                                            fxParamsList.CompRatio
+                                            FxParam.CompRatio
                                         )}
                                         <p className="zero-comp">______</p>
                                         {this.gainReduction()}
@@ -347,11 +347,11 @@ class ChanStrip extends React.PureComponent<
                                         <div className="eq-group">
                                             {window.mixerProtocol
                                                 .channelTypes[0].toMixer[
-                                                fxParamsList.EqGain01
+                                                FxParam.EqGain01
                                             ] ? (
                                                 <React.Fragment>
                                                     {this.fxParamFader(
-                                                        fxParamsList.EqGain01
+                                                        FxParam.EqGain01
                                                     )}
                                                     <p className="zero-eq">
                                                         _______
@@ -360,11 +360,11 @@ class ChanStrip extends React.PureComponent<
                                             ) : null}
                                             {window.mixerProtocol
                                                 .channelTypes[0].toMixer[
-                                                fxParamsList.EqGain02
+                                                FxParam.EqGain02
                                             ] ? (
                                                 <React.Fragment>
                                                     {this.fxParamFader(
-                                                        fxParamsList.EqGain02
+                                                        FxParam.EqGain02
                                                     )}
                                                     <p className="zero-eq">
                                                         _______
@@ -373,11 +373,11 @@ class ChanStrip extends React.PureComponent<
                                             ) : null}
                                             {window.mixerProtocol
                                                 .channelTypes[0].toMixer[
-                                                fxParamsList.EqGain03
+                                                FxParam.EqGain03
                                             ] ? (
                                                 <React.Fragment>
                                                     {this.fxParamFader(
-                                                        fxParamsList.EqGain03
+                                                        FxParam.EqGain03
                                                     )}
                                                     <p className="zero-eq">
                                                         _______
@@ -386,11 +386,11 @@ class ChanStrip extends React.PureComponent<
                                             ) : null}
                                             {window.mixerProtocol
                                                 .channelTypes[0].toMixer[
-                                                fxParamsList.EqGain04
+                                                FxParam.EqGain04
                                             ] ? (
                                                 <React.Fragment>
                                                     {this.fxParamFader(
-                                                        fxParamsList.EqGain04
+                                                        FxParam.EqGain04
                                                     )}
                                                     <p className="zero-eq">
                                                         _______

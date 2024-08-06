@@ -4,7 +4,7 @@ import { remoteConnections } from '../../mainClasses'
 
 //Utils:
 import {
-    fxParamsList,
+    FxParam,
     MixerProtocol,
 } from '../../../../shared/src/constants/MixerProtocolInterface'
 import {
@@ -14,6 +14,7 @@ import { logger } from '../logger'
 import { SettingsActionTypes} from '../../../../shared/src/actions/settingsActions'
 import { ChannelActionTypes } from '../../../../shared/src/actions/channelActions'
 import { EmberElement, NumberedTreeNode } from 'emberplus-connection/dist/model'
+import { MixerConnection } from '.'
 
 // TODO - should these be util functions?
 export function floatToDB(f: number): number {
@@ -46,7 +47,7 @@ export function dbToFloat(d: number): number {
     return Math.max(0, f)
 }
 
-export class LawoRubyMixerConnection {
+export class LawoRubyMixerConnection implements MixerConnection {
     mixerProtocol: MixerProtocol
     mixerIndex: number
     emberConnection: EmberClient
@@ -54,7 +55,6 @@ export class LawoRubyMixerConnection {
 
     constructor(mixerProtocol: MixerProtocol, mixerIndex: number) {
         this.sendOutMessage = this.sendOutMessage.bind(this)
-        this.pingMixerCommand = this.pingMixerCommand.bind(this)
 
         this.mixerProtocol = mixerProtocol
         this.mixerIndex = mixerIndex
@@ -120,7 +120,7 @@ export class LawoRubyMixerConnection {
             })
     }
 
-    async setupMixerConnection() {
+    private async setupMixerConnection() {
         logger.info(
             'Ember connection established - setting up subscription of channels'
         )
@@ -249,7 +249,7 @@ export class LawoRubyMixerConnection {
         }
     }
 
-    async subscribeFaderLevel(
+    private async subscribeFaderLevel(
         ch: number,
         typeIndex: number,
         channelTypeIndex: number
@@ -287,7 +287,7 @@ export class LawoRubyMixerConnection {
                     ) {
                         // update the fader
                         const level = dbToFloat(levelInDecibel)
-                        store.dispatch  ({   
+                        store.dispatch  ({
                             type: FaderActionTypes.SET_FADER_LEVEL,
                             faderIndex: ch - 1,
                             level: level,
@@ -315,7 +315,7 @@ export class LawoRubyMixerConnection {
             logger.data(e).debug('error when subscribing to fader level')
         }
     }
-    async subscribeGainLevel(
+    private async subscribeGainLevel(
         ch: number,
         typeIndex: number,
         channelTypeIndex: number
@@ -357,7 +357,7 @@ export class LawoRubyMixerConnection {
             logger.data(e).debug('Error when subscribing to gain level')
         }
     }
-    async subscribeInputSelector(
+    private async subscribeInputSelector(
         ch: number,
         typeIndex: number,
         channelTypeIndex: number
@@ -424,7 +424,7 @@ export class LawoRubyMixerConnection {
             logger.data(e).debug('Error when subscribing to input selector')
         }
     }
-    async subscribeAMixState(
+    private async subscribeAMixState(
         ch: number,
         typeIndex: number,
         channelTypeIndex: number
@@ -480,15 +480,7 @@ export class LawoRubyMixerConnection {
         }
     }
 
-    subscribeChannelName() {
-        return true
-    }
-
-    pingMixerCommand() {
-        return true
-    }
-
-    sendOutMessage(
+    private sendOutMessage(
         mixerMessage: string,
         channel: number,
         value: string | number | boolean,
@@ -515,7 +507,7 @@ export class LawoRubyMixerConnection {
             })
     }
 
-    sendOutLevelMessage(channel: number, value: number) {
+    private sendOutLevelMessage(channel: number, value: number) {
         const source = this.faders[channel]
         if (!channel) return
 
@@ -526,27 +518,6 @@ export class LawoRubyMixerConnection {
         logger.trace(`Sending out Level: ${value}  To ${source}`)
 
         this.sendOutMessage(mixerMessage, channel, value)
-    }
-
-    updateOutLevel(channelIndex: number) {
-        let channelType =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[
-                channelIndex
-            ].channelType
-        let channelTypeIndex =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[
-                channelIndex
-            ].channelTypeIndex
-        let protocol =
-            this.mixerProtocol.channelTypes[channelType].toMixer
-                .CHANNEL_OUT_GAIN[0]
-        let level =
-            (state.channels[0].chMixerConnection[this.mixerIndex].channel[
-                channelIndex
-            ].outputLevel -
-                protocol.min) *
-            (protocol.max - protocol.min)
-        this.sendOutLevelMessage(channelTypeIndex + 1, level)
     }
 
     updateFadeIOLevel(channelIndex: number, outputLevel: number) {
@@ -674,7 +645,7 @@ export class LawoRubyMixerConnection {
         return true
     }
 
-    updateFx(fxParam: fxParamsList, channelIndex: number, level: number) {
+    updateFx(channelIndex: number, fxParam: FxParam, level: number) {
         return true
     }
     updateAuxLevel(channelIndex: number, auxSendIndex: number, level: number) {

@@ -8,7 +8,7 @@ import {
     MixerProtocol,
     MixerProtocolGeneric,
     CasparCGMixerGeometry,
-    fxParamsList,
+    FxParam,
     MixerConnectionTypes
 } from '../../../shared/src/constants/MixerProtocolInterface'
 import { OscMixerConnection } from './mixerConnections/OscMixerConnection'
@@ -31,22 +31,11 @@ import {
 import { AtemMixerConnection } from './mixerConnections/AtemConnection'
 import { ChannelReference } from '../../../shared/src/reducers/fadersReducer'
 import { sendChLevelsToOuputServer } from './outputLevelServer'
+import { MixerConnection } from './mixerConnections'
 
 export class MixerGenericConnection {
     mixerProtocol: MixerProtocolGeneric[]
-    mixerConnection: Array<
-        | OscMixerConnection
-        | QlClMixerConnection
-        | MidiMixerConnection
-        | CasparCGConnection
-        | EmberMixerConnection
-        | LawoRubyMixerConnection
-        | StuderMixerConnection
-        | StuderVistaMixerConnection
-        | SSLMixerConnection
-        | VMixMixerConnection
-        | AtemMixerConnection
-    >
+    mixerConnection: MixerConnection[]
     mixerTimers: {
         chTimer: NodeJS.Timeout[]
         fadeActiveTimer: NodeJS.Timeout[]
@@ -345,7 +334,7 @@ export class MixerGenericConnection {
         )
     }
 
-    updateFx = (fxParam: fxParamsList, faderIndex: number) => {
+    updateFx = (fxParam: FxParam, faderIndex: number) => {
         let level: number = state.faders[0].fader[faderIndex][fxParam][0]
         state.faders[0].fader[faderIndex].assignedChannels?.forEach(
             (assignedChannel: ChannelReference) => {
@@ -456,7 +445,7 @@ export class MixerGenericConnection {
             targetVal = (targetVal * (100 - state.settings[0].voLevel)) / 100
         }
 
-        this.fade(fadeTime, mixerIndex, channelIndex, outputLevel, targetVal)
+        this.fade(fadeTime, mixerIndex, channelIndex, outputLevel[0], targetVal)
     }
 
     fade(
@@ -548,7 +537,7 @@ export class MixerGenericConnection {
                 channelIndex
             ].outputLevel
 
-        this.fade(fadeTime, mixerIndex, channelIndex, outputLevel, 0)
+        this.fade(fadeTime, mixerIndex, channelIndex, outputLevel[0], 0)
     }
 }
 

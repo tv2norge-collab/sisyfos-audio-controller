@@ -2,7 +2,7 @@ import { Atem, AtemState } from 'atem-connection'
 
 import { store, state } from '../../reducers/store'
 import {
-    fxParamsList,
+    FxParam,
     MixerProtocol,
 } from '../../../../shared/src/constants/MixerProtocolInterface'
 import { logger } from '../logger'
@@ -20,6 +20,7 @@ import {
 import { FaderActionTypes } from '../../../../shared/src/actions/faderActions'
 import { ChannelActionTypes } from '../../../../shared/src/actions/channelActions'
 import { FairlightAudioSource } from 'atem-connection/dist/state/fairlight'
+import { MixerConnection } from '.'
 
 enum TrackIndex {
     Stereo = '-65280',
@@ -27,7 +28,7 @@ enum TrackIndex {
     Left = '-256',
 }
 
-export class AtemMixerConnection {
+export class AtemMixerConnection implements MixerConnection {
     private _connection: Atem
 
     private _chNoToSource: Record<number, number> = {}
@@ -75,7 +76,7 @@ export class AtemMixerConnection {
             })
     }
 
-    setupMixerConnection() {
+    private setupMixerConnection() {
         const sourceToName: Record<string, string> = {
             ...Object.fromEntries(
                 Object.entries(this._connection.state.inputs).map(
@@ -149,7 +150,7 @@ export class AtemMixerConnection {
     updateMuteState(channelIndex: number, muteOn: boolean): void {
         const { channelTypeIndex, outputLevel } = this.getChannel(channelIndex)
 
-        if (outputLevel > 0) {
+        if (outputLevel[0] > 0) {
             this._connection.setFairlightAudioMixerSourceProps(
                 this._sourceToChNo[channelTypeIndex],
                 this._sourceTracks[channelTypeIndex],
@@ -170,7 +171,7 @@ export class AtemMixerConnection {
         return
     }
 
-    updateFx(fxParam: fxParamsList, channelIndex: number, level: number): void {
+    updateFx(channelIndex: number, fxParam: FxParam, level: number): void {
         return
     }
 

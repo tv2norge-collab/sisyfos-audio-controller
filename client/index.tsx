@@ -4,9 +4,6 @@ import App from './src/components/App'
 
 import { MixerProtocol } from '../shared/src/constants/MixerProtocolInterface'
 import ContextProvider from './src/components/ContextProvider'
-
-import './style'
-
 declare global {
     interface Window {
         storeRedux: any

@@ -19,6 +19,7 @@ export interface Settings {
     showLabelSettings: boolean
     showChanStrip: number
     showChanStripFull: number
+    showChanLayoutSettings: number
     showOptions: number | false
     showMonitorOptions: number
     showStorage: boolean
@@ -80,6 +81,7 @@ const defaultSettingsReducerState: Array<Settings> = [
         showLabelSettings: false,
         showChanStrip: -1,
         showChanStripFull: -1,
+        showChanLayoutSettings: -1,
         showOptions: false,
         showMonitorOptions: -1,
         showStorage: false,
@@ -149,6 +151,13 @@ export const settings = (
                 nextState[0].showChanStripFull = action.channel
             } else {
                 nextState[0].showChanStripFull = -1
+            }
+            return nextState
+        case SettingsActionTypes.TOGGLE_SHOW_CHAN_LAYOUT_SETTINGS:
+            if (nextState[0].showChanLayoutSettings !== action.channel) {
+                nextState[0].showChanLayoutSettings = action.channel
+            } else {
+                nextState[0].showChanLayoutSettings = -1
             }
             return nextState
         case SettingsActionTypes.TOGGLE_SHOW_MONITOR_OPTIONS:

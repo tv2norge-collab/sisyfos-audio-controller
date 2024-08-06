@@ -1,0 +1,64 @@
+.channel-layout-popover {
+    width: 100px;
+    background-color: rgb(31, 31, 31);
+    border-color: rgb(70, 70, 70);
+    border-style: solid;
+    border-width: 4px;
+    border-radius: 8px;
+    text-align: left;
+    color: #fff;
+    z-index: 10;
+    padding: 8px;
+}
+
+.channel-layout-popover .row {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    gap: 8px;
+}
+
+.channel-layout-popover .channel-layout-gain {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    max-width: 50%;
+    margin-top: 12px;
+}
+
+.channel-layout-gain .row {
+    justify-content: space-between;
+}
+
+.channel-layout-gain .gain-label {
+    font-size: 80%;
+    opacity: 0.6;
+    margin-left: 3px;
+}
+
+.channel-layout-selector-button {
+    outline: none;
+    -moz-outline: none;
+    margin-bottom: 12px;
+    color: rgb(153, 153, 153);
+    height: 40px;
+    width: 50%;
+    font-size: 90%;
+    background-color: rgb(40, 40, 40);
+    border-radius: 7px;
+    border-color: rgb(76, 76, 76);
+}
+
+.channel-layout-selector-button.active {
+    color: white;
+    background-color: rgb(47, 71, 91);
+}
+
+.channel-layout-matrix {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    gap: 4px;
+    justify-items: center;
+}

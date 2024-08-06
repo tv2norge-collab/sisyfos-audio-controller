@@ -3,6 +3,7 @@ import { connect } from 'react-redux'
 import { compose } from 'redux'
 import { ReduxStore } from '../../../shared/src/reducers/store'
 
+import '../assets/css/App.css'
 import Channels from './Channels'
 import Settings from './Settings'
 import Storage from './RoutingStorage'

@@ -10,7 +10,7 @@ import {
     CasparCGMixerGeometry,
     CasparCGChannelLayerPair,
     CasparCGMixerGeometryFile,
-    fxParamsList,
+    FxParam,
 } from '../../../../shared/src/constants/MixerProtocolInterface'
 import { Channel } from '../../../../shared/src/reducers/channelsReducer'
 import {
@@ -25,6 +25,7 @@ import {
     SettingsActionTypes,
 } from '../../../../shared/src/actions/settingsActions'
 import { STORAGE_FOLDER } from '../SettingsStorage'
+import { MixerConnection } from '.'
 
 interface CommandChannelMap {
     [key: string]: number
@@ -37,7 +38,7 @@ const OSC_PATH_PRODUCER_FILE_NAME =
 const OSC_PATH_PRODUCER_CHANNEL_LAYOUT =
     /\/channel\/(\d+)\/stage\/layer\/(\d+)\/producer\/channel_layout/
 
-export class CasparCGConnection {
+export class CasparCGConnection implements MixerConnection {
     mixerProtocol: CasparCGMixerGeometry
     mixerIndex: number
     connection: CasparCG
@@ -89,7 +90,7 @@ export class CasparCGConnection {
         })
     }
 
-    injectCasparCGSetting() {
+    private injectCasparCGSetting() {
         const geometryFile = path.resolve(
             STORAGE_FOLDER,
             'default-casparcg.ccg'
@@ -121,7 +122,7 @@ export class CasparCGConnection {
         }
     }
 
-    setupMixerConnection() {
+    private setupMixerConnection() {
         const calcVuLevel = (level: number) => {
             return dbToFloat(20 * Math.log(level) + 12)
         }
@@ -267,36 +268,14 @@ export class CasparCGConnection {
         }
     }
 
-    checkOscCommand(
-        address: string,
-        commandSpace: CommandChannelMap
-    ): number | undefined {
-        const index = commandSpace[address]
-        if (index !== undefined) {
-            return index
-        }
-        return undefined
-    }
-
-    pingMixerCommand = () => {
-        //Ping OSC mixer if mixerProtocol needs it.
-        /* this.mixerProtocol.pingCommand.map((command) => {
-            this.sendOutMessage(
-                command.mixerMessage,
-                0,
-                command.value
-            );
-        }); */
-    }
-
     private syncCommand = Promise.resolve()
-    floatToVolume = (float: number) => {
+    private floatToVolume = (float: number) => {
         const db = floatToDB(float)
         const volume = Math.pow(10, db / 20)
 
         return Math.min(Math.max(volume, 0), 3.2) // clamp between 0 and 3.2
     }
-    controlVolume = (channel: number, layer: number, value: number) => {
+    private controlVolume = (channel: number, layer: number, value: number) => {
         logger.trace(`Set ${channel}-${layer} volume = ${value}`)
         this.syncCommand = this.syncCommand
             .then(() =>
@@ -315,7 +294,7 @@ export class CasparCGConnection {
             .then(() => {})
     }
 
-    controlChannelSetting = (
+    private controlChannelSetting = (
         channel: number,
         layer: number,
         producer: string,
@@ -383,7 +362,7 @@ export class CasparCGConnection {
             })
     }
 
-    setAllLayers = (pairs: CasparCGChannelLayerPair[], value: number) => {
+    private setAllLayers = (pairs: CasparCGChannelLayerPair[], value: number) => {
         pairs.forEach((i) => {
             this.controlVolume(i.channel, i.layer, value)
         })
@@ -518,17 +497,17 @@ export class CasparCGConnection {
             this.mixerProtocol.toMixer.CHANNEL_INPUT_SELECTOR &&
             state.channels[0].chMixerConnection[this.mixerIndex].channel[
                 channelIndex
-            ].private
+            ].privateData
         ) {
             const pair = this.mixerProtocol.sourceOptions.sources[channelIndex]
             const producer =
                 state.channels[0].chMixerConnection[this.mixerIndex].channel[
                     channelIndex
-                ].private!['producer']
+                ].privateData!['producer']
             let filePath = String(
                 state.channels[0].chMixerConnection[this.mixerIndex].channel[
                     channelIndex
-                ].private!['file_path']
+                ].privateData!['file_path']
             )
             filePath = filePath.replace(/\.[\w\d]+$/, '')
             this.controlChannelSetting(
@@ -543,7 +522,7 @@ export class CasparCGConnection {
             )
         }
     }
-    updateFx(fxParam: fxParamsList, channelIndex: number, level: number) {
+    updateFx(channelIndex: number, fxParam: FxParam, level: number) {
         return true
     }
     updateAuxLevel(channelIndex: number, auxSendIndex: number, level: number) {
