@@ -2,6 +2,7 @@ import { babel } from '@rollup/plugin-babel';
 import postcss from 'rollup-plugin-postcss';
 import typescript from '@rollup/plugin-typescript';
 import commonjs from '@rollup/plugin-commonjs';
+import image from '@rollup/plugin-image';
 import path from 'path';
 
 export default {
@@ -32,6 +33,7 @@ export default {
       babelHelpers: 'bundled',
       include: ['../client', '../shared', '../component-lib']
     }),
+    image()
   ],
   external: [
     'react', // Prevent bundling react
