@@ -9,7 +9,7 @@ export default {
   input: './src/index.tsx', // Entry point of the component library
   output: [
     {
-      file: 'dist/index.cjs.js',
+      file: 'dist/index.cjs',
       format: 'cjs',
       sourcemap: true,
     },
