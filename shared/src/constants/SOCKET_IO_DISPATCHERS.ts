@@ -16,10 +16,10 @@ export const SOCKET_TOGGLE_PST = 'togglePst'
 export const SOCKET_TOGGLE_PFL = 'togglePfl'
 export const SOCKET_TOGGLE_MUTE = 'toggleMute'
 export const SOCKET_TOGGLE_AMIX = 'toggleAmix'
-export const SOCKET_TOGGLE_LINK = 'toggleLink'
 export const SOCKET_TOGGLE_IGNORE = 'toggleIgnore'
 export const SOCKET_NEXT_MIX = 'nextMix'
 export const SOCKET_CLEAR_PST = 'clearPst'
+export const SOCKET_SET_LINK = 'setLink'
 
 // Div:
 export const SOCKET_SAVE_SETTINGS = 'saveSettings'

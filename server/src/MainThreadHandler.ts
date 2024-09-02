@@ -118,6 +118,18 @@ export class MainThreadHandlers {
         })
     }
 
+    setLink(faderIndex: number, linkOn: boolean) {
+        store.dispatch({
+            type: FaderActionTypes.SET_LINK,
+            faderIndex,
+            linkOn,
+        })
+        mixerGenericConnection.updateOutLevel(faderIndex, -1)
+        mixerGenericConnection.updateOutLevel(faderIndex + 1, -1)
+        this.reIndexAssignedChannelsRelation()
+        this.updateFullClientStore()
+    }
+
     socketServerHandlers(socket: any) {
         logger.info('Setting up socket IO main handlers.')
 
@@ -396,16 +408,7 @@ export class MainThreadHandlers {
                 mixerGenericConnection.updateAMixState(faderIndex)
                 this.updatePartialStore(faderIndex)
             })
-            .on(IO.SOCKET_TOGGLE_LINK, (faderIndex: any) => {
-                store.dispatch({
-                    type: FaderActionTypes.TOGGLE_LINK,
-                    faderIndex: faderIndex,
-                })
-                mixerGenericConnection.updateOutLevel(faderIndex, -1)
-                mixerGenericConnection.updateOutLevel(faderIndex + 1, -1)
-                this.reIndexAssignedChannelsRelation()
-                this.updateFullClientStore()
-            })
+            .on(IO.SOCKET_SET_LINK, (payload: any) => this.setLink(payload.faderIndex, payload.linkOn))
             .on(IO.SOCKET_TOGGLE_IGNORE, (faderIndex: any) => {
                 store.dispatch({
                     type: FaderActionTypes.IGNORE_AUTOMATION,

@@ -21,7 +21,7 @@ class Channels extends React.Component<ChannelsInjectProps & Store> {
         this.props.settings.showMonitorOptions = -1
     }
 
-    public shouldComponentUpdate(nextProps: ChannelsInjectProps) {
+    public shouldComponentUpdate(nextProps: ChannelsInjectProps): boolean {
         return (
             this.props.settings.showOptions !==
                 nextProps.settings.showOptions ||

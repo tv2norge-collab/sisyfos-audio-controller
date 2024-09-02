@@ -71,8 +71,6 @@ export const defaultFadersReducerState = (
         }
     })
 
-    console.log(channels)
-
     for (let index = 0; index < numberOfFaders; index++) {
         defaultObj[0].fader[index] = {
             faderLevel: 0.75,
@@ -283,18 +281,26 @@ export const faders = (
         case FaderActionTypes.SET_AMIX: //channel
             nextState[0].fader[action.faderIndex].amixOn = action.state
             return nextState
-        case FaderActionTypes.TOGGLE_LINK: {//channel
+        case FaderActionTypes.SET_LINK: {//channel
             const wasLinked = nextState[0].fader[action.faderIndex].isLinked
             if (wasLinked) {
-                const channelToReassign = nextState[0].fader[action.faderIndex].assignedChannels.pop()
-                nextState[0].fader[action.faderIndex + 1].assignedChannels.push(channelToReassign)
-                nextState[0].fader[action.faderIndex + 1].faderLevel = nextState[0].fader[action.faderIndex].faderLevel
+                if (!action.linkOn) {
+                    const channelToReassign = nextState[0].fader[action.faderIndex].assignedChannels?.pop()
+                    if (channelToReassign) {
+                        nextState[0].fader[action.faderIndex + 1].assignedChannels?.push(channelToReassign)
+                        nextState[0].fader[action.faderIndex + 1].faderLevel = nextState[0].fader[action.faderIndex].faderLevel
+                    }
+                }
             } else {
-                const channelToReassign = nextState[0].fader[action.faderIndex + 1].assignedChannels.pop()
-                nextState[0].fader[action.faderIndex].assignedChannels.push(channelToReassign)
+                if (action.linkOn) {
+                    const channelToReassign = nextState[0].fader[action.faderIndex + 1].assignedChannels?.pop()
+                    if (channelToReassign) {
+                        nextState[0].fader[action.faderIndex].assignedChannels?.push(channelToReassign)
+                    }
+                }
             }
-            nextState[0].fader[action.faderIndex].isLinked = !wasLinked
-            nextState[0].fader[action.faderIndex + 1].isLinked = !wasLinked
+            nextState[0].fader[action.faderIndex].isLinked = action.linkOn
+            nextState[0].fader[action.faderIndex + 1].isLinked = action.linkOn
             return nextState
         }
         case FaderActionTypes.REMOVE_ALL_ASSIGNED_CHANNELS: //channel

@@ -94,7 +94,7 @@ class ChanStripEq extends React.PureComponent<
 
     shouldComponentUpdate(
         nextProps: ChanStripFullInjectProps & ChanStripFullProps
-    ) {
+    ): boolean {
         if (nextProps.faderIndex > -1) {
             return true
         } else {

@@ -44,7 +44,7 @@ class App extends React.Component<AppProps> {
         }
     }
 
-    public shouldComponentUpdate(nextProps: AppProps) {
+    public shouldComponentUpdate(nextProps: AppProps): boolean {
         return (
             nextProps.store.settings[0].showSettings !=
                 this.props.store.settings[0].showSettings ||

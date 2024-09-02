@@ -6,13 +6,11 @@
     "build": "rollup -c",
     "copy-deps": "node ./scripts/copy-dependencies.cjs"
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.esm.js",
+  "module": "./dist/index.mjs",
   "files": [
     "dist"
   ],
-  "types": "dist/component-lib/src/index.d.ts",
-  "type": "module",
+  "types": "./dist/component-lib/src/index.d.ts",
   "dependencies": {
     "@floating-ui/react": "^0.26.20",
     "classnames": "^2.5.1",

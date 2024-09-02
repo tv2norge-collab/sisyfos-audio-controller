@@ -56,8 +56,8 @@ class Channel extends React.Component<
         this.faderIndex = this.props.faderIndex
     }
 
-    public shouldComponentUpdate(nextProps: ChannelInjectProps) {
-        return (
+    public shouldComponentUpdate(nextProps: ChannelInjectProps): boolean {
+        return !!(
             nextProps.channelTypeIndex !== this.props.channelTypeIndex ||
             nextProps.fader.pgmOn != this.props.fader.pgmOn ||
             nextProps.fader.voOn != this.props.fader.voOn ||
@@ -177,6 +177,7 @@ class Channel extends React.Component<
                                 <VuMeter
                                     faderIndex={this.faderIndex}
                                     channel={i}
+                                    key={i}
                                 />
                             ),
                         )}{' '}
@@ -193,6 +194,7 @@ class Channel extends React.Component<
                                 <VuMeter
                                     faderIndex={this.faderIndex}
                                     channel={index}
+                                    key={index}
                                 />
                             ),
                         )}{' '}

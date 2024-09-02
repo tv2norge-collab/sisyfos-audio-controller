@@ -38,7 +38,7 @@ export function ChannelLayoutSettingsButton({
     }
 
     const toggleLink = () => {
-        window.socketIoClient.emit(IO.SOCKET_TOGGLE_LINK, faderIndex)
+        window.socketIoClient.emit(IO.SOCKET_SET_LINK, { faderIndex, linkOn: !fader.isLinked })
     }
 
     const handleInputGainLeft = useCallback(
@@ -96,7 +96,7 @@ export function ChannelLayoutSettingsButton({
             {isActive && (
                 <PopoverContent className="channel-layout-popover">
                     {fader.capabilities?.isLinkablePrimary && (
-                        <div className='row'>
+                        <div className='row channel-layout-selectors'>
                             <button onClick={toggleLink} className={classNames('channel-layout-selector-button', { active: fader.isLinked })}>L+R</button>
                             <button onClick={toggleLink} className={classNames('channel-layout-selector-button', { active: !fader.isLinked })}>1|2</button>
                         </div>

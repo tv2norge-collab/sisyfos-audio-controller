@@ -33,7 +33,7 @@ export class ReductionMeter extends React.Component<ReductionMeterInjectedProps>
         this.meterZero = window.mixerProtocol.meter?.zero || 0.75
     }
 
-    public shouldComponentUpdate(nextProps: ReductionMeterInjectedProps) {
+    public shouldComponentUpdate(nextProps: ReductionMeterInjectedProps): boolean {
         return nextProps.reductionVal != this.props.reductionVal
     }
 

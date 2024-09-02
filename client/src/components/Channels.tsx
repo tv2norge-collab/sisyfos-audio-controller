@@ -4,7 +4,7 @@ import ClassNames from 'classnames'
 
 import Channel from './Channel'
 import '../assets/css/Channels.css'
-import { Store } from 'redux'
+import { Store, UnknownAction } from 'redux'
 import {
     SettingsActionTypes,
 } from '../../../shared/src/actions/settingsActions'
@@ -27,6 +27,9 @@ import {
 } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 import ChanStripFull from './ChanStripFull'
 
+interface ChannelsProps {
+    page?: string
+}
 interface ChannelsInjectProps {
     channels: IChannels
     faders: Fader[]
@@ -35,19 +38,26 @@ interface ChannelsInjectProps {
     mixersOnline: boolean
 }
 
-class Channels extends React.Component<ChannelsInjectProps & Store> {
+class Channels extends React.Component<ChannelsProps & ChannelsInjectProps & Store> {
     constructor(props: any) {
         super(props)
         this.props.settings.showMonitorOptions = -1
         const urlParams = new URLSearchParams(window.location.search)
-        const pageId = urlParams.get('page')
+        const pageId = props.page ?? urlParams.get('page')
         if (pageId) {
             this.handlePages(PageType.CustomPage, pageId)
         }
     }
 
-    public shouldComponentUpdate(nextProps: ChannelsInjectProps) {
+    public componentDidUpdate(prevProps: Readonly<ChannelsProps & ChannelsInjectProps & Store<any, UnknownAction, unknown>>) {
+        if (prevProps.page !== this.props.page) {
+            this.handlePages(PageType.CustomPage, this.props.page)
+        }
+    }
+
+    public shouldComponentUpdate(nextProps: ChannelsProps & ChannelsInjectProps): boolean {
         return (
+            this.props.page !== nextProps.page ||
             this.props.settings.showOptions !==
                 nextProps.settings.showOptions ||
             this.props.settings.showChanStrip !==

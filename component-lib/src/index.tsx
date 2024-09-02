@@ -4,6 +4,6 @@ import React from 'react'
 
 import { default as OrgChannels } from '../../client/src/components/Channels'
 
-export function Channels() {
-    return <OrgChannels />
+export function Channels({page} : { page?: string }) {
+    return <OrgChannels page={page}/>
 }

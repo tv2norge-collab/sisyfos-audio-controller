@@ -42,7 +42,7 @@ export enum FaderActionTypes {
     SET_AMIX = 'SET_AMIX',
     SET_CAPABILITY = 'SET_CAPABILITY',
     TOGGLE_ALL_MANUAL = 'TOGGLE_ALL_MANUAL',
-    TOGGLE_LINK = 'TOGGLE_LINK',
+    SET_LINK = 'SET_LINK',
 }
 
 export type FaderActions =
@@ -151,7 +151,7 @@ export type FaderActions =
           disabled: boolean
       }
     | { type: FaderActionTypes.TOGGLE_AMIX; faderIndex: number }
-    | { type: FaderActionTypes.TOGGLE_LINK; faderIndex: number }
+    | { type: FaderActionTypes.SET_LINK; faderIndex: number; linkOn: boolean }
     | { type: FaderActionTypes.SET_AMIX; faderIndex: number; state: boolean }
     | {
           type: FaderActionTypes.SET_CAPABILITY

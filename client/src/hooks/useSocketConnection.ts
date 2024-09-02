@@ -24,20 +24,23 @@ export function useSocketConnection(customUri?: string, customPath?: string, que
         const socketServerPath = customPath ??
             pathname + (pathname.endsWith('/') ? '' : '/') + 'socket.io/'
         const uri = customUri ?? host
+
         window.socketIoClient = io(uri, {
             path: socketServerPath,
             query,
         })
+        socketClientHandlers()
+
         window.socketIoClient.emit(SOCKET_GET_SNAPSHOT_LIST)
         window.socketIoClient.emit(SOCKET_GET_CCG_LIST)
         window.socketIoClient.emit(SOCKET_GET_MIXER_PRESET_LIST)
-        window.socketIoClient.emit(SOCKET_GET_PAGES_LIST)
 
         console.log('Setting up SocketIO connection ' + socketServerPath)
-        socketClientHandlers()
+        window.socketIoClient.emit('get-mixerprotocol', 'get selected mixerprotocol')
         window.socketIoClient.emit('get-store', 'update local store')
         window.socketIoClient.emit('get-settings', 'update local settings')
-        window.socketIoClient.emit('get-mixerprotocol', 'get selected mixerprotocol')
+        window.socketIoClient.emit(SOCKET_GET_PAGES_LIST)
+
         setInitialized(true);
     }, [customUri, customPath])
     return { initialized }
