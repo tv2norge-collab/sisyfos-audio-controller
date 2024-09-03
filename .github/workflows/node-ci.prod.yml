@@ -194,72 +194,14 @@ jobs:
           name: ${{ github.event.repository.name }}-desktop
           path: desktop/dist
 
-  check-github-release:
+  publish-ecr-package:
     runs-on: ubuntu-latest
-    needs: build-desktop
-    outputs:
-      defined: ${{ steps.release.outputs.defined == 'true' }}
-    steps:
-      - name: Access repository
-        uses: actions/checkout@v4
-      - name: Check if is set to release
-        id: release
-        uses: ./.github/actions/check-secret
-        with:
-          secret: ${{ secrets.RELEASE_TO_GITHUB }}
-
-  publish-github-release:
-    runs-on: ubuntu-latest
-    if: needs.bump-version.outputs.bumped == 'true' && needs.check-github-release.outputs.defined == 'true'
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     needs:
       - bump-version
-      - check-github-release
-    steps:
-      - name: Access repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.bump-version.outputs.commit_sha }}
-      - name: Ensure commits from bump-version
-        run: git pull
-      - uses: actions/download-artifact@v3
-        with:
-          name: ${{ github.event.repository.name }}-desktop
-          path: desktop/dist
-      - name: Compress artifact to zip
-        uses: papeloto/action-zip@v1
-        with:
-          files: dist
-          dest: "${{ github.event.repository.name }}-${{ needs.bump-version.outputs.version }}.zip"
-      - name: Create Github release with desktop exe
-        uses: softprops/action-gh-release@v1
-        with:
-          name: Release ${{ needs.bump-version.outputs.tag_version }}
-          tag_name: ${{ needs.bump-version.outputs.tag_version }}
-          body: ${{ needs.bump-version.outputs.changelog }}
-          files: |
-            desktop/dist/*.exe
-            desktop/dist/*.dmg
-
-  check-npm-token:
-    runs-on: ubuntu-latest
-    needs: build
-    outputs:
-      defined: ${{ steps.token.outputs.defined == 'true' }}
-    steps:
-      - name: Access repository
-        uses: actions/checkout@v4
-      - name: Check if has username
-        id: token
-        uses: ./.github/actions/check-secret
-        with:
-          secret: ${{ secrets.NPM_TOKEN }}
-
-  publish-npm-package:
-    runs-on: ubuntu-latest
-    if: needs.check-npm-token.outputs.defined == 'true'
-    needs:
-      - bump-version
-      - check-npm-token
     steps:
       - name: Access repository
         uses: actions/checkout@v4
@@ -276,36 +218,29 @@ jobs:
         with:
           node-version: "18.x"
           registry-url: "https://registry.npmjs.org"
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Login to CodeArtifact
+        run: |
+          aws codeartifact login --tool npm --repository selma-store --domain selma --domain-owner ${{ secrets.AWS_ACCOUNT_ID }} --region ${{ secrets.AWS_REGION }}
+      - name: Configure CodeArtifact Token
+        run: |
+          export CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain selma --domain-owner ${{ secrets.AWS_ACCOUNT_ID }} --region ${{ secrets.AWS_REGION }} --query authorizationToken --output text`
+          yarn config set npmRegistryServer "https://selma-${{ secrets.AWS_ACCOUNT_ID }}.d.codeartifact.${{ secrets.AWS_REGION }}.amazonaws.com/npm/selma-store/"
+          yarn config set 'npmRegistries["https://selma-${{ secrets.AWS_ACCOUNT_ID }}.d.codeartifact.${{ secrets.AWS_REGION }}.amazonaws.com/npm/selma-store/"].npmAuthToken' "${CODEARTIFACT_AUTH_TOKEN}"
+          yarn config set 'npmRegistries["https://selma-${{ secrets.AWS_ACCOUNT_ID }}.d.codeartifact.${{ secrets.AWS_REGION }}.amazonaws.com/npm/selma-store/"].npmAlwaysAuth' "true"
       - name: Publish package
         run: yarn publish --access=public --tag latest --new-version "${{ needs.bump-version.outputs.version }}"
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  check-docker-credentials:
-    runs-on: ubuntu-latest
-    needs: build
-    outputs:
-      defined: ${{ steps.username.outputs.defined == 'true' && steps.password.outputs.defined == 'true' }}
-    steps:
-      - name: Access repository
-        uses: actions/checkout@v4
-      - name: Check if has username
-        id: username
-        uses: ./.github/actions/check-secret
-        with:
-          secret: ${{ secrets.DOCKER_USERNAME }}
-      - name: Check if has password
-        id: password
-        uses: ./.github/actions/check-secret
-        with:
-          secret: ${{ secrets.DOCKER_PASSWORD }}
+          NODE_AUTH_TOKEN: ${{ secrets.AWS_ROLE_ARN }}
 
   publish-docker-image:
     runs-on: ubuntu-latest
-    if: needs.check-docker-credentials.outputs.defined == 'true'
     needs:
       - bump-version
-      - check-docker-credentials
     steps:
       - name: Access repository
         uses: actions/checkout@v4
@@ -316,20 +251,39 @@ jobs:
         with:
           version: ${{ needs.bump-version.outputs.version }}
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+      - name: Determine if images should be published to ecr
+        id: ecrrepo
+        run: |
+          # check if a release branch, or master, or a tag
+          if [[ "${{ github.ref }}" =~ ^refs/heads/release([0-9]+)$ || "${{ github.ref }}" == "refs/heads/master" || "${{ github.ref }}" == refs/tags/* || "${{ github.ref }}" == refs/heads/EAV-* ]]
+          then
+            ECRREPO_PUBLISH="1"
+          else
+            ECRREPO_PUBLISH="0"
+          fi
+          # debug output
+          echo "ecrrepo-publish $ECRREPO_PUBLISH"
+          echo "ecrrepo-publish=$ECRREPO_PUBLISH" >> $GITHUB_OUTPUT
+      - name: Configure AWS Credentials
+        if: steps.ecrrepo.outputs.ecrrepo-publish == '1'
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        if: steps.ecrrepo.outputs.ecrrepo-publish == '1'
+        uses: aws-actions/amazon-ecr-login@v1
 
       - name: Build and push
+        if: steps.ecrrepo.outputs.ecrrepo-publish == '1'
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
           tags: |
-            "tv2media/${{ github.event.repository.name }}:latest"
-            "tv2media/${{ github.event.repository.name }}:${{ steps.version.outputs.version }}"
-            "tv2media/${{ github.event.repository.name }}:${{ steps.version.outputs.major }}"
-            "tv2media/${{ github.event.repository.name }}:${{ steps.version.outputs.major }}.${{ steps.version.outputs.minor }}"
+            "${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name }}:latest"
+            "${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name }}:${{ steps.version.outputs.version }}"
+            "${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name }}:${{ steps.version.outputs.major }}"
+            "${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name }}:${{ steps.version.outputs.major }}.${{ steps.version.outputs.minor }}"
 
