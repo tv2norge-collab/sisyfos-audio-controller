@@ -284,17 +284,17 @@ export const faders = (
         case FaderActionTypes.SET_LINK: {//channel
             const wasLinked = nextState[0].fader[action.faderIndex].isLinked
             const currentFader = nextState[0].fader[action.faderIndex]
-            const nextFader = nextState[0].fader[action.faderIndex + 1]
             if (!currentFader?.capabilities?.isLinkablePrimary) {
-                nextFader.isLinked = false
+                currentFader.isLinked = false
                 return nextState
             }
+            const nextFader = nextState[0].fader[action.faderIndex + 1]
             if (wasLinked) {
                 if (!action.linkOn) {
                     const channels = currentFader.assignedChannels
                     if ((channels?.length ?? 0) > 1) {
                         const channelToReassign = channels?.pop()
-                        if (channelToReassign && nextFader.capabilities?.isLinkableSecondary) {
+                        if (channelToReassign && nextFader?.capabilities?.isLinkableSecondary) {
                             nextFader.assignedChannels?.push(channelToReassign)
                             nextFader.faderLevel = currentFader.faderLevel
                         }
@@ -302,14 +302,14 @@ export const faders = (
                 }
             } else {
                 if (action.linkOn) {
-                    const channelToReassign = nextFader.assignedChannels?.pop()
+                    const channelToReassign = nextFader?.assignedChannels?.pop()
                     if (channelToReassign && nextFader.capabilities?.isLinkableSecondary) {
                         currentFader.assignedChannels?.push(channelToReassign)
                     }
                 }
             }
             currentFader.isLinked = action.linkOn
-            if (nextFader.capabilities?.isLinkableSecondary) {
+            if (nextFader?.capabilities?.isLinkableSecondary) {
                 nextFader.isLinked = action.linkOn
             }
             return nextState
