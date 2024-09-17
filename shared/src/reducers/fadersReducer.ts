@@ -283,24 +283,35 @@ export const faders = (
             return nextState
         case FaderActionTypes.SET_LINK: {//channel
             const wasLinked = nextState[0].fader[action.faderIndex].isLinked
+            const currentFader = nextState[0].fader[action.faderIndex]
+            const nextFader = nextState[0].fader[action.faderIndex + 1]
+            if (!currentFader?.capabilities?.isLinkablePrimary) {
+                nextFader.isLinked = false
+                return nextState
+            }
             if (wasLinked) {
                 if (!action.linkOn) {
-                    const channelToReassign = nextState[0].fader[action.faderIndex].assignedChannels?.pop()
-                    if (channelToReassign) {
-                        nextState[0].fader[action.faderIndex + 1].assignedChannels?.push(channelToReassign)
-                        nextState[0].fader[action.faderIndex + 1].faderLevel = nextState[0].fader[action.faderIndex].faderLevel
+                    const channels = currentFader.assignedChannels
+                    if ((channels?.length ?? 0) > 1) {
+                        const channelToReassign = channels?.pop()
+                        if (channelToReassign && nextFader.capabilities?.isLinkableSecondary) {
+                            nextFader.assignedChannels?.push(channelToReassign)
+                            nextFader.faderLevel = currentFader.faderLevel
+                        }
                     }
                 }
             } else {
                 if (action.linkOn) {
-                    const channelToReassign = nextState[0].fader[action.faderIndex + 1].assignedChannels?.pop()
-                    if (channelToReassign) {
-                        nextState[0].fader[action.faderIndex].assignedChannels?.push(channelToReassign)
+                    const channelToReassign = nextFader.assignedChannels?.pop()
+                    if (channelToReassign && nextFader.capabilities?.isLinkableSecondary) {
+                        currentFader.assignedChannels?.push(channelToReassign)
                     }
                 }
             }
-            nextState[0].fader[action.faderIndex].isLinked = action.linkOn
-            nextState[0].fader[action.faderIndex + 1].isLinked = action.linkOn
+            currentFader.isLinked = action.linkOn
+            if (nextFader.capabilities?.isLinkableSecondary) {
+                nextFader.isLinked = action.linkOn
+            }
             return nextState
         }
         case FaderActionTypes.REMOVE_ALL_ASSIGNED_CHANNELS: //channel
