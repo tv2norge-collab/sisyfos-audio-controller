@@ -280,6 +280,17 @@ export class MainThreadHandlers {
                 this.reIndexAssignedChannelsRelation()
                 this.updateFullClientStore()
             })
+            .on(IO.SOCKET_ASSIGN_ONE_TO_ONE, () => {
+                logger.trace(`Assign 1:1.\n`)
+                store.dispatch({
+                    type: FaderActionTypes.REMOVE_ALL_ASSIGNED_CHANNELS,
+                })
+                store.dispatch({
+                    type: FaderActionTypes.ASSIGN_ONE_TO_ONE,
+                })
+                this.reIndexAssignedChannelsRelation()
+                this.updateFullClientStore()
+            })
             .on(IO.SOCKET_SET_FADER_MONITOR, (payload: any) => {
                 store.dispatch({
                     type: FaderActionTypes.SET_FADER_MONITOR,

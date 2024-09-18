@@ -386,10 +386,10 @@ export class VMixMixerConnection implements MixerConnection {
                 (input.linkable !== lastInputState?.linkable &&
                     privateData?.[PrivateDataTag.LINKABLE] !==
                         input.linkable) ||
-                capabilities?.isLinkablePrimary !==
+                !isLinked && (capabilities?.isLinkablePrimary !==
                     (input.linkable === LinkableMode.PRIMARY) ||
                 capabilities?.isLinkableSecondary !==
-                    (input.linkable === LinkableMode.SECONDARY)
+                    (input.linkable === LinkableMode.SECONDARY))
             ) {
                 dispatchAndSetUpdateState({
                     type: FaderActionTypes.SET_CAPABILITY,
@@ -410,13 +410,6 @@ export class VMixMixerConnection implements MixerConnection {
                     tag: PrivateDataTag.LINKABLE,
                     value: input.linkable,
                 })
-                if (!input.linkable) {
-                    dispatchAndSetUpdateState({
-                        type: FaderActionTypes.SET_LINK,
-                        faderIndex: assignedFaderIndex,
-                        linkOn: false,
-                    })
-                }
             }
             if (
                 privateData?.[PrivateDataTag.INPUT_NUMBER] !==
