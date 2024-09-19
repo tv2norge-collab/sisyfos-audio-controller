@@ -19,7 +19,7 @@ export interface Channel {
     fadeActive: boolean
     outputLevel: number
     auxLevel: number[]
-    private?: {
+    privateData?: {
         [key: string]: string
     }
 }
@@ -151,15 +151,15 @@ export const channels = (
             if (
                 !nextState[0].chMixerConnection[action.mixerIndex].channel[
                     action.channel
-                ].private
+                ].privateData
             ) {
                 nextState[0].chMixerConnection[action.mixerIndex].channel[
                     action.channel
-                ].private = {}
+                ].privateData = {}
             }
             nextState[0].chMixerConnection[action.mixerIndex].channel[
                 action.channel
-            ].private![action.tag] = action.value
+            ].privateData![action.tag] = action.value
             return nextState
         case ChannelActionTypes.SET_CHANNEL_LABEL:
             nextState[0].chMixerConnection[action.mixerIndex].channel[

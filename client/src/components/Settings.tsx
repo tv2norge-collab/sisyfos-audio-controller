@@ -167,7 +167,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
     ) => {
         let settingsCopy = Object.assign({}, this.state.settings)
         settingsCopy.mixers[mixerIndex].numberOfChannelsInType[index] =
-            parseInt(event.target.value) || 1
+            parseInt(event.target.value) || 0
         this.setState({ settings: settingsCopy })
     }
 

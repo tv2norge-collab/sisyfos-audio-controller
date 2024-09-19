@@ -1,4 +1,4 @@
-import { fxParamsList } from '../constants/MixerProtocolInterface'
+import { FxParam } from '../constants/MixerProtocolInterface'
 import { Fader, Faders } from '../reducers/fadersReducer'
 
 // Move all consts to this type
@@ -15,6 +15,7 @@ export enum FaderActionTypes {
     SET_FADER_MONITOR = 'SET_FADER_MONITOR',
     SET_ASSIGNED_CHANNEL = 'SET_ASSIGNED_CHANNEL',
     REMOVE_ALL_ASSIGNED_CHANNELS = 'REMOVE_ALL_ASSIGNED_CHANNELS',
+    ASSIGN_ONE_TO_ONE = 'ASSIGN_ONE_TO_ONE',
     TOGGLE_PGM = 'TOGGLE_PGM',
     SET_PGM = 'SET_PGM',
     TOGGLE_VO = 'TOGGLE_VO',
@@ -42,6 +43,7 @@ export enum FaderActionTypes {
     SET_AMIX = 'SET_AMIX',
     SET_CAPABILITY = 'SET_CAPABILITY',
     TOGGLE_ALL_MANUAL = 'TOGGLE_ALL_MANUAL',
+    SET_LINK = 'SET_LINK',
 }
 
 export type FaderActions =
@@ -87,7 +89,7 @@ export type FaderActions =
       }
     | {
           type: FaderActionTypes.SET_FADER_FX
-          fxParam: fxParamsList
+          fxParam: FxParam
           faderIndex: number
           level: number
       }
@@ -104,6 +106,7 @@ export type FaderActions =
           assigned: boolean
       }
     | { type: FaderActionTypes.REMOVE_ALL_ASSIGNED_CHANNELS }
+    | { type: FaderActionTypes.ASSIGN_ONE_TO_ONE }
     | { type: FaderActionTypes.TOGGLE_PGM; faderIndex: number }
     | { type: FaderActionTypes.SET_PGM; faderIndex: number; pgmOn: boolean }
     | { type: FaderActionTypes.TOGGLE_VO; faderIndex: number }
@@ -150,6 +153,7 @@ export type FaderActions =
           disabled: boolean
       }
     | { type: FaderActionTypes.TOGGLE_AMIX; faderIndex: number }
+    | { type: FaderActionTypes.SET_LINK; faderIndex: number; linkOn: boolean }
     | { type: FaderActionTypes.SET_AMIX; faderIndex: number; state: boolean }
     | {
           type: FaderActionTypes.SET_CAPABILITY

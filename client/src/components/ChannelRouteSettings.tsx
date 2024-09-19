@@ -5,7 +5,7 @@ import '../assets/css/ChannelRouteSettings.css'
 import { Store } from 'redux'
 import { connect } from 'react-redux'
 import { SettingsActionTypes } from '../../../shared/src/actions/settingsActions'
-import { SOCKET_ASSIGN_CH_TO_FADER, SOCKET_REMOVE_ALL_CH_ASSIGNMENTS } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
+import { SOCKET_ASSIGN_CH_TO_FADER, SOCKET_ASSIGN_ONE_TO_ONE, SOCKET_REMOVE_ALL_CH_ASSIGNMENTS, SOCKET_SET_LINK } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 import { ChMixerConnection } from '../../../shared/src/reducers/channelsReducer'
 import { ChannelReference, Fader } from '../../../shared/src/reducers/fadersReducer'
 import { getFaderLabel } from '../utils/labels'
@@ -76,17 +76,7 @@ class ChannelRouteSettings extends React.PureComponent<
 
     handleOneToOneRouting() {
         if (window.confirm('Reassign all Faders 1:1 to Channels????')) {
-            window.socketIoClient.emit(SOCKET_REMOVE_ALL_CH_ASSIGNMENTS)
-            this.props.fader.forEach((fader: any, index: number) => {
-                if (this.props.chMixerConnections[0].channel.length > index) {
-                    window.socketIoClient.emit(SOCKET_ASSIGN_CH_TO_FADER, {
-                        mixerIndex: 0,
-                        channel: index,
-                        faderIndex: index,
-                        assigned: true
-                    })
-                }
-            })
+            window.socketIoClient.emit(SOCKET_ASSIGN_ONE_TO_ONE)
         }
     }
 

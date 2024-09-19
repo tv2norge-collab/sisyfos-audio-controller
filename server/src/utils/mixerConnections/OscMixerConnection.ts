@@ -8,7 +8,7 @@ import { mixerGenericConnection, remoteConnections } from '../../mainClasses'
 
 //Utils:
 import {
-    fxParamsList,
+    FxParam,
     MixerProtocol,
 } from '../../../../shared/src/constants/MixerProtocolInterface'
 import { behringerXrMeter } from './productSpecific/behringerXr'
@@ -31,13 +31,14 @@ import {
 } from '../../../../shared/src/reducers/fadersReducer'
 import { Channel } from '../../../../shared/src/reducers/channelsReducer'
 import { STORAGE_FOLDER } from '../SettingsStorage'
+import { MixerConnection } from '.'
 
 interface OscCommand {
     address: string
     args?: any[]
 }
 
-export class OscMixerConnection {
+export class OscMixerConnection implements MixerConnection {
     mixerProtocol: MixerProtocol
     mixerIndex: number
     cmdChannelIndex: number
@@ -95,7 +96,7 @@ export class OscMixerConnection {
         this.setupMixerConnection()
     }
 
-    mixerOnline(onLineState: boolean) {
+    private mixerOnline(onLineState: boolean) {
         store.dispatch({
             type: SettingsActionTypes.SET_MIXER_ONLINE,
             mixerIndex: this.mixerIndex,
@@ -115,7 +116,7 @@ export class OscMixerConnection {
         )
     }
 
-    setupMixerConnection() {
+    private setupMixerConnection() {
         this.oscConnection
             .on('ready', () => {
                 logger.info('Receiving state of desk')
@@ -406,7 +407,7 @@ export class OscMixerConnection {
         }, 2)
     }
 
-    initialCommands() {
+    private initialCommands() {
         // To prevent network overload, timers will delay the requests.
         this.mixerProtocol.initializeCommands?.forEach(
             (item, itemIndex: number) => {
@@ -459,7 +460,7 @@ export class OscMixerConnection {
         )
     }
 
-    pingMixerCommand() {
+    private pingMixerCommand() {
         //Ping OSC mixer if mixerProtocol needs it.
         this.mixerProtocol.pingCommand.forEach((command) => {
             let value = command.value || 0
@@ -477,7 +478,7 @@ export class OscMixerConnection {
         }, this.mixerProtocol.pingTime)
     }
 
-    resetMixerTimeout() {
+    private resetMixerTimeout() {
         // Check mixer Timeout response if protocol needs it:
         if (this.mixerProtocol.mixerTimeout > 0) {
             clearTimeout(this.timeoutTimer)
@@ -489,16 +490,16 @@ export class OscMixerConnection {
         }
     }
 
-    checkFxCommands(message: any) {
-        Object.keys(fxParamsList).forEach((keyName: string) => {
+    private checkFxCommands(message: any) {
+        Object.keys(FxParam).forEach((keyName: string) => {
             if (!isNaN(parseFloat(keyName))) {
                 return
             }
 
-            let fxKey = keyName as keyof typeof fxParamsList
+            let fxKey = keyName as keyof typeof FxParam
             let fxMessage =
                 this.mixerProtocol.channelTypes[0].fromMixer[
-                    fxParamsList[fxKey]
+                    FxParam[fxKey]
                 ][0]
             let range: number = fxMessage.max - fxMessage.min || 1
             if (this.checkOscCommand(message.address, fxMessage.mixerMessage)) {
@@ -508,7 +509,7 @@ export class OscMixerConnection {
                     store.dispatch({
                         type: FaderActionTypes.SET_FADER_FX,
                         faderIndex: assignedFaderIndex,
-                        fxParam: fxParamsList[fxKey],
+                        fxParam: FxParam[fxKey],
                         level: message.args[0] / range,
                     })
                     global.mainThreadHandler.updatePartialStore(
@@ -521,7 +522,7 @@ export class OscMixerConnection {
         })
     }
 
-    checkOscCommand(message: string, command: string | undefined): boolean {
+    private checkOscCommand(message: string, command: string | undefined): boolean {
         if (!command) return false
         if (message === command) return true
         let messageArray: string[] = message.split('/')
@@ -546,7 +547,7 @@ export class OscMixerConnection {
         return status
     }
 
-    sendOutMessage(
+    private sendOutMessage(
         oscMessage: string,
         channel: number,
         value: string | number,
@@ -570,7 +571,7 @@ export class OscMixerConnection {
         }
     }
 
-    sendOutRequest(oscMessage: string, channel: number) {
+    private sendOutRequest(oscMessage: string, channel: number) {
         let channelString = this.mixerProtocol.leadingZeros
             ? ('0' + channel).slice(-2)
             : channel.toString()
@@ -582,7 +583,7 @@ export class OscMixerConnection {
         }
     }
 
-    sendOutRequestAux(oscMessage: string, channel: number, auxSend: number) {
+    private sendOutRequestAux(oscMessage: string, channel: number, auxSend: number) {
         let channelString = this.mixerProtocol.leadingZeros
             ? ('0' + channel).slice(-2)
             : channel.toString()
@@ -597,26 +598,6 @@ export class OscMixerConnection {
                 address: message,
             })
         }
-    }
-
-    updateOutLevel(channelIndex: number) {
-        let channelType =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[
-                channelIndex
-            ].channelType
-        let channelTypeIndex =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[
-                channelIndex
-            ].channelTypeIndex
-        this.sendOutMessage(
-            this.mixerProtocol.channelTypes[channelType].toMixer
-                .CHANNEL_OUT_GAIN[0].mixerMessage,
-            channelTypeIndex + 1,
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[
-                channelIndex
-            ].outputLevel,
-            'f'
-        )
     }
 
     updatePflState(channelIndex: number) {
@@ -704,7 +685,7 @@ export class OscMixerConnection {
         return true
     }
 
-    updateFx(fxParam: fxParamsList, channelIndex: number, level: number) {
+    updateFx(channelIndex: number, fxParam: FxParam, level: number) {
         let channelType =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[
                 channelIndex
@@ -806,13 +787,11 @@ export class OscMixerConnection {
         }
     }
 
-    sendBuffered(command: OscCommand) {
+    private sendBuffered(command: OscCommand) {
         this.commandBuffer.push(JSON.parse(JSON.stringify(command)))
     }
 
-    injectCommand(command: string[]) {
-        return true
-    }
+    injectCommand(command: string[]) {}
 
     updateAMixState(channelIndex: number, amixOn: boolean) {}
 

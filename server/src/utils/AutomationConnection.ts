@@ -227,13 +227,13 @@ export class AutomationConnection {
                     store.dispatch({
                         type: FaderActionTypes.SET_SINGLE_FADER_STATE,
                         faderIndex: ch - 1,
-                        state: channelState,                        
+                        state: channelState,
                     })
                 })
             } else if (check('INJECT_COMMAND')) {
                 /*
-                The INJECT COMMAND is not implemented 
-                It's planned for injecting commands directly from Sisyfos into the Audiomixer.  
+                The INJECT COMMAND is not implemented
+                It's planned for injecting commands directly from Sisyfos into the Audiomixer.
                 wrapChannelCommand((ch: any) => {
                     store.dispatch({
                         type: FaderActionTypes.SET_FADER_LABEL,
@@ -300,7 +300,7 @@ export class AutomationConnection {
                                     showChannel,
                                     muteOn,
                                     inputGain,
-                                    inputSelector,                                    
+                                    inputSelector,
                                 }: Fader,
                                 index,
                             ): AutomationChannelAPI => ({

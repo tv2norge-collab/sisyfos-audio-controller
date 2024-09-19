@@ -37,15 +37,17 @@
     "client",
     "server",
     "shared",
-    "desktop"
+    "desktop",
+    "component-lib"
   ],
   "scripts": {
     "start": "cross-env NODE_ENV=production node server/dist/server",
     "start:dev": "cross-env NODE_ENV=development node --inspect server/dist/server",
     "start:local": "cross-env NODE_ENV=local node --inspect server/dist/server",
-    "build": "yarn build:client && yarn build:server",
+    "build": "yarn build:client && yarn build:server && yarn build:component-lib",
     "build:client": "yarn --cwd ./client build",
     "build:server": "yarn --cwd ./server build",
+    "build:component-lib": "yarn --cwd ./component-lib build",
     "build:desktop": "yarn --cwd ./desktop build",
     "watch": "concurrently --kill-others \"yarn watch:server\" \"yarn watch:client\"",
     "watch:client": "yarn --cwd ./client watch",
@@ -83,5 +85,6 @@
     "xml2js": "^0.5.0",
     "socket.io-parser": "^4.2.3",
     "axios": "^1.6.0"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

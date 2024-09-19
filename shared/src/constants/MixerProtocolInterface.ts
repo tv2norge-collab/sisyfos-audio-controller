@@ -13,7 +13,7 @@ export enum MixerConnectionTypes {
     'Atem' = 'Atem',
 }
 
-export enum fxParamsList {
+export enum FxParam {
     EqGain01,
     EqGain02,
     EqGain03,
@@ -126,7 +126,7 @@ interface MixerMessageProtocol {
 }
 
 export interface FxProtocol {
-    key: fxParamsList
+    key: FxParam
     params: Array<MixerMessageProtocol>
 }
 

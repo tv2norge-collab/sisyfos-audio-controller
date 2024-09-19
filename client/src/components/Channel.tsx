@@ -9,13 +9,23 @@ import '../assets/css/NoUiSlider.css'
 //assets:
 import '../assets/css/Channel.css'
 import * as IO from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
-import { ChannelReference, Fader } from '../../../shared/src/reducers/fadersReducer'
+import {
+    ChannelReference,
+    Fader,
+} from '../../../shared/src/reducers/fadersReducer'
 import { Settings } from '../../../shared/src/reducers/settingsReducer'
 import { SettingsActionTypes } from '../../../shared/src/actions/settingsActions'
 import { withTranslation } from 'react-i18next'
-import { MixerConnectionTypes, VuLabelConversionType } from '../../shared../../../shared/src/constants/MixerProtocolInterface'
+import {
+    MixerConnectionTypes,
+    VuLabelConversionType,
+} from '../../shared../../../shared/src/constants/MixerProtocolInterface'
 import { getFaderLabel } from '../utils/labels'
 import { Conversions } from '../../../shared/src/actions/utils/dbConversion'
+import { ChannelLayoutSettingsButton } from './ChannelLayoutSettingsPopup'
+import LinkedIcon from '../assets/icons/link.svg'
+import UnlinkedLeftIcon from '../assets/icons/link-left.svg'
+import UnlinkedRightIcon from '../assets/icons/link-right.svg'
 
 interface ChannelInjectProps {
     t: any
@@ -46,8 +56,8 @@ class Channel extends React.Component<
         this.faderIndex = this.props.faderIndex
     }
 
-    public shouldComponentUpdate(nextProps: ChannelInjectProps) {
-        return (
+    public shouldComponentUpdate(nextProps: ChannelInjectProps): boolean {
+        return !!(
             nextProps.channelTypeIndex !== this.props.channelTypeIndex ||
             nextProps.fader.pgmOn != this.props.fader.pgmOn ||
             nextProps.fader.voOn != this.props.fader.voOn ||
@@ -66,12 +76,22 @@ class Channel extends React.Component<
             nextProps.settings.showChanStrip !=
                 this.props.settings.showChanStrip ||
             nextProps.fader.amixOn != this.props.fader.amixOn ||
-            nextProps.fader.assignedChannels != this.props.fader.assignedChannels ||
+            nextProps.fader.assignedChannels !=
+                this.props.fader.assignedChannels ||
             XOR(nextProps.fader.capabilities, this.props.fader.capabilities) ||
             XOR(
                 nextProps.fader.capabilities?.hasAMix,
-                this.props.fader.capabilities?.hasAMix
-            )
+                this.props.fader.capabilities?.hasAMix,
+            ) ||
+            XOR(
+                nextProps.fader.capabilities?.isLinkablePrimary,
+                this.props.fader.capabilities?.isLinkablePrimary,
+            ) ||
+            XOR(
+                nextProps.fader.capabilities?.isLinkableSecondary,
+                this.props.fader.capabilities?.isLinkableSecondary,
+            ) ||
+            XOR(nextProps.fader.isLinked, this.props.fader.isLinked)
         )
     }
 
@@ -145,7 +165,9 @@ class Channel extends React.Component<
     handleVuMeter() {
         if (
             window.mixerProtocol.protocol === MixerConnectionTypes.CasparCG ||
-            window.mixerProtocol.protocol === MixerConnectionTypes.vMix
+            (window.mixerProtocol.protocol === MixerConnectionTypes.vMix &&
+                !this.props.fader.capabilities?.isLinkablePrimary &&
+                !this.props.fader.capabilities?.isLinkableSecondary)
         ) {
             return (
                 <React.Fragment>
@@ -155,8 +177,9 @@ class Channel extends React.Component<
                                 <VuMeter
                                     faderIndex={this.faderIndex}
                                     channel={i}
+                                    key={i}
                                 />
-                            )
+                            ),
                         )}{' '}
                 </React.Fragment>
             )
@@ -171,8 +194,9 @@ class Channel extends React.Component<
                                 <VuMeter
                                     faderIndex={this.faderIndex}
                                     channel={index}
+                                    key={index}
                                 />
-                            )
+                            ),
                         )}{' '}
                 </React.Fragment>
             )
@@ -456,8 +480,16 @@ class Channel extends React.Component<
         )
     }
 
+    shouldHideChannel = () => {
+        return (
+            this.props.fader.showChannel === false ||
+            (this.props.fader.isLinked &&
+                this.props.fader.capabilities.isLinkableSecondary)
+        )
+    }
+
     render() {
-        return this.props.fader.showChannel === false ? null : (
+        return this.shouldHideChannel() ? null : (
             <div
                 className={ClassNames('channel-body', {
                     'with-pfl': this.props.settings.showPfl,
@@ -474,6 +506,28 @@ class Channel extends React.Component<
                     {/* TODO - amix and mute cannot be shown at the same time due to css. Depends on protocol right now. */}
                     {this.muteButton()}
                     {this.amixButton()}
+                    <div className="channel-layout">
+                        {window.mixerProtocol.protocol ===
+                            MixerConnectionTypes.vMix &&
+                            !this.props.fader.capabilities
+                                ?.isLinkableSecondary && (
+                                <ChannelLayoutSettingsButton
+                                    fader={this.props.fader}
+                                    faderIndex={this.props.faderIndex}
+                                />
+                            )}
+                        <div className="channel-stereo-link-button">
+                            {this.props.fader.capabilities?.isLinkablePrimary &&
+                                ((this.props.fader.isLinked && (
+                                    <LinkedIcon />
+                                )) || <UnlinkedLeftIcon />)}
+                            {this.props.fader.capabilities
+                                ?.isLinkableSecondary &&
+                                !this.props.fader.isLinked && (
+                                    <UnlinkedRightIcon />
+                                )}
+                        </div>
+                    </div>
                 </div>
                 <div className="fader">
                     {this.handleVuMeter()}
@@ -513,5 +567,5 @@ const mapStateToProps = (state: any, props: any): ChannelInjectProps => {
 
 export default compose(
     connect<any, ChannelInjectProps, any>(mapStateToProps),
-    withTranslation()
+    withTranslation(),
 )(Channel) as any

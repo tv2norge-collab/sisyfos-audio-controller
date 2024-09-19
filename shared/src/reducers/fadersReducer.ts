@@ -31,6 +31,7 @@ export interface Fader {
     ignoreAutomation: boolean
     disabled: boolean
     assignedChannels?: ChannelReference[]
+    isLinked?: boolean
 
     /**
      * Assuming that the protocol has a "feature", can it be enabled on this fader?
@@ -39,6 +40,8 @@ export interface Fader {
     capabilities?: {
         hasAMix?: boolean
         hasInputSelector?: boolean
+        isLinkablePrimary?: boolean
+        isLinkableSecondary?: boolean
     }
 }
 
@@ -48,7 +51,7 @@ export interface VuMeters {
 
 export const defaultFadersReducerState = (
     numberOfFaders: number,
-    numberOfChannels?: NumberOfChannels[]
+    numberOfChannels?: NumberOfChannels[],
 ): Faders[] => {
     let defaultObj: Array<Faders> = [
         {
@@ -67,8 +70,6 @@ export const defaultFadersReducerState = (
             }
         }
     })
-
-    console.log(channels)
 
     for (let index = 0; index < numberOfFaders; index++) {
         defaultObj[0].fader[index] = {
@@ -101,7 +102,7 @@ export const defaultFadersReducerState = (
 
 export const faders = (
     state = defaultFadersReducerState(0),
-    action: FaderActions
+    action: FaderActions,
 ): Array<Faders> => {
     let nextState = [
         {
@@ -280,50 +281,65 @@ export const faders = (
         case FaderActionTypes.SET_AMIX: //channel
             nextState[0].fader[action.faderIndex].amixOn = action.state
             return nextState
+        case FaderActionTypes.SET_LINK: {
+            const wasLinked = nextState[0].fader[action.faderIndex].isLinked
+            const currentFader = nextState[0].fader[action.faderIndex]
+            if (!currentFader?.capabilities?.isLinkablePrimary) {
+                currentFader.isLinked = false
+                return nextState
+            }
+            const nextFader = nextState[0].fader[action.faderIndex + 1]
+            if (wasLinked) {
+                if (!action.linkOn) {
+                    const channels = currentFader.assignedChannels
+                    if ((channels?.length ?? 0) > 1) {
+                        const channelToReassign = channels?.pop()
+                        if (
+                            channelToReassign &&
+                            nextFader?.capabilities?.isLinkableSecondary
+                        ) {
+                            nextFader.assignedChannels?.push(channelToReassign)
+                            nextFader.faderLevel = currentFader.faderLevel
+                        }
+                    }
+                }
+            } else {
+                if (action.linkOn) {
+                    const channelToReassign = nextFader?.assignedChannels?.pop()
+                    if (
+                        channelToReassign &&
+                        nextFader.capabilities?.isLinkableSecondary
+                    ) {
+                        currentFader.assignedChannels?.push(channelToReassign)
+                    }
+                }
+            }
+            currentFader.isLinked = action.linkOn
+            if (nextFader?.capabilities?.isLinkableSecondary) {
+                nextFader.isLinked = action.linkOn
+            }
+            return nextState
+        }
         case FaderActionTypes.REMOVE_ALL_ASSIGNED_CHANNELS: //channel
             nextState[0].fader.forEach((fader) => {
                 fader.assignedChannels = []
             })
             return nextState
+        case FaderActionTypes.ASSIGN_ONE_TO_ONE:
+            nextState[0].fader.forEach((fader, index) => {
+                setAssignedChannel(nextState, {
+                    mixerIndex: 0,
+                    assigned: true,
+                    channelIndex: index,
+                    faderIndex: index,
+                })
+                fader.capabilities.isLinkablePrimary = false
+                fader.capabilities.isLinkableSecondary = false
+                fader.isLinked = false
+            })
+            return nextState
         case FaderActionTypes.SET_ASSIGNED_CHANNEL:
-            let newAssignments: ChannelReference[] =
-                nextState[0].fader[action.faderIndex].assignedChannels || []
-
-            if (action.assigned) {
-                if (
-                    !newAssignments.some((channel) => {
-                        return (
-                            channel.mixerIndex === action.mixerIndex &&
-                            channel.channelIndex === action.channelIndex
-                        )
-                    })
-                ) {
-                    newAssignments.push({
-                        mixerIndex: action.mixerIndex,
-                        channelIndex: action.channelIndex,
-                    })
-                    newAssignments.sort(
-                        (n1: ChannelReference, n2: ChannelReference) =>
-                            n1.channelIndex - n2.channelIndex
-                    )
-                    newAssignments.sort(
-                        (n1: ChannelReference, n2: ChannelReference) =>
-                            n1.mixerIndex - n2.mixerIndex
-                    )
-                }
-            } else {
-                newAssignments = newAssignments.filter(
-                    (channel: ChannelReference) => {
-                        return !(
-                            channel.channelIndex === action.channelIndex &&
-                            channel.mixerIndex === action.mixerIndex
-                        )
-                    }
-                )
-            }
-
-            nextState[0].fader[action.faderIndex].assignedChannels =
-                newAssignments
+            setAssignedChannel(nextState, action)
             return nextState
         case FaderActionTypes.SET_CAPABILITY:
             nextState[0].fader[action.faderIndex].capabilities = {
@@ -333,7 +349,7 @@ export const faders = (
             // remove object if empty:
             if (
                 Object.entries(
-                    nextState[0].fader[action.faderIndex].capabilities!
+                    nextState[0].fader[action.faderIndex].capabilities!,
                 ).length === 0
             ) {
                 delete nextState[0].fader[action.faderIndex].capabilities
@@ -359,7 +375,7 @@ export const faders = (
                 ([index, label]: [string, string]) => {
                     nextState[0].fader[Number(index)].userLabel =
                         label === '' ? undefined : label
-                }
+                },
             )
             return nextState
         case FaderActionTypes.FLUSH_FADER_LABELS:
@@ -370,4 +386,50 @@ export const faders = (
         default:
             return nextState
     }
+}
+
+function setAssignedChannel(
+    nextState: { fader: Fader[] }[],
+    action: {
+        faderIndex: number
+        mixerIndex: number
+        channelIndex: number
+        assigned: boolean
+    },
+) {
+    let newAssignments: ChannelReference[] =
+        nextState[0].fader[action.faderIndex].assignedChannels || []
+
+    if (action.assigned) {
+        if (
+            !newAssignments.some((channel) => {
+                return (
+                    channel.mixerIndex === action.mixerIndex &&
+                    channel.channelIndex === action.channelIndex
+                )
+            })
+        ) {
+            newAssignments.push({
+                mixerIndex: action.mixerIndex,
+                channelIndex: action.channelIndex,
+            })
+            newAssignments.sort(
+                (n1: ChannelReference, n2: ChannelReference) =>
+                    n1.channelIndex - n2.channelIndex,
+            )
+            newAssignments.sort(
+                (n1: ChannelReference, n2: ChannelReference) =>
+                    n1.mixerIndex - n2.mixerIndex,
+            )
+        }
+    } else {
+        newAssignments = newAssignments.filter((channel: ChannelReference) => {
+            return !(
+                channel.channelIndex === action.channelIndex &&
+                channel.mixerIndex === action.mixerIndex
+            )
+        })
+    }
+
+    nextState[0].fader[action.faderIndex].assignedChannels = newAssignments
 }

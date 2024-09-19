@@ -10,5 +10,10 @@ export interface ReduxStore {
   faders: Array<Faders>
 }
 
-export default createStore(indexReducer)
+const store = createStore(indexReducer)
+
+export default store
+
+export type AppDispatch = typeof store.dispatch;
+
 export { Store } from 'redux'

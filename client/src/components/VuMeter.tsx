@@ -45,7 +45,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
 
     totalHeight = () => {
         return (
-            (400) /
+            (this.canvas?.height ?? 400) /
             (this.meterMax - this.meterMin)
         )
     }
@@ -132,8 +132,8 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
         context.clearRect(
             0,
             0,
-            this.canvas.clientWidth,
-            this.canvas.clientHeight
+            this.canvas.width,
+            this.canvas.height,
         )
 
         // lower part
@@ -141,7 +141,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
         context.fillRect(
             0,
             this.totalHeight() - this.calcLower(),
-            this.canvas.clientWidth,
+            this.canvas.height,
             this.calcLower()
         )
 
@@ -150,7 +150,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
         context.fillRect(
             0,
             this.totalHeight() * (range - this.meterTest) - this.calcMiddle(),
-            this.canvas.clientWidth,
+            this.canvas.width,
             this.calcMiddle()
         )
 
@@ -159,7 +159,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
         context.fillRect(
             0,
             this.totalHeight() * (range - this.meterZero) - this.calcUpper(),
-            this.canvas.clientWidth,
+            this.canvas.width,
             this.calcUpper()
         )
 
@@ -173,7 +173,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
         context.fillRect(
             0,
             this.totalHeight() - windowPeak,
-            this.canvas.clientWidth,
+            this.canvas.width,
             2
         )
 
@@ -186,7 +186,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
         context.fillRect(
             0,
             this.totalHeight() - this.getTotalPeak(),
-            this.canvas.clientWidth,
+            this.canvas.width,
             2
         )
 

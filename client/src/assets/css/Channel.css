@@ -25,6 +25,10 @@
 .channel-body > .channel-control {
     flex-grow: 0;
 }
+.channel-body > .channel-props > .channel-layout {
+    display: flex;
+    flex-direction: row;
+}
 .channel-body > .fader {
     flex-grow: 1;
     display: flex;
@@ -143,7 +147,9 @@
 }
 
 .channel-mute-button,
-.channel-amix-button {
+.channel-amix-button,
+.channel-layout-settings-button,
+.channel-stereo-link-button {
     outline: none;
     -moz-outline: none;
     margin-left: 3px;
@@ -169,6 +175,35 @@
 }
 .channel-amix-button.disabled {
     visibility: hidden;
+}
+
+.channel-layout-settings-button {
+    width: 40px;
+    height: 40px;
+    color: rgb(255, 255, 255);
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.channel-stereo-link-button {
+    width: 34px;
+    height: 40px;
+    color: rgb(255, 255, 255);
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    background-color: transparent;
+}
+.channel-layout-settings-button > svg, .channel-stereo-link-button > svg {
+    width: 24px;
+    height: 24px;
+}
+
+.channel-layout-settings-button.active {
+    background-color: rgb(47, 71, 91);
 }
 
 .channel-ignore-button {
@@ -277,4 +312,43 @@
     height: 950px;
     opacity: 0.65;
     top: 0;
+}
+
+.channel-body .input-buttons {
+    width: auto;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-left: 3px;
+    margin-right: 3px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+}
+
+.channel-body .input-buttons.disabled {
+    visibility: hidden;
+}
+
+.channel-body .input-buttons > .input-select {
+    outline: none;
+    -moz-outline: none;
+    color: white;
+    border-color: rgb(71, 71, 71);
+    background-color: rgb(53, 53, 53);
+    margin: 0;
+    border-radius: 7px;
+    width: auto;
+    height: 24px;
+}
+
+.channel-body .input-buttons > .input-select.active {
+    background-color: #2f475b;
+}
+
+.channel-body .input-buttons > .input-select:first-child {
+    grid-column: 1 / -1;
+}
+
+.channel-body .input-buttons > .input-select:nth-child(4) {
+    grid-column: 1 / -1;
 }
