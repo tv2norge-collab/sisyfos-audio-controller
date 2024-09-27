@@ -84,7 +84,7 @@ class PagesSettings extends React.PureComponent<
                     ),
                     1
                 )
-                window.storeRedux.dispatch({ type: SettingsActionTypes.TOGGLE_SHOW_PAGES_SETUP})
+                window.storeRedux.dispatch({ type: SettingsActionTypes.SET_PAGES_LIST, customPages: nextPages})
                 window.socketIoClient.emit(SOCKET_SET_PAGES_LIST, nextPages)
             }
         } else {
