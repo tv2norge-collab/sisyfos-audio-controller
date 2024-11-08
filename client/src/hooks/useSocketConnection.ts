@@ -42,6 +42,15 @@ export function useSocketConnection(customUri?: string, customPath?: string, que
         window.socketIoClient.emit(SOCKET_GET_PAGES_LIST)
 
         setInitialized(true);
+
+        return () => {
+            if (window.socketIoClient) {
+                window.socketIoClient.removeAllListeners()
+                window.socketIoClient.disconnect()
+            }
+            unsubscribe()
+            window.socketIoClient = undefined
+        }
     }, [customUri, customPath])
     return { initialized }
 }
