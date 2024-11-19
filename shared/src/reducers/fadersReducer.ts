@@ -233,12 +233,8 @@ export const faders = (
                 !!action.showInMiniMonitor
             return nextState
         case FaderActionTypes.IGNORE_AUTOMATION: //channel // ignoreAutomation
-            if (action.state === undefined) {
-                nextState[0].fader[action.faderIndex].ignoreAutomation =
-                    !nextState[0].fader[action.faderIndex].ignoreAutomation
-            } else {
-                nextState[0].fader[action.faderIndex].ignoreAutomation = action.state
-            }
+            nextState[0].fader[action.faderIndex].ignoreAutomation =
+                !nextState[0].fader[action.faderIndex].ignoreAutomation
             return nextState
         case FaderActionTypes.X_MIX: //none
             nextState[0].fader.forEach((item, index) => {
@@ -337,6 +333,8 @@ export const faders = (
                     channelIndex: index,
                     faderIndex: index,
                 })
+                // Ensure that there are capabilities before
+                fader.capabilities ??= {}
                 fader.capabilities.isLinkablePrimary = false
                 fader.capabilities.isLinkableSecondary = false
                 fader.isLinked = false
