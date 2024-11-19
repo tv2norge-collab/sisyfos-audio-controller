@@ -353,29 +353,32 @@ export class EmberMixerConnection implements MixerConnection {
             channelTypeIndex,
             mixerMessage,
             (node) => {
+                let newLabel = ''
                 if (node.contents.type === Model.ElementType.Node) {
-                    logger.trace(
-                        `Receiving Label from Ch "${ch}", val: ${node.contents.description}`
-                    )
-                    store.dispatch({
-                        type: ChannelActionTypes.SET_CHANNEL_LABEL,
-                        mixerIndex: this.mixerIndex,
-                        channel: channelTypeIndex,
-                        label: node.contents.description,
-                    })
+                    newLabel = node.contents.description
                 } else {
-                    logger.trace(
-                        `Receiving Label from Ch "${ch}", val: ${
-                            (node.contents as Model.Parameter).value
-                        }`
-                    )
+                    String((node.contents as Model.Parameter).value)
+                }
+                logger.trace(`Receiving Label from Ch "${ch}", val: ${newLabel}`)
+
+                // If auto/man is setup to be controlled from the mixer:
+                if (state.settings[0].labelControlsIgnoreAutomation) {
+                    let faderIndex =
+                        state.channels[0].chMixerConnection[this.mixerIndex]
+                            .channel[ch - 1].assignedFader
                     store.dispatch({
-                        type: ChannelActionTypes.SET_CHANNEL_LABEL,
-                        mixerIndex: this.mixerIndex,
-                        channel: channelTypeIndex,
-                        label: String((node.contents as Model.Parameter).value),
+                        type: FaderActionTypes.IGNORE_AUTOMATION,
+                        faderIndex: faderIndex,
+                        state: newLabel.startsWith(state.settings[0].labelIgnorePrefix),
                     })
                 }
+
+                store.dispatch({
+                    type: ChannelActionTypes.SET_CHANNEL_LABEL,
+                    mixerIndex: this.mixerIndex,
+                    channel: channelTypeIndex,
+                    label: newLabel,
+                })
                 global.mainThreadHandler.updatePartialStore(assignedFaderIndex)
             }
         )
@@ -840,6 +843,12 @@ export class EmberMixerConnection implements MixerConnection {
                 channelIndex
             ].channelTypeIndex
         let channelName = state.faders[0].fader[channelIndex].label
+        // If labelControlsIgnoreAutomation, the mixer should receive the channels label and not the faders
+        if (state.settings[0].labelControlsIgnoreAutomation) {
+            channelName =
+                state.channels[0].chMixerConnection[0].channel[channelIndex]
+                    .label
+        }
         this.sendOutMessage(
             this.mixerProtocol.channelTypes[channelType].toMixer.CHANNEL_NAME[0]
                 .mixerMessage,
