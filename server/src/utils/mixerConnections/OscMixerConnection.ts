@@ -339,7 +339,7 @@ export class OscMixerConnection implements MixerConnection {
                         store.dispatch({
                             type: FaderActionTypes.IGNORE_AUTOMATION,
                             faderIndex: faderIndex,
-                            state: message.args[0].includes('#'),
+                            state: message.args[0].startsWith(state.settings[0].labelIgnorePrefix),
                         })
                     }
                     store.dispatch({
