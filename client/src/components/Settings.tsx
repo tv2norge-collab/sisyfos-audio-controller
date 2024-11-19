@@ -10,9 +10,7 @@ import { Settings as SettingsInterface } from '../../../shared/src/reducers/sett
 import { Store } from 'redux'
 import { ChangeEvent } from 'react'
 import { SOCKET_SAVE_SETTINGS } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
-import {
-    SettingsActionTypes,
-} from '../../../shared/src/actions/settingsActions'
+import { SettingsActionTypes } from '../../../shared/src/actions/settingsActions'
 import { MixerConnectionTypes } from '../../../shared/src/constants/MixerProtocolInterface'
 
 //Set style for Select dropdown component:
@@ -96,7 +94,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
     }
 
     handleChange = (
-        event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+        event: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
     ) => {
         let settingsCopy = Object.assign({}, this.state.settings)
         if (event.target.type === 'checkbox') {
@@ -137,7 +135,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
 
     handleMixerChange = (
         event: ChangeEvent<HTMLInputElement>,
-        mixerIndex: number
+        mixerIndex: number,
     ) => {
         let settingsCopy = Object.assign({}, this.state.settings)
         if (event.target.type === 'checkbox') {
@@ -163,7 +161,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
     handleNumberOfChannels = (
         mixerIndex: number,
         index: number,
-        event: any
+        event: any,
     ) => {
         let settingsCopy = Object.assign({}, this.state.settings)
         settingsCopy.mixers[mixerIndex].numberOfChannelsInType[index] =
@@ -210,7 +208,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         this.handleNumberOfChannels(
                                             mixerIndex,
                                             index,
-                                            event
+                                            event,
                                         )
                                     }
                                 />
@@ -281,7 +279,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                     onChange={(event) =>
                                         this.handleProtocolChange(
                                             event,
-                                            mixerIndex
+                                            mixerIndex,
                                         )
                                     }
                                     options={window.mixerProtocolList}
@@ -296,7 +294,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         onChange={(event) =>
                                             this.handleMixerChange(
                                                 event,
-                                                mixerIndex
+                                                mixerIndex,
                                             )
                                         }
                                     />
@@ -311,7 +309,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         onChange={(event) =>
                                             this.handleMixerChange(
                                                 event,
-                                                mixerIndex
+                                                mixerIndex,
                                             )
                                         }
                                     />
@@ -326,7 +324,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         onChange={(event) =>
                                             this.handleMixerChange(
                                                 event,
-                                                mixerIndex
+                                                mixerIndex,
                                             )
                                         }
                                     />
@@ -341,7 +339,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         onChange={(event) =>
                                             this.handleMixerChange(
                                                 event,
-                                                mixerIndex
+                                                mixerIndex,
                                             )
                                         }
                                     />
@@ -356,7 +354,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         onChange={(event) =>
                                             this.handleMixerChange(
                                                 event,
-                                                mixerIndex
+                                                mixerIndex,
                                             )
                                         }
                                     />
@@ -371,7 +369,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         onChange={(event) =>
                                             this.handleMixerChange(
                                                 event,
-                                                mixerIndex
+                                                mixerIndex,
                                             )
                                         }
                                     />
@@ -386,13 +384,14 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         onChange={(event) =>
                                             this.handleMixerChange(
                                                 event,
-                                                mixerIndex
+                                                mixerIndex,
                                             )
                                         }
                                     />
                                 </label>
                                 <br />
-                                {window.mixerProtocol.protocol === MixerConnectionTypes.GenericMidi
+                                {window.mixerProtocol.protocol ===
+                                MixerConnectionTypes.GenericMidi
                                     ? this.renderMixerMidiSettings()
                                     : ''}
                                 <br />
@@ -400,7 +399,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                 <br />
                             </React.Fragment>
                         )
-                    }
+                    },
                 )}
             </div>
         )
@@ -457,15 +456,6 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     %
                 </label>
                 <br />
-                <label className="settings-input-field">
-                    NUMBER OF FADERS :
-                    <input
-                        name="numberOfFaders"
-                        type="text"
-                        value={this.state.settings.numberOfFaders}
-                        onChange={this.handleChange}
-                    />
-                </label>
                 <br />
                 <label className="settings-input-field">
                     NUMBER OF MIXERS :
@@ -551,6 +541,29 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     />
                 </label>
                 <br />
+                <label className="settings-input-field">
+                    LABEL CONTROLS AUTO/MANUAL:
+                    <input
+                        type="checkbox"
+                        name="labelControlsIgnoreAutomation"
+                        checked={
+                            this.state.settings.labelControlsIgnoreAutomation
+                        }
+                        onChange={this.handleChange}
+                    />
+                </label>
+                <br />
+                <label className="settings-input-field">
+                    LABEL AUTO/MANUAL PREFIX :
+                    <input
+                        name="labelIgnorePrefix"
+                        type="text"
+                        value={this.state.settings.labelIgnorePrefix}
+                        onChange={this.handleChange}
+                    />
+                </label>
+                <br />
+
 
                 {this.renderMixerSettings()}
                 <button

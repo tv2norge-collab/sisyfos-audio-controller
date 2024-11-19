@@ -42,6 +42,8 @@ export interface Settings {
     voLevel: number // Relative level of PGM in %
     autoResetLevel: number // Autoreset before pgm on, if level is lower than in %
     automationMode: boolean
+    labelControlsIgnoreAutomation: boolean
+    labelIgnorePrefix: string
     offtubeMode: boolean
     showPfl: boolean
     enablePages: boolean
@@ -111,6 +113,8 @@ const defaultSettingsReducerState: Array<Settings> = [
         voLevel: 30,
         autoResetLevel: 5,
         automationMode: true,
+        labelControlsIgnoreAutomation: false,
+        labelIgnorePrefix: '#',
         offtubeMode: false,
         fadeTime: 120,
         voFadeTime: 280,

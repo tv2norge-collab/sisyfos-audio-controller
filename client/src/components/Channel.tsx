@@ -285,7 +285,11 @@ class Channel extends React.Component<
                     this.handleZeroLevel()
                 }}
             >
-                {this.props.label}
+                {this.props.label.startsWith(
+                    this.props.settings.labelIgnorePrefix,
+                )
+                    ? this.props.label.slice(1)
+                    : this.props.label}
             </button>
         )
     }
@@ -306,7 +310,11 @@ class Channel extends React.Component<
                     this.handlePgm()
                 }}
             >
-                {this.props.label}
+                {this.props.label.startsWith(
+                    this.props.settings.labelIgnorePrefix,
+                )
+                    ? this.props.label.slice(1)
+                    : this.props.label}
             </button>
         )
     }
@@ -389,7 +397,11 @@ class Channel extends React.Component<
                     this.handleShowChanStrip()
                 }}
             >
-                {this.props.label}
+                {this.props.label.startsWith(
+                    this.props.settings.labelIgnorePrefix,
+                )
+                    ? this.props.label.slice(1)
+                    : this.props.label}
             </button>
         )
     }

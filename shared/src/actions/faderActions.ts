@@ -133,7 +133,7 @@ export type FaderActions =
           faderIndex: number
           showInMiniMonitor: boolean
       }
-    | { type: FaderActionTypes.IGNORE_AUTOMATION; faderIndex: number }
+    | { type: FaderActionTypes.IGNORE_AUTOMATION; faderIndex: number, state?: boolean }
     | { type: FaderActionTypes.X_MIX }
     | { type: FaderActionTypes.NEXT_MIX }
     | { type: FaderActionTypes.FADE_TO_BLACK }
