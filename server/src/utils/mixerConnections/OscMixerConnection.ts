@@ -333,12 +333,15 @@ export class OscMixerConnection implements MixerConnection {
                     )
                 ) {
                     let ch = message.address.split('/')[this.cmdChannelIndex]
-                    store.dispatch({
-                        type: FaderActionTypes.IGNORE_AUTOMATION,
-                        // Remember to change this to the channels corresponding fader:
-                        faderIndex: ch - 1,
-                        state: message.args[0].includes('#'),
-                    })
+                    // If auto/man is setup to be controlled from the mixer:
+                    if (state.settings[0].labelControlsIgnoreAutomation) {
+                        let faderIndex = state.channels[0].chMixerConnection[this.mixerIndex].channel[ch-1].assignedFader
+                        store.dispatch({
+                            type: FaderActionTypes.IGNORE_AUTOMATION,
+                            faderIndex: faderIndex,
+                            state: message.args[0].includes('#'),
+                        })
+                    }
                     store.dispatch({
                         type: ChannelActionTypes.SET_CHANNEL_LABEL,
                         mixerIndex: this.mixerIndex,

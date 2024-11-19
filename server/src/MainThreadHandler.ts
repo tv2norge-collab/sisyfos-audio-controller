@@ -417,24 +417,48 @@ export class MainThreadHandlers {
                 this.setLink(payload.faderIndex, payload.linkOn),
             )
             .on(IO.SOCKET_TOGGLE_IGNORE, (faderIndex: any) => {
-                // store.dispatch({
-                //     type: FaderActionTypes.IGNORE_AUTOMATION,
-                //     faderIndex: faderIndex,
-                // })
-                console.log('Fader Index :', faderIndex)
-                const oldLabel = state.channels[0].chMixerConnection[0].channel[
-                    faderIndex
-                ].label
-                const newLabel = oldLabel.startsWith(state.settings[0].labelIgnorePrefix) ? oldLabel.slice(1) : oldLabel
-                store.dispatch({
-                    type: ChannelActionTypes.SET_CHANNEL_LABEL,
-                    channel: faderIndex,
-                    label:
-                        state.faders[0].fader[faderIndex].ignoreAutomation ? newLabel :
-                        (state.settings[0].labelIgnorePrefix + newLabel),
-                        mixerIndex: 0
-                })
-                mixerGenericConnection.updateChannelName(faderIndex)
+                if (!state.settings[0].labelControlsIgnoreAutomation) {
+                    store.dispatch({
+                        type: FaderActionTypes.IGNORE_AUTOMATION,
+                        faderIndex: faderIndex,
+                    })
+                } else {
+                    // If the Auto Manual is Labelprefix based, the label should have set prefix set
+                    // Label will then be send to the Mixer, and the mixer response sets the automation
+                    // This way we ensure only one state that is the external Mixer
+                    state.faders[0].fader[faderIndex].assignedChannels.forEach(
+                        (assignedChannel) => {
+                            const oldLabel =
+                                state.channels[0].chMixerConnection[0].channel[
+                                    assignedChannel.channelIndex
+                                ].label
+                            const newLabel = oldLabel.startsWith(
+                                state.settings[0].labelIgnorePrefix,
+                            )
+                                ? oldLabel.slice(1)
+                                : oldLabel
+                            console.log(
+                                'Channel :',
+                                assignedChannel,
+                                'assigned to :',
+                                faderIndex,
+                            )
+                            store.dispatch({
+                                type: ChannelActionTypes.SET_CHANNEL_LABEL,
+                                channel: assignedChannel.channelIndex,
+                                label: state.faders[0].fader[faderIndex]
+                                    .ignoreAutomation
+                                    ? newLabel
+                                    : state.settings[0].labelIgnorePrefix +
+                                      newLabel,
+                                mixerIndex: assignedChannel.mixerIndex,
+                            })
+                            mixerGenericConnection.updateChannelName(
+                                assignedChannel.channelIndex,
+                            )
+                        },
+                    )
+                }
                 this.updatePartialStore(faderIndex)
             })
             .on(IO.SOCKET_SET_FADERLEVEL, (payload: any) => {
