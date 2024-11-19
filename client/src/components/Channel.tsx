@@ -81,15 +81,15 @@ class Channel extends React.Component<
             XOR(nextProps.fader.capabilities, this.props.fader.capabilities) ||
             XOR(
                 nextProps.fader.capabilities?.hasAMix,
-                this.props.fader.capabilities?.hasAMix,
+                this.props.fader.capabilities?.hasAMix
             ) ||
             XOR(
                 nextProps.fader.capabilities?.isLinkablePrimary,
-                this.props.fader.capabilities?.isLinkablePrimary,
+                this.props.fader.capabilities?.isLinkablePrimary
             ) ||
             XOR(
                 nextProps.fader.capabilities?.isLinkableSecondary,
-                this.props.fader.capabilities?.isLinkableSecondary,
+                this.props.fader.capabilities?.isLinkableSecondary
             ) ||
             XOR(nextProps.fader.isLinked, this.props.fader.isLinked)
         )
@@ -179,7 +179,7 @@ class Channel extends React.Component<
                                     channel={i}
                                     key={i}
                                 />
-                            ),
+                            )
                         )}{' '}
                 </React.Fragment>
             )
@@ -196,7 +196,7 @@ class Channel extends React.Component<
                                     channel={index}
                                     key={index}
                                 />
-                            ),
+                            )
                         )}{' '}
                 </React.Fragment>
             )
@@ -567,5 +567,5 @@ const mapStateToProps = (state: any, props: any): ChannelInjectProps => {
 
 export default compose(
     connect<any, ChannelInjectProps, any>(mapStateToProps),
-    withTranslation(),
+    withTranslation()
 )(Channel) as any
