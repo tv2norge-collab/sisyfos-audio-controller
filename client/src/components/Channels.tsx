@@ -211,7 +211,7 @@ class Channels extends React.Component<ChannelsProps & ChannelsInjectProps & Sto
         const curPage = this.props.settings.currentPage
         switch (curPage.type) {
             case PageType.All:
-                return this.props.faders.map((value, index) => (
+                return this.props.faders.map((_value, index) => (
                     <Channel faderIndex={index} key={index} />
                 ))
             case PageType.CustomPage:
