@@ -280,8 +280,13 @@ export const faders = (
                 !!action.showInMiniMonitor
             return nextState
         case FaderActionTypes.IGNORE_AUTOMATION: //channel // ignoreAutomation
-            nextState[0].fader[action.faderIndex].ignoreAutomation =
-                !nextState[0].fader[action.faderIndex].ignoreAutomation
+            if (action.state === undefined) {
+                nextState[0].fader[action.faderIndex].ignoreAutomation =
+                    !nextState[0].fader[action.faderIndex].ignoreAutomation
+            } else {
+                nextState[0].fader[action.faderIndex].ignoreAutomation =
+                    !!action.state
+            }
             return nextState
         case FaderActionTypes.X_MIX: //none
             nextState[0].fader.forEach((item, index) => {
