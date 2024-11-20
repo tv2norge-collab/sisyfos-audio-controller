@@ -6,7 +6,7 @@ import { AppProps } from './App'
 
 //Utils:
 import '../assets/css/Settings.css'
-import { Settings as SettingsInterface } from '../../../shared/src/reducers/settingsReducer'
+import { PgmOnFollowMixerBehaviour, Settings as SettingsInterface } from '../../../shared/src/reducers/settingsReducer'
 import { Store } from 'redux'
 import { ChangeEvent } from 'react'
 import { SOCKET_SAVE_SETTINGS } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
@@ -468,20 +468,6 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 </label>
                 <br />
                 <label className="settings-input-field">
-                    LABEL TYPE :
-                    <select
-                        name="labelType"
-                        value={this.state.settings.labelType}
-                        onChange={this.handleChange}
-                    >
-                        <option value="automatic">Automatic</option>
-                        <option value="user">User labels</option>
-                        <option value="automation">Automation labels</option>
-                        <option value="channel">Channel labels</option>
-                    </select>
-                </label>
-                <br />
-                <label className="settings-input-field">
                     NUMBER OF CUSTOM PAGES:
                     <input
                         name="numberOfCustomPages"
@@ -542,6 +528,20 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 </label>
                 <br />
                 <label className="settings-input-field">
+                    LABEL TYPE :
+                    <select
+                        name="labelType"
+                        value={this.state.settings.labelType}
+                        onChange={this.handleChange}
+                    >
+                        <option value="automatic">Automatic</option>
+                        <option value="user">User labels</option>
+                        <option value="automation">Automation labels</option>
+                        <option value="channel">Channel labels</option>
+                    </select>
+                </label>
+                <br />
+                <label className="settings-input-field">
                     LABEL CONTROLS AUTO/MANUAL:
                     <input
                         type="checkbox"
@@ -561,6 +561,19 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                         value={this.state.settings.labelIgnorePrefix}
                         onChange={this.handleChange}
                     />
+                </label>
+                <br />
+                <label className="settings-input-field">
+                    PGM ON FOLLOWS MIXER :
+                    <select
+                        name="pgmOnFollowsMixer"
+                        value={this.state.settings.pgmOnFollowsMixer}
+                        onChange={this.handleChange}
+                    >
+                        <option value={PgmOnFollowMixerBehaviour.None}>None</option>
+                        <option value={PgmOnFollowMixerBehaviour.Global}>Global</option>
+                        <option value={PgmOnFollowMixerBehaviour.AutoManual}>Auto/Manual</option>
+                    </select>
                 </label>
                 <br />
 
