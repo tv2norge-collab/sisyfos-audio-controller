@@ -51,7 +51,7 @@ export interface VuMeters {
 
 export const defaultFadersReducerState = (
     numberOfFaders: number,
-    numberOfChannels?: NumberOfChannels[],
+    numberOfChannels?: NumberOfChannels[]
 ): Faders[] => {
     let defaultObj: Array<Faders> = [
         {
@@ -102,7 +102,7 @@ export const defaultFadersReducerState = (
 
 export const faders = (
     state = defaultFadersReducerState(0),
-    action: FaderActions,
+    action: FaderActions
 ): Array<Faders> => {
     let nextState = [
         {
@@ -143,6 +143,12 @@ export const faders = (
             return nextState
         case FaderActionTypes.SET_FADER_LEVEL:
             nextState[0].fader[action.faderIndex].faderLevel = action.level
+            // if (
+            //     action.pgmOnFollowsMixer ===
+            //     PgmOnFollowMixerBehaviour.AutoManual
+            // ) {
+                nextState[0].fader[action.faderIndex].pgmOn = nextState[0].fader[action.faderIndex].faderLevel >= 0.01
+            //
 
             return nextState
         case FaderActionTypes.SET_INPUT_GAIN:
@@ -168,12 +174,25 @@ export const faders = (
             nextState[0].fader[action.faderIndex].label = action.label
             return nextState
         case FaderActionTypes.TOGGLE_PGM:
+            // nextState[0].fader[action.faderIndex].pgmOn =
+            //     !nextState[0].fader[action.faderIndex].pgmOn
+                nextState[0].fader[action.faderIndex].pgmOn = nextState[0].fader[action.faderIndex].faderLevel >= 0.01
+
+            nextState[0].fader[action.faderIndex].voOn = false
+            return nextState
+        case FaderActionTypes.TOGGLE_PGM_UI:
             nextState[0].fader[action.faderIndex].pgmOn =
-                !nextState[0].fader[action.faderIndex].pgmOn
+                 !nextState[0].fader[action.faderIndex].pgmOn
+                 //If pgmOnFollowsMixer
+                nextState[0].fader[action.faderIndex].pgmOn = false
+                nextState[0].fader[action.faderIndex].faderLevel = 0
+
             nextState[0].fader[action.faderIndex].voOn = false
             return nextState
         case FaderActionTypes.SET_PGM:
             nextState[0].fader[action.faderIndex].pgmOn = !!action.pgmOn
+            nextState[0].fader[action.faderIndex].pgmOn = nextState[0].fader[action.faderIndex].faderLevel >= 0.01
+
             nextState[0].fader[action.faderIndex].voOn = false
             return nextState
         case FaderActionTypes.TOGGLE_VO:
@@ -351,7 +370,7 @@ export const faders = (
             // remove object if empty:
             if (
                 Object.entries(
-                    nextState[0].fader[action.faderIndex].capabilities!,
+                    nextState[0].fader[action.faderIndex].capabilities!
                 ).length === 0
             ) {
                 delete nextState[0].fader[action.faderIndex].capabilities
@@ -377,7 +396,7 @@ export const faders = (
                 ([index, label]: [string, string]) => {
                     nextState[0].fader[Number(index)].userLabel =
                         label === '' ? undefined : label
-                },
+                }
             )
             return nextState
         case FaderActionTypes.FLUSH_FADER_LABELS:
@@ -397,7 +416,7 @@ function setAssignedChannel(
         mixerIndex: number
         channelIndex: number
         assigned: boolean
-    },
+    }
 ) {
     let newAssignments: ChannelReference[] =
         nextState[0].fader[action.faderIndex].assignedChannels || []
@@ -417,11 +436,11 @@ function setAssignedChannel(
             })
             newAssignments.sort(
                 (n1: ChannelReference, n2: ChannelReference) =>
-                    n1.channelIndex - n2.channelIndex,
+                    n1.channelIndex - n2.channelIndex
             )
             newAssignments.sort(
                 (n1: ChannelReference, n2: ChannelReference) =>
-                    n1.mixerIndex - n2.mixerIndex,
+                    n1.mixerIndex - n2.mixerIndex
             )
         }
     } else {

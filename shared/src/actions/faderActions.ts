@@ -17,6 +17,7 @@ export enum FaderActionTypes {
     REMOVE_ALL_ASSIGNED_CHANNELS = 'REMOVE_ALL_ASSIGNED_CHANNELS',
     ASSIGN_ONE_TO_ONE = 'ASSIGN_ONE_TO_ONE',
     TOGGLE_PGM = 'TOGGLE_PGM',
+    TOGGLE_PGM_UI = 'TOGGLE_PGM_UI',
     SET_PGM = 'SET_PGM',
     TOGGLE_VO = 'TOGGLE_VO',
     SET_VO = 'SET_VO',
@@ -108,6 +109,7 @@ export type FaderActions =
     | { type: FaderActionTypes.REMOVE_ALL_ASSIGNED_CHANNELS }
     | { type: FaderActionTypes.ASSIGN_ONE_TO_ONE }
     | { type: FaderActionTypes.TOGGLE_PGM; faderIndex: number }
+    | { type: FaderActionTypes.TOGGLE_PGM_UI; faderIndex: number }
     | { type: FaderActionTypes.SET_PGM; faderIndex: number; pgmOn: boolean }
     | { type: FaderActionTypes.TOGGLE_VO; faderIndex: number }
     | { type: FaderActionTypes.SET_VO; faderIndex: number; voOn: boolean }

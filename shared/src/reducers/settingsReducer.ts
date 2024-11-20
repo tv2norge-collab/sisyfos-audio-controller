@@ -9,6 +9,12 @@ export enum PageType {
     CustomPage,
 }
 
+export enum PgmOnFollowMixerBehaviour {
+    None,
+    Global,
+    AutoManual,
+}
+
 export interface Settings {
     /* Sisyfos Settings Version: */
     sisyfosVersion?: string
@@ -44,6 +50,7 @@ export interface Settings {
     automationMode: boolean
     labelControlsIgnoreAutomation: boolean
     labelIgnorePrefix: string
+    pgmOnFollowsMixer: PgmOnFollowMixerBehaviour
     offtubeMode: boolean
     showPfl: boolean
     enablePages: boolean
@@ -115,6 +122,7 @@ const defaultSettingsReducerState: Array<Settings> = [
         automationMode: true,
         labelControlsIgnoreAutomation: false,
         labelIgnorePrefix: '#',
+        pgmOnFollowsMixer: PgmOnFollowMixerBehaviour.AutoManual,
         offtubeMode: false,
         fadeTime: 120,
         voFadeTime: 280,

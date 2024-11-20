@@ -359,7 +359,7 @@ export class MainThreadHandlers {
             .on(IO.SOCKET_TOGGLE_PGM, (faderIndex: any) => {
                 mixerGenericConnection.checkForAutoResetThreshold(faderIndex)
                 store.dispatch({
-                    type: FaderActionTypes.TOGGLE_PGM,
+                    type: FaderActionTypes.TOGGLE_PGM_UI,
                     faderIndex: faderIndex,
                 })
                 mixerGenericConnection.updateOutLevel(faderIndex, -1)
