@@ -10,9 +10,9 @@ export enum PageType {
 }
 
 export enum PgmOnFollowMixerBehaviour {
-    None,
-    Global,
-    AutoManual,
+    None = 0,
+    Global = 1,
+    AutoManual = 2,
 }
 
 export interface Settings {

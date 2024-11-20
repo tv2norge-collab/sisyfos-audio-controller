@@ -1,6 +1,7 @@
 import { FaderActionTypes } from '../actions/faderActions'
 import { NumberOfChannels } from './channelsReducer'
 import { RootAction, RootState } from './indexReducer'
+import { PgmOnFollowMixerBehaviour } from './settingsReducer'
 export interface Faders {
     fader: Array<Fader>
     vuMeters: Array<VuMeters>
@@ -148,14 +149,17 @@ export const faders = (
             nextState[0].fader[action.faderIndex] = action.state
             return nextState
         case FaderActionTypes.SET_FADER_LEVEL:
+            if (
+                fullState.settings[0].pgmOnFollowsMixer === 
+                PgmOnFollowMixerBehaviour.AutoManual && !nextState[0].fader[action.faderIndex].ignoreAutomation
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (action.level >= 0.01)
+            } else if (fullState.settings[0].pgmOnFollowsMixer ===
+                PgmOnFollowMixerBehaviour.Global
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (action.level >= 0.01)
+            } 
             nextState[0].fader[action.faderIndex].faderLevel = action.level
-            // if (
-            //     action.pgmOnFollowsMixer ===
-            //     PgmOnFollowMixerBehaviour.AutoManual
-            // ) {
-                nextState[0].fader[action.faderIndex].pgmOn = nextState[0].fader[action.faderIndex].faderLevel >= 0.01
-            //
-
             return nextState
         case FaderActionTypes.SET_INPUT_GAIN:
             nextState[0].fader[action.faderIndex].inputGain = action.level
@@ -180,19 +184,37 @@ export const faders = (
             nextState[0].fader[action.faderIndex].label = action.label
             return nextState
         case FaderActionTypes.TOGGLE_PGM:
-            // nextState[0].fader[action.faderIndex].pgmOn =
-            //     !nextState[0].fader[action.faderIndex].pgmOn
-                nextState[0].fader[action.faderIndex].pgmOn = nextState[0].fader[action.faderIndex].faderLevel >= 0.01
-
+            if (
+                fullState.settings[0].pgmOnFollowsMixer === 
+                PgmOnFollowMixerBehaviour.AutoManual && !nextState[0].fader[action.faderIndex].ignoreAutomation
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (nextState[0].fader[action.faderIndex].faderLevel >= 0.01)
+            } else if (fullState.settings[0].pgmOnFollowsMixer ===
+                PgmOnFollowMixerBehaviour.Global
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (nextState[0].fader[action.faderIndex].faderLevel >= 0.01)
+            } else {
+                nextState[0].fader[action.faderIndex].pgmOn =
+                !nextState[0].fader[action.faderIndex].pgmOn  
+            }
             nextState[0].fader[action.faderIndex].voOn = false
             return nextState
         case FaderActionTypes.TOGGLE_PGM_UI:
-            nextState[0].fader[action.faderIndex].pgmOn =
-                 !nextState[0].fader[action.faderIndex].pgmOn
-                 //If pgmOnFollowsMixer
-                nextState[0].fader[action.faderIndex].pgmOn = false
-                nextState[0].fader[action.faderIndex].faderLevel = 0
-
+                 if (
+                    fullState.settings[0].pgmOnFollowsMixer === 
+                    PgmOnFollowMixerBehaviour.AutoManual && !nextState[0].fader[action.faderIndex].ignoreAutomation
+                ) {
+                    nextState[0].fader[action.faderIndex].pgmOn = false
+                    nextState[0].fader[action.faderIndex].faderLevel = 0
+                } else if (fullState.settings[0].pgmOnFollowsMixer ===
+                    PgmOnFollowMixerBehaviour.Global
+                ) {
+                    nextState[0].fader[action.faderIndex].pgmOn = false
+                    nextState[0].fader[action.faderIndex].faderLevel = 0
+                } else {
+                    nextState[0].fader[action.faderIndex].pgmOn =
+                    !nextState[0].fader[action.faderIndex].pgmOn
+                }
             nextState[0].fader[action.faderIndex].voOn = false
             return nextState
         case FaderActionTypes.SET_PGM:
