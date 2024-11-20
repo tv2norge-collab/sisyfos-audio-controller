@@ -1,8 +1,8 @@
 import { MixerProtocolPresets } from '../constants/MixerProtocolPresets'
 import {
     SettingsActionTypes,
-    SettingsActions,
 } from '../actions/settingsActions'
+import { RootAction } from './indexReducer'
 
 export enum PageType {
     All,
@@ -83,7 +83,7 @@ export interface MixerSettings {
     localOscPort: number
 }
 
-const defaultSettingsReducerState: Array<Settings> = [
+export const defaultSettingsReducerState: Array<Settings> = [
     {
         showSettings: false,
         showPagesSetup: false,
@@ -137,8 +137,11 @@ const defaultSettingsReducerState: Array<Settings> = [
 
 export const settings = (
     state = defaultSettingsReducerState,
-    action: SettingsActions
+    action: RootAction
 ): Array<Settings> => {
+    if (!(action.type in SettingsActionTypes)) {
+        return state;
+    }
     let nextState = [Object.assign({}, state[0])]
 
     switch (action.type) {

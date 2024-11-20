@@ -1,5 +1,6 @@
-import { FaderActionTypes, FaderActions } from '../actions/faderActions'
+import { FaderActionTypes } from '../actions/faderActions'
 import { NumberOfChannels } from './channelsReducer'
+import { RootAction, RootState } from './indexReducer'
 export interface Faders {
     fader: Array<Fader>
     vuMeters: Array<VuMeters>
@@ -100,10 +101,15 @@ export const defaultFadersReducerState = (
     return defaultObj
 }
 
+
 export const faders = (
     state = defaultFadersReducerState(0),
-    action: FaderActions
+    action: RootAction,
+    fullState?: RootState
 ): Array<Faders> => {
+    if (!(action.type in FaderActionTypes)) {
+        return state;
+    }
     let nextState = [
         {
             vuMeters: [...state[0].vuMeters],
