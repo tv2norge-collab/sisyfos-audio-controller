@@ -101,6 +101,8 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
             ;(settingsCopy as any)[event.target.name] = !!(
                 event.target as HTMLInputElement
             ).checked
+        } else if (event.target.name === 'pgmOnFollowsMixer') {
+            (settingsCopy as any)[event.target.name] = Number(event.target.value)
         } else {
             ;(settingsCopy as any)[event.target.name] = event.target.value
         }
@@ -567,12 +569,12 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     PGM ON FOLLOWS MIXER :
                     <select
                         name="pgmOnFollowsMixer"
-                        value={this.state.settings.pgmOnFollowsMixer}
+                        value={Number(this.state.settings.pgmOnFollowsMixer)}
                         onChange={this.handleChange}
                     >
-                        <option value={PgmOnFollowMixerBehaviour.None}>None</option>
-                        <option value={PgmOnFollowMixerBehaviour.Global}>Global</option>
-                        <option value={PgmOnFollowMixerBehaviour.AutoManual}>Auto/Manual</option>
+                        <option value={0}>None</option>
+                        <option value={1}>Global</option>
+                        <option value={2}>Auto/Manual</option>
                     </select>
                 </label>
                 <br />
