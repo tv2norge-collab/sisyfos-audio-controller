@@ -481,6 +481,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     />
                 </label>
                 <br />
+                <br />
                 <label
                     className="settings-input-field"
                     title="Automation mode toggles between displaying VO/SLOW, and between CUE NEXT/PST"
@@ -496,19 +497,6 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 <br />
                 <label
                     className="settings-input-field"
-                    title="Some Mixer protocols has a wider support for the channel strip"
-                >
-                    EQ-COMP-AUX IN CH.STRIP:
-                    <input
-                        type="checkbox"
-                        name="offtubeMode"
-                        checked={this.state.settings.offtubeMode}
-                        onChange={this.handleChange}
-                    />
-                </label>
-                <br />
-                <label
-                    className="settings-input-field"
                     title="Enable PFL control instead of CUE NEXT/PST. This will also hide the CLEAR NEXT and NEXT TAKE buttons"
                 >
                     SHOW PFL CONTROLS:
@@ -516,6 +504,33 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                         type="checkbox"
                         name="showPfl"
                         checked={this.state.settings.showPfl}
+                        onChange={this.handleChange}
+                    />
+                </label>
+                <br />
+                <label className="settings-input-field">
+                    LABEL TYPE :
+                    <select
+                        name="labelType"
+                        value={this.state.settings.labelType}
+                        onChange={this.handleChange}
+                    >
+                        <option value="automatic">Automatic</option>
+                        <option value="user">User labels</option>
+                        <option value="automation">Automation labels</option>
+                        <option value="channel">Channel labels</option>
+                    </select>
+                </label>
+                <br />
+                <label
+                    className="settings-input-field"
+                    title="Some Mixer protocols has a wider support for the channel strip"
+                >
+                    EQ-COMP-AUX IN CH.STRIP:
+                    <input
+                        type="checkbox"
+                        name="offtubeMode"
+                        checked={this.state.settings.offtubeMode}
                         onChange={this.handleChange}
                     />
                 </label>
@@ -540,19 +555,6 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     />
                 </label>
                 <br />
-                <label className="settings-input-field">
-                    LABEL TYPE :
-                    <select
-                        name="labelType"
-                        value={this.state.settings.labelType}
-                        onChange={this.handleChange}
-                    >
-                        <option value="automatic">Automatic</option>
-                        <option value="user">User labels</option>
-                        <option value="automation">Automation labels</option>
-                        <option value="channel">Channel labels</option>
-                    </select>
-                </label>
                 <br />
                 <label
                     className="settings-input-field"
@@ -582,8 +584,8 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 <br />
                 <label
                     className="settings-input-field"
-                    title="The default behavior for Sisyfos is to have a preset level on a fader, and then use the PGM ON for fading to the preset level, 
-                    PGM ON Follows mixer, makes the fader follow the mixer level and the PGM button becomes an fadeout button"
+                    title="The default behavior for Sisyfos is to have a target level on the fader, and then use the PGM ON for fading to the target level, 
+                    the PGM ON Follows mixer, makes the fader follow the mixer level and the PGM button becomes a fadeout button"
                 >
                     PGM ON FOLLOWS MIXER :
                     <select
@@ -591,10 +593,10 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                         value={Number(this.state.settings.pgmOnFollowsMixer)}
                         onChange={this.handleChange}
                     >
-                        <option value={0}>None</option>
-                        <option value={1}>Global</option>
-                        <option value={2}>In Manual Mode</option>
-                        <option value={3}>In Auto Mode</option>
+                        <option value={0}>Disabled</option>
+                        <option value={1}>All faders</option>
+                        <option value={2}>Fader in Manual</option>
+                        <option value={3}>Fader in Auto</option>
                     </select>
                 </label>
                 <br />
