@@ -6,7 +6,7 @@ import { AppProps } from './App'
 
 //Utils:
 import '../assets/css/Settings.css'
-import { PgmOnFollowMixerBehaviour, Settings as SettingsInterface } from '../../../shared/src/reducers/settingsReducer'
+import { Settings as SettingsInterface } from '../../../shared/src/reducers/settingsReducer'
 import { Store } from 'redux'
 import { ChangeEvent } from 'react'
 import { SOCKET_SAVE_SETTINGS } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
@@ -94,7 +94,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
     }
 
     handleChange = (
-        event: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+        event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) => {
         let settingsCopy = Object.assign({}, this.state.settings)
         if (event.target.type === 'checkbox') {
@@ -102,7 +102,9 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 event.target as HTMLInputElement
             ).checked
         } else if (event.target.name === 'pgmOnFollowsMixer') {
-            (settingsCopy as any)[event.target.name] = Number(event.target.value)
+            ;(settingsCopy as any)[event.target.name] = Number(
+                event.target.value
+            )
         } else {
             ;(settingsCopy as any)[event.target.name] = event.target.value
         }
@@ -137,7 +139,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
 
     handleMixerChange = (
         event: ChangeEvent<HTMLInputElement>,
-        mixerIndex: number,
+        mixerIndex: number
     ) => {
         let settingsCopy = Object.assign({}, this.state.settings)
         if (event.target.type === 'checkbox') {
@@ -163,7 +165,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
     handleNumberOfChannels = (
         mixerIndex: number,
         index: number,
-        event: any,
+        event: any
     ) => {
         let settingsCopy = Object.assign({}, this.state.settings)
         settingsCopy.mixers[mixerIndex].numberOfChannelsInType[index] =
@@ -210,7 +212,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         this.handleNumberOfChannels(
                                             mixerIndex,
                                             index,
-                                            event,
+                                            event
                                         )
                                     }
                                 />
@@ -281,7 +283,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                     onChange={(event) =>
                                         this.handleProtocolChange(
                                             event,
-                                            mixerIndex,
+                                            mixerIndex
                                         )
                                     }
                                     options={window.mixerProtocolList}
@@ -296,7 +298,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         onChange={(event) =>
                                             this.handleMixerChange(
                                                 event,
-                                                mixerIndex,
+                                                mixerIndex
                                             )
                                         }
                                     />
@@ -311,7 +313,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         onChange={(event) =>
                                             this.handleMixerChange(
                                                 event,
-                                                mixerIndex,
+                                                mixerIndex
                                             )
                                         }
                                     />
@@ -326,7 +328,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         onChange={(event) =>
                                             this.handleMixerChange(
                                                 event,
-                                                mixerIndex,
+                                                mixerIndex
                                             )
                                         }
                                     />
@@ -341,7 +343,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         onChange={(event) =>
                                             this.handleMixerChange(
                                                 event,
-                                                mixerIndex,
+                                                mixerIndex
                                             )
                                         }
                                     />
@@ -356,7 +358,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         onChange={(event) =>
                                             this.handleMixerChange(
                                                 event,
-                                                mixerIndex,
+                                                mixerIndex
                                             )
                                         }
                                     />
@@ -371,7 +373,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         onChange={(event) =>
                                             this.handleMixerChange(
                                                 event,
-                                                mixerIndex,
+                                                mixerIndex
                                             )
                                         }
                                     />
@@ -386,7 +388,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         onChange={(event) =>
                                             this.handleMixerChange(
                                                 event,
-                                                mixerIndex,
+                                                mixerIndex
                                             )
                                         }
                                     />
@@ -401,7 +403,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                 <br />
                             </React.Fragment>
                         )
-                    },
+                    }
                 )}
             </div>
         )
@@ -479,7 +481,10 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     />
                 </label>
                 <br />
-                <label className="settings-input-field">
+                <label
+                    className="settings-input-field"
+                    title="Automation mode toggles between displaying VO/SLOW, and between CUE NEXT/PST"
+                >
                     AUTOMATION MODE:
                     <input
                         type="checkbox"
@@ -489,7 +494,10 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     />
                 </label>
                 <br />
-                <label className="settings-input-field">
+                <label
+                    className="settings-input-field"
+                    title="Some Mixer protocols has a wider support for the channel strip"
+                >
                     EQ-COMP-AUX IN CH.STRIP:
                     <input
                         type="checkbox"
@@ -499,7 +507,10 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     />
                 </label>
                 <br />
-                <label className="settings-input-field">
+                <label
+                    className="settings-input-field"
+                    title="Enable PFL control instead of CUE NEXT/PST. This will also hide the CLEAR NEXT and NEXT TAKE buttons"
+                >
                     SHOW PFL CONTROLS:
                     <input
                         type="checkbox"
@@ -543,7 +554,11 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     </select>
                 </label>
                 <br />
-                <label className="settings-input-field">
+                <label
+                    className="settings-input-field"
+                    title="Using the prefix label, it's possible for a mixer to control the AUTO/MANUAL 
+                        state in Sisyfos, this is a two way functionality, so pressing AUTO/MANUAL in UI also sets the label on the connected mixer"
+                >
                     LABEL CONTROLS AUTO/MANUAL:
                     <input
                         type="checkbox"
@@ -565,7 +580,11 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     />
                 </label>
                 <br />
-                <label className="settings-input-field">
+                <label
+                    className="settings-input-field"
+                    title="The default behavior for Sisyfos is to have a preset level on a fader, and then use the PGM ON for fading to the preset level, 
+                    PGM ON Follows mixer, makes the fader follow the mixer level and the PGM button becomes an fadeout button"
+                >
                     PGM ON FOLLOWS MIXER :
                     <select
                         name="pgmOnFollowsMixer"
@@ -578,7 +597,6 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     </select>
                 </label>
                 <br />
-
 
                 {this.renderMixerSettings()}
                 <button
