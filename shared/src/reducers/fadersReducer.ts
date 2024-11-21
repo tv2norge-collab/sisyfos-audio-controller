@@ -151,7 +151,12 @@ export const faders = (
         case FaderActionTypes.SET_FADER_LEVEL:
             if (
                 fullState.settings[0].pgmOnFollowsMixer === 
-                PgmOnFollowMixerBehaviour.AutoManual && !nextState[0].fader[action.faderIndex].ignoreAutomation
+                PgmOnFollowMixerBehaviour.Auto && !nextState[0].fader[action.faderIndex].ignoreAutomation
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (action.level >= 0.01)
+            } else if (
+                fullState.settings[0].pgmOnFollowsMixer === 
+                PgmOnFollowMixerBehaviour.Manual && nextState[0].fader[action.faderIndex].ignoreAutomation
             ) {
                 nextState[0].fader[action.faderIndex].pgmOn = (action.level >= 0.01)
             } else if (fullState.settings[0].pgmOnFollowsMixer ===
@@ -186,7 +191,12 @@ export const faders = (
         case FaderActionTypes.TOGGLE_PGM:
             if (
                 fullState.settings[0].pgmOnFollowsMixer === 
-                PgmOnFollowMixerBehaviour.AutoManual && !nextState[0].fader[action.faderIndex].ignoreAutomation
+                PgmOnFollowMixerBehaviour.Auto && !nextState[0].fader[action.faderIndex].ignoreAutomation
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (nextState[0].fader[action.faderIndex].faderLevel >= 0.01)
+            } else if (
+                fullState.settings[0].pgmOnFollowsMixer === 
+                PgmOnFollowMixerBehaviour.Manual && nextState[0].fader[action.faderIndex].ignoreAutomation
             ) {
                 nextState[0].fader[action.faderIndex].pgmOn = (nextState[0].fader[action.faderIndex].faderLevel >= 0.01)
             } else if (fullState.settings[0].pgmOnFollowsMixer ===
@@ -202,7 +212,13 @@ export const faders = (
         case FaderActionTypes.TOGGLE_PGM_UI:
                  if (
                     fullState.settings[0].pgmOnFollowsMixer === 
-                    PgmOnFollowMixerBehaviour.AutoManual && !nextState[0].fader[action.faderIndex].ignoreAutomation
+                    PgmOnFollowMixerBehaviour.Auto && !nextState[0].fader[action.faderIndex].ignoreAutomation
+                ) {
+                    nextState[0].fader[action.faderIndex].pgmOn = false
+                    nextState[0].fader[action.faderIndex].faderLevel = 0
+                } else if (
+                    fullState.settings[0].pgmOnFollowsMixer === 
+                    PgmOnFollowMixerBehaviour.Manual && !nextState[0].fader[action.faderIndex].ignoreAutomation
                 ) {
                     nextState[0].fader[action.faderIndex].pgmOn = false
                     nextState[0].fader[action.faderIndex].faderLevel = 0

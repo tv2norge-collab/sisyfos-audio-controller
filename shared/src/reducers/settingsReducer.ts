@@ -12,7 +12,8 @@ export enum PageType {
 export enum PgmOnFollowMixerBehaviour {
     None = 0,
     Global = 1,
-    AutoManual = 2,
+    Manual = 2,
+    Auto = 3,
 }
 
 export interface Settings {
@@ -122,7 +123,7 @@ export const defaultSettingsReducerState: Array<Settings> = [
         automationMode: true,
         labelControlsIgnoreAutomation: false,
         labelIgnorePrefix: '#',
-        pgmOnFollowsMixer: PgmOnFollowMixerBehaviour.AutoManual,
+        pgmOnFollowsMixer: PgmOnFollowMixerBehaviour.None,
         offtubeMode: false,
         fadeTime: 120,
         voFadeTime: 280,

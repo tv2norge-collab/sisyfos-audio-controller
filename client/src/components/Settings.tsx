@@ -593,7 +593,8 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     >
                         <option value={0}>None</option>
                         <option value={1}>Global</option>
-                        <option value={2}>Auto/Manual</option>
+                        <option value={2}>In Manual Mode</option>
+                        <option value={3}>In Auto Mode</option>
                     </select>
                 </label>
                 <br />
