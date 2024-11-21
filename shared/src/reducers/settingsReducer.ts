@@ -16,6 +16,19 @@ export enum PgmOnFollowMixerBehaviour {
     Auto = 3,
 }
 
+export enum SecondRowButtonType {
+    NONE = 0,
+    VO = 1,
+    SLOW_FADE = 2,
+}
+
+export enum ThirdRowButtonType {
+    NONE = 0,
+    PST = 1,
+    PFL = 2,
+    CUE_NEXT = 3,
+}
+
 export interface Settings {
     /* Sisyfos Settings Version: */
     sisyfosVersion?: string
@@ -48,19 +61,23 @@ export interface Settings {
     voFadeTime: number // Default fade time for VO ON - OFF
     voLevel: number // Relative level of PGM in %
     autoResetLevel: number // Autoreset before pgm on, if level is lower than in %
-    automationMode: boolean
+    secondRowButton: SecondRowButtonType
+    thirdRowButton: ThirdRowButtonType
     labelControlsIgnoreAutomation: boolean
     labelIgnorePrefix: string
     pgmOnFollowsMixer: PgmOnFollowMixerBehaviour
     offtubeMode: boolean
-    showPfl: boolean
     enablePages: boolean
     numberOfCustomPages: number
     chanStripFollowsPFL: boolean
     labelType: 'automatic' | 'user' | 'automation' | 'channel'
-
+    
     /** Connection state */
     serverOnline: boolean
+    
+    // Deprecated:
+    automationMode?: boolean
+    showPfl?: boolean
 }
 
 export interface CustomPages {
@@ -120,14 +137,14 @@ export const defaultSettingsReducerState: Array<Settings> = [
         numberOfFaders: 8,
         voLevel: 30,
         autoResetLevel: 5,
-        automationMode: true,
+        secondRowButton: SecondRowButtonType.VO,
+        thirdRowButton: ThirdRowButtonType.CUE_NEXT,
         labelControlsIgnoreAutomation: false,
         labelIgnorePrefix: '#',
         pgmOnFollowsMixer: PgmOnFollowMixerBehaviour.None,
         offtubeMode: false,
         fadeTime: 120,
         voFadeTime: 280,
-        showPfl: false,
         enablePages: true,
         numberOfCustomPages: 4,
         chanStripFollowsPFL: true,

@@ -13,7 +13,11 @@ import {
     ChannelReference,
     Fader,
 } from '../../../shared/src/reducers/fadersReducer'
-import { Settings } from '../../../shared/src/reducers/settingsReducer'
+import {
+    SecondRowButtonType,
+    Settings,
+    ThirdRowButtonType,
+} from '../../../shared/src/reducers/settingsReducer'
 import { SettingsActionTypes } from '../../../shared/src/actions/settingsActions'
 import { withTranslation } from 'react-i18next'
 import {
@@ -72,7 +76,10 @@ class Channel extends React.Component<
             nextProps.label != this.props.label ||
             nextProps.settings.mixers[0].mixerProtocol !=
                 this.props.settings.mixers[0].mixerProtocol ||
-            nextProps.settings.showPfl != this.props.settings.showPfl ||
+            nextProps.settings.secondRowButton !=
+                this.props.settings.secondRowButton ||
+            nextProps.settings.thirdRowButton !=
+                this.props.settings.thirdRowButton ||
             nextProps.settings.showChanStrip !=
                 this.props.settings.showChanStrip ||
             nextProps.fader.amixOn != this.props.fader.amixOn ||
@@ -353,6 +360,26 @@ class Channel extends React.Component<
         )
     }
 
+    cueNextButton = () => {
+        return (
+            <button
+                className={ClassNames('channel-pst-button', {
+                    on: this.props.fader.pstOn,
+                    vo: this.props.fader.pstVoOn,
+                })}
+                onClick={(event) => {
+                    this.handlePst()
+                }}
+                onTouchEnd={(event) => {
+                    event.preventDefault()
+                    this.handlePst()
+                }}
+            >
+                <React.Fragment>{this.props.t('CUE NEXT')}</React.Fragment>
+            </button>
+        )
+    }
+
     pstButton = () => {
         return (
             <button
@@ -368,28 +395,7 @@ class Channel extends React.Component<
                     this.handlePst()
                 }}
             >
-                {this.props.settings.automationMode ? (
-                    <React.Fragment>{this.props.t('CUE NEXT')}</React.Fragment>
-                ) : (
-                    <React.Fragment>{this.props.t('PST')}</React.Fragment>
-                )}
-            </button>
-        )
-    }
-
-    chanStripButton = () => {
-        const isActive = this.props.settings.showChanStrip === this.faderIndex
-        return (
-            <button
-                className={ClassNames('channel-strip-button', {
-                    on: this.props.settings.showChanStrip,
-                    active: isActive,
-                })}
-                onClick={(event) => {
-                    this.handleShowChanStrip()
-                }}
-            >
-                {this.props.label}
+                <React.Fragment>{this.props.t('PST')}</React.Fragment>
             </button>
         )
     }
@@ -409,6 +415,23 @@ class Channel extends React.Component<
                 }}
             >
                 {this.props.t('PFL')}
+            </button>
+        )
+    }
+
+    chanStripButton = () => {
+        const isActive = this.props.settings.showChanStrip === this.faderIndex
+        return (
+            <button
+                className={ClassNames('channel-strip-button', {
+                    on: this.props.settings.showChanStrip,
+                    active: isActive,
+                })}
+                onClick={(event) => {
+                    this.handleShowChanStrip()
+                }}
+            >
+                {this.props.label}
             </button>
         )
     }
@@ -492,7 +515,7 @@ class Channel extends React.Component<
         return this.shouldHideChannel() ? null : (
             <div
                 className={ClassNames('channel-body', {
-                    'with-pfl': this.props.settings.showPfl,
+                    'with-pfl': this.props.settings.thirdRowButton === ThirdRowButtonType.PFL,
                     'pgm-on': this.props.fader.pgmOn,
                     'vo-on': this.props.fader.voOn,
                     'mute-on': this.props.fader.muteOn,
@@ -537,16 +560,32 @@ class Channel extends React.Component<
                 <div className="out-control">
                     {this.pgmButton()}
 
-                    {this.props.settings.automationMode
-                        ? this.voButton()
-                        : this.slowButton()}
+                    {(() => {
+                        switch (this.props.settings.secondRowButton) {
+                            case SecondRowButtonType.VO:
+                                return this.voButton()
+                            case SecondRowButtonType.SLOW_FADE:
+                                return this.slowButton()
+                            default:
+                                return null
+                        }
+                    })()}
                     <br />
                 </div>
                 <div className="channel-control">
                     {this.chanStripButton()}
-                    {this.props.settings.showPfl
-                        ? this.pflButton()
-                        : this.pstButton()}
+                    {(() => {
+                        switch (this.props.settings.thirdRowButton) {
+                            case ThirdRowButtonType.CUE_NEXT:
+                                return this.cueNextButton()
+                            case ThirdRowButtonType.PFL:
+                                return this.pflButton()
+                            case ThirdRowButtonType.PST:
+                                return this.pstButton()
+                            default:
+                                return null
+                        }
+                    })()}
                 </div>
             </div>
         )

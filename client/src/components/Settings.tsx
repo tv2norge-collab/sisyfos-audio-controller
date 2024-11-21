@@ -6,7 +6,7 @@ import { AppProps } from './App'
 
 //Utils:
 import '../assets/css/Settings.css'
-import { Settings as SettingsInterface } from '../../../shared/src/reducers/settingsReducer'
+import { SecondRowButtonType, Settings as SettingsInterface, ThirdRowButtonType } from '../../../shared/src/reducers/settingsReducer'
 import { Store } from 'redux'
 import { ChangeEvent } from 'react'
 import { SOCKET_SAVE_SETTINGS } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
@@ -101,7 +101,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
             ;(settingsCopy as any)[event.target.name] = !!(
                 event.target as HTMLInputElement
             ).checked
-        } else if (event.target.name === 'pgmOnFollowsMixer') {
+        } else if (event.target.name === 'pgmOnFollowsMixer' || event.target.name === 'secondRowButton' || event.target.name === 'thirdRowButton') {
             ;(settingsCopy as any)[event.target.name] = Number(
                 event.target.value
             )
@@ -482,30 +482,32 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 </label>
                 <br />
                 <br />
-                <label
-                    className="settings-input-field"
-                    title="Automation mode toggles between displaying VO/SLOW, and between CUE NEXT/PST"
-                >
-                    AUTOMATION MODE:
-                    <input
-                        type="checkbox"
-                        name="automationMode"
-                        checked={this.state.settings.automationMode}
+                <label className="settings-input-field">
+                    SECOND ROW BUTTON :
+                    <select
+                        name="secondRowButton"
+                        value={this.state.settings.secondRowButton}
                         onChange={this.handleChange}
-                    />
+                    >
+                        <option value={SecondRowButtonType.NONE}>None</option>
+                        <option value={SecondRowButtonType.VO}>Voice Over</option>
+                        <option value={SecondRowButtonType.SLOW_FADE}>Slow Fade</option>
+                    </select>
                 </label>
                 <br />
-                <label
-                    className="settings-input-field"
-                    title="Enable PFL control instead of CUE NEXT/PST. This will also hide the CLEAR NEXT and NEXT TAKE buttons"
-                >
-                    SHOW PFL CONTROLS:
-                    <input
-                        type="checkbox"
-                        name="showPfl"
-                        checked={this.state.settings.showPfl}
+                
+                <label className="settings-input-field">
+                    THIRD ROW BUTTON :
+                    <select
+                        name="thirdRowButton"
+                        value={this.state.settings.thirdRowButton}
                         onChange={this.handleChange}
-                    />
+                    >
+                        <option value={ThirdRowButtonType.NONE}>None</option>
+                        <option value={ThirdRowButtonType.PST}>PST</option>
+                        <option value={ThirdRowButtonType.PFL}>PFL</option>
+                        <option value={ThirdRowButtonType.CUE_NEXT}>Cue Next</option>
+                    </select>
                 </label>
                 <br />
                 <label className="settings-input-field">
