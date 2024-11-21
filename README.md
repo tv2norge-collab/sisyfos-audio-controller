@@ -336,3 +336,8 @@ The ability to use use a character prefix (default is #) on the connected Audio 
 If the prefix is not found, the channel is in AUTO mode.
 This is a 2-way communication, so if the user toggles the AUTO/MANUAL in the UI, the corresponding channel on the Audio Mixer will have the prefix added or removed.
 Labels on the UI will allways hide the prefix.
+
+### Pgm On follows Audio Mixer: 
+The default behaviour of Sisyfos is to have a target level. This is the level that the fader will fade to when the PGM button is pressed.
+But when either in manual or in auto mode, it's possible to let the fader behave in sync with the audio mixer. 
+Settings the "PGM On follows Audio Mixer" in the settings, let's the sisyfos fader always follow level of the audio mixer, and when the level is zero, the PGM button turns off. If level is above zero, the PGM button will behave as a fadeout button.
