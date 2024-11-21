@@ -46,16 +46,3 @@ export const createEnhancedReducer = () => {
 
     return reducer
 }
-
-// Old reducer is kept for backward compatibility until tests are rewritten:
-const indexReducer = combineReducers<{
-    faders: (state: Faders[] | undefined, action: FaderActions) => Faders[]
-    channels: (state: Channels[] | undefined, action: ChannelActions) => Channels[]
-    settings: (state: Settings[] | undefined, action: SettingsActions) => Settings[]
-}>({
-    faders: (state, action) => faders(state || DEFAULT_STATE.faders, action, undefined),
-    channels: (state, action) => channels(state || DEFAULT_STATE.channels, action, undefined),
-    settings: (state, action) => settings(state || DEFAULT_STATE.settings, action)
-})
-
-export default indexReducer
