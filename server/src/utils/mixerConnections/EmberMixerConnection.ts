@@ -9,18 +9,12 @@ import {
     FxParam,
     MixerProtocol,
 } from '../../../../shared/src/constants/MixerProtocolInterface'
-import {
-    FaderActionTypes,
-} from '../../../../shared/src/actions/faderActions'
+import { FaderActionTypes } from '../../../../shared/src/actions/faderActions'
 import { logger } from '../logger'
 import { LawoMC2 } from '../../../../shared/src/constants/mixerProtocols/LawoMC2'
 import { dbToFloat, floatToDB } from './LawoRubyConnection'
-import {
-    ChannelActionTypes,
-} from '../../../../shared/src/actions/channelActions'
-import {
-    SettingsActionTypes,
-} from '../../../../shared/src/actions/settingsActions'
+import { ChannelActionTypes } from '../../../../shared/src/actions/channelActions'
+import { SettingsActionTypes } from '../../../../shared/src/actions/settingsActions'
 import {
     ChannelReference,
     Fader,
@@ -207,6 +201,9 @@ export class EmberMixerConnection implements MixerConnection {
         const channel =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[ch - 1]
         const assignedFaderIndex = this.getAssignedFaderIndex(ch - 1)
+        console.log(ch, assignedFaderIndex)
+
+        if (assignedFaderIndex < 0) return
 
         await this.subscribeToEmberNode(
             channelTypeIndex,
@@ -349,17 +346,21 @@ export class EmberMixerConnection implements MixerConnection {
         const channel =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[ch - 1]
         const assignedFaderIndex = this.getAssignedFaderIndex(ch - 1)
+
         await this.subscribeToEmberNode(
             channelTypeIndex,
             mixerMessage,
             (node) => {
+                console.log(node)
                 let newLabel = ''
                 if (node.contents.type === Model.ElementType.Node) {
                     newLabel = node.contents.description
                 } else {
-                    String((node.contents as Model.Parameter).value)
+                    newLabel = String((node.contents as Model.Parameter).value)
                 }
-                logger.trace(`Receiving Label from Ch "${ch}", val: ${newLabel}`)
+                logger.trace(
+                    `Receiving Label from Ch "${ch}", val: ${newLabel}`
+                )
 
                 // If auto/man is setup to be controlled from the mixer:
                 if (state.settings[0].labelControlsIgnoreAutomation) {
@@ -369,7 +370,9 @@ export class EmberMixerConnection implements MixerConnection {
                     store.dispatch({
                         type: FaderActionTypes.IGNORE_AUTOMATION,
                         faderIndex: faderIndex,
-                        state: newLabel.startsWith(state.settings[0].labelIgnorePrefix),
+                        state: newLabel.startsWith(
+                            state.settings[0].labelIgnorePrefix
+                        ),
                     })
                 }
 
@@ -525,7 +528,8 @@ export class EmberMixerConnection implements MixerConnection {
                     type: FaderActionTypes.SET_CAPABILITY,
                     faderIndex: assignedFaderIndex,
                     capability: 'hasInputSelector',
-                    enabled: (node.contents as Model.Parameter).value as boolean,
+                    enabled: (node.contents as Model.Parameter)
+                        .value as boolean,
                 })
                 global.mainThreadHandler.updatePartialStore(assignedFaderIndex)
             }
@@ -549,7 +553,6 @@ export class EmberMixerConnection implements MixerConnection {
                     faderIndex: assignedFaderIndex,
                     selected: 3,
                 })
-
             } else {
                 logger.trace(`Input selector state: lr`)
                 store.dispatch({
@@ -623,8 +626,7 @@ export class EmberMixerConnection implements MixerConnection {
                         capability: 'hasAMix',
                         enabled:
                             (node.contents as Model.Parameter).value !==
-                            ((node.contents as Model.Parameter).maximum ||
-                                63), // max is unassigned, max = 63 in firmware 6.4
+                            ((node.contents as Model.Parameter).maximum || 63), // max is unassigned, max = 63 in firmware 6.4
                     })
                     global.mainThreadHandler.updatePartialStore(
                         assignedFaderIndex
@@ -842,7 +844,16 @@ export class EmberMixerConnection implements MixerConnection {
             state.channels[0].chMixerConnection[this.mixerIndex].channel[
                 channelIndex
             ].channelTypeIndex
-        let channelName = state.faders[0].fader[channelIndex].label
+        const faderIndex = this.getAssignedFaderIndex(channelIndex)
+
+        if (
+            faderIndex < 0 ||
+            !this.mixerProtocol.channelTypes[channelType].toMixer
+                .CHANNEL_NAME?.[0]
+        )
+            return
+
+        let channelName = state.faders[0].fader[faderIndex].label
         // If labelControlsIgnoreAutomation, the mixer should receive the channels label and not the faders
         if (state.settings[0].labelControlsIgnoreAutomation) {
             channelName =

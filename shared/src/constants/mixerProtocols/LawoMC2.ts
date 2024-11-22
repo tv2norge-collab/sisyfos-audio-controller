@@ -2,7 +2,7 @@ import {
     MixerProtocol,
     emptyMixerMessage,
     VuLabelConversionType,
-    MixerConnectionTypes
+    MixerConnectionTypes,
 } from '../MixerProtocolInterface'
 
 export const LawoMC2: MixerProtocol = {
@@ -116,6 +116,17 @@ export const LawoMC2: MixerProtocol = {
                         type: 'real',
                         min: -128,
                         max: 12,
+                        zero: 0,
+                    },
+                ],
+                CHANNEL_NAME: [
+                    {
+                        mixerMessage:
+                            'Channels.Inputs.${channel}.General.User Label',
+                        value: 0,
+                        type: 'real',
+                        min: -200,
+                        max: 20,
                         zero: 0,
                     },
                 ],

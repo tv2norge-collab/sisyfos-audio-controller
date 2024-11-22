@@ -526,9 +526,9 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 <br />
                 <label
                     className="settings-input-field"
-                    title="Some Mixer protocols has a wider support for the channel strip"
+                    title="Some Mixer protocols has a wider support for the channel strip, this setting enables these in the channel strip view"
                 >
-                    EQ-COMP-AUX IN CH.STRIP:
+                    SHOW OPTIONS IN CH.STRIP:
                     <input
                         type="checkbox"
                         name="offtubeMode"
