@@ -849,6 +849,7 @@ export class EmberMixerConnection implements MixerConnection {
                 state.channels[0].chMixerConnection[0].channel[channelIndex]
                     .label
         }
+        if (!this.mixerProtocol.channelTypes[channelType].toMixer.CHANNEL_NAME) return
         this.sendOutMessage(
             this.mixerProtocol.channelTypes[channelType].toMixer.CHANNEL_NAME[0]
                 .mixerMessage,
