@@ -480,6 +480,25 @@ class Channel extends React.Component<
         )
     }
 
+    channelLayout = () => {
+        const isLinkable =
+            this.props.fader.capabilities?.isLinkableSecondary ||
+            this.props.fader.capabilities?.isLinkableSecondary
+
+        if (!isLinkable) return null
+
+        return (
+            <div className="channel-stereo-link-button">
+                {this.props.fader.capabilities?.isLinkablePrimary &&
+                    ((this.props.fader.isLinked && <LinkedIcon />) || (
+                        <UnlinkedLeftIcon />
+                    ))}
+                {this.props.fader.capabilities?.isLinkableSecondary &&
+                    !this.props.fader.isLinked && <UnlinkedRightIcon />}
+            </div>
+        )
+    }
+
     shouldHideChannel = () => {
         return (
             this.props.fader.showChannel === false ||
@@ -506,28 +525,7 @@ class Channel extends React.Component<
                     {/* TODO - amix and mute cannot be shown at the same time due to css. Depends on protocol right now. */}
                     {this.muteButton()}
                     {this.amixButton()}
-                    <div className="channel-layout">
-                        {window.mixerProtocol.protocol ===
-                            MixerConnectionTypes.vMix &&
-                            !this.props.fader.capabilities
-                                ?.isLinkableSecondary && (
-                                <ChannelLayoutSettingsButton
-                                    fader={this.props.fader}
-                                    faderIndex={this.props.faderIndex}
-                                />
-                            )}
-                        <div className="channel-stereo-link-button">
-                            {this.props.fader.capabilities?.isLinkablePrimary &&
-                                ((this.props.fader.isLinked && (
-                                    <LinkedIcon />
-                                )) || <UnlinkedLeftIcon />)}
-                            {this.props.fader.capabilities
-                                ?.isLinkableSecondary &&
-                                !this.props.fader.isLinked && (
-                                    <UnlinkedRightIcon />
-                                )}
-                        </div>
-                    </div>
+                    {this.channelLayout()}
                 </div>
                 <div className="fader">
                     {this.handleVuMeter()}

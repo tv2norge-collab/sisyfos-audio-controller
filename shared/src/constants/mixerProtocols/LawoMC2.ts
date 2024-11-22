@@ -106,6 +106,16 @@ export const LawoMC2: MixerProtocol = {
                         zero: 0,
                     },
                 ],
+                CHANNEL_MUTE_ON: [
+                    {
+                        mixerMessage: 'Channels.Inputs.${channel}.Mute.Mute',
+                        value: true,
+                        type: 'boolean',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ],
             },
             toMixer: {
                 CHANNEL_OUT_GAIN: [
@@ -180,6 +190,16 @@ export const LawoMC2: MixerProtocol = {
                         mixerMessage:
                             'Channels.Inputs.${channel}.Automix.Automix Active',
                         value: false,
+                        type: 'boolean',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ],
+                CHANNEL_MUTE_ON: [
+                    {
+                        mixerMessage: 'Channels.Inputs.${channel}.Mute.Mute',
+                        value: true,
                         type: 'boolean',
                         min: -128,
                         max: 12,
