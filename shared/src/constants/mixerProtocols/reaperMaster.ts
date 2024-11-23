@@ -88,7 +88,7 @@ export const ReaperMaster: MixerProtocol = {
         },
         {
             channelTypeName: 'MASTER',
-            channelTypeColor: '#0f0fcf',
+            channelTypeColor: '#1f2f1f',
             fromMixer: {
                 CHANNEL_OUT_GAIN: [
                     {

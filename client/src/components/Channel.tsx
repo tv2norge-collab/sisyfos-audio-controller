@@ -426,20 +426,17 @@ class Channel extends React.Component<
 
     chanStripButton = () => {
         const isActive = this.props.settings.showChanStrip === this.faderIndex
-        //If multiple channeltype e.g. groups or master, style these:
-        const groupStyle = {
-            ...(this.props.channelType > 0 && {
-                backgroundColor: this.props.channelTypeColor,
-            }),
+        //style for if active or the color from the multiple channeltype e.g. groups or master
+        const styleBackground = {
+            backgroundColor: isActive
+                ? '#2f475b'
+                : this.props.channelTypeColor,
         }
 
         return (
             <button
-                className={ClassNames('channel-strip-button', {
-                    on: this.props.settings.showChanStrip,
-                    active: isActive,
-                })}
-                style={groupStyle}
+                className="channel-strip-button"
+                style={styleBackground}
                 onClick={(event) => {
                     this.handleShowChanStrip()
                 }}
@@ -640,7 +637,8 @@ const mapStateToProps = (state: RootState, props: any): ChannelInjectProps => {
         channelTypeColor:
             window.mixerProtocolPresets[
                 state.settings[0].mixers[0].mixerProtocol
-            ].channelTypes[firstAssingedChannel?.channelType || 0]?.channelTypeColor,
+            ].channelTypes[firstAssingedChannel?.channelType || 0]
+                ?.channelTypeColor,
         label: getFaderLabel(props.faderIndex),
     }
 }
