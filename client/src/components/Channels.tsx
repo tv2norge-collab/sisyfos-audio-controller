@@ -16,7 +16,7 @@ import {
     MixerSettings,
     Settings,
     PageType,
-    ThirdRowButtonType,
+    ThirdOutRowButtonType,
 } from '../../../shared/src/reducers/settingsReducer'
 import {
     SOCKET_NEXT_MIX,
@@ -357,7 +357,7 @@ class Channels extends React.Component<
                         </div>
                         <div className="mid">
                             {this.renderAllManualButton()}
-                            {this.props.settings.thirdRowButton === ThirdRowButtonType.CUE_NEXT && (
+                            {this.props.settings.thirdOutRowButton === ThirdOutRowButtonType.CUE_NEXT && (
                                 <React.Fragment>
                                     <button
                                         className="button channels-clear-button"

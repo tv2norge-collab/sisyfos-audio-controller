@@ -16,13 +16,13 @@ export enum PgmOnFollowMixerBehaviour {
     Auto = 3,
 }
 
-export enum SecondRowButtonType {
+export enum SecondOutRowButtonType {
     NONE = 0,
     VO = 1,
     SLOW_FADE = 2,
 }
 
-export enum ThirdRowButtonType {
+export enum ThirdOutRowButtonType {
     NONE = 0,
     PST = 1,
     PFL = 2,
@@ -61,8 +61,8 @@ export interface Settings {
     voFadeTime: number // Default fade time for VO ON - OFF
     voLevel: number // Relative level of PGM in %
     autoResetLevel: number // Autoreset before pgm on, if level is lower than in %
-    secondRowButton: SecondRowButtonType
-    thirdRowButton: ThirdRowButtonType
+    secondOutRowButton: SecondOutRowButtonType
+    thirdOutRowButton: ThirdOutRowButtonType
     labelControlsIgnoreAutomation: boolean
     labelIgnorePrefix: string
     pgmOnFollowsMixer: PgmOnFollowMixerBehaviour
@@ -137,8 +137,8 @@ export const defaultSettingsReducerState: Array<Settings> = [
         numberOfFaders: 8,
         voLevel: 30,
         autoResetLevel: 5,
-        secondRowButton: SecondRowButtonType.VO,
-        thirdRowButton: ThirdRowButtonType.CUE_NEXT,
+        secondOutRowButton: SecondOutRowButtonType.VO,
+        thirdOutRowButton: ThirdOutRowButtonType.CUE_NEXT,
         labelControlsIgnoreAutomation: false,
         labelIgnorePrefix: '#',
         pgmOnFollowsMixer: PgmOnFollowMixerBehaviour.None,

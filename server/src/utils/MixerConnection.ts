@@ -32,7 +32,7 @@ import { AtemMixerConnection } from './mixerConnections/AtemConnection'
 import { ChannelReference } from '../../../shared/src/reducers/fadersReducer'
 import { sendChLevelsToOuputServer } from './outputLevelServer'
 import { MixerConnection } from './mixerConnections'
-import { SecondRowButtonType } from '../../../shared/src/reducers/settingsReducer'
+import { SecondOutRowButtonType } from '../../../shared/src/reducers/settingsReducer'
 
 export class MixerGenericConnection {
     mixerProtocol: MixerProtocolGeneric[]
@@ -228,7 +228,7 @@ export class MixerGenericConnection {
 
                 // Set fadetime if SLOW FADE Button is ON:
                 if (
-                    state.settings[0].secondRowButton === SecondRowButtonType.SLOW_FADE &&
+                    state.settings[0].secondOutRowButton === SecondOutRowButtonType.SLOW_FADE &&
                     state.faders[0].fader[faderIndex].slowFadeOn
                 ) {
                     fadeTime = state.settings[0].voFadeTime

@@ -14,9 +14,9 @@ import {
     Fader,
 } from '../../../shared/src/reducers/fadersReducer'
 import {
-    SecondRowButtonType,
+    SecondOutRowButtonType,
     Settings,
-    ThirdRowButtonType,
+    ThirdOutRowButtonType,
 } from '../../../shared/src/reducers/settingsReducer'
 import { SettingsActionTypes } from '../../../shared/src/actions/settingsActions'
 import { withTranslation } from 'react-i18next'
@@ -76,10 +76,10 @@ class Channel extends React.Component<
             nextProps.label != this.props.label ||
             nextProps.settings.mixers[0].mixerProtocol !=
                 this.props.settings.mixers[0].mixerProtocol ||
-            nextProps.settings.secondRowButton !=
-                this.props.settings.secondRowButton ||
-            nextProps.settings.thirdRowButton !=
-                this.props.settings.thirdRowButton ||
+            nextProps.settings.secondOutRowButton !=
+                this.props.settings.secondOutRowButton ||
+            nextProps.settings.thirdOutRowButton !=
+                this.props.settings.thirdOutRowButton ||
             nextProps.settings.showChanStrip !=
                 this.props.settings.showChanStrip ||
             nextProps.fader.amixOn != this.props.fader.amixOn ||
@@ -536,7 +536,7 @@ class Channel extends React.Component<
         return this.shouldHideChannel() ? null : (
             <div
                 className={ClassNames('channel-body', {
-                    'with-pfl': this.props.settings.thirdRowButton === ThirdRowButtonType.PFL,
+                    'with-pfl': this.props.settings.thirdOutRowButton === ThirdOutRowButtonType.PFL,
                     'pgm-on': this.props.fader.pgmOn,
                     'vo-on': this.props.fader.voOn,
                     'mute-on': this.props.fader.muteOn,
@@ -562,10 +562,10 @@ class Channel extends React.Component<
                     {this.pgmButton()}
 
                     {(() => {
-                        switch (this.props.settings.secondRowButton) {
-                            case SecondRowButtonType.VO:
+                        switch (this.props.settings.secondOutRowButton) {
+                            case SecondOutRowButtonType.VO:
                                 return this.voButton()
-                            case SecondRowButtonType.SLOW_FADE:
+                            case SecondOutRowButtonType.SLOW_FADE:
                                 return this.slowButton()
                             default:
                                 return null
@@ -576,12 +576,12 @@ class Channel extends React.Component<
                 <div className="channel-control">
                     {this.chanStripButton()}
                     {(() => {
-                        switch (this.props.settings.thirdRowButton) {
-                            case ThirdRowButtonType.CUE_NEXT:
+                        switch (this.props.settings.thirdOutRowButton) {
+                            case ThirdOutRowButtonType.CUE_NEXT:
                                 return this.cueNextButton()
-                            case ThirdRowButtonType.PFL:
+                            case ThirdOutRowButtonType.PFL:
                                 return this.pflButton()
-                            case ThirdRowButtonType.PST:
+                            case ThirdOutRowButtonType.PST:
                                 return this.pstButton()
                             default:
                                 return null

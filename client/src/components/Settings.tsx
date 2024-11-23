@@ -6,7 +6,7 @@ import { AppProps } from './App'
 
 //Utils:
 import '../assets/css/Settings.css'
-import { SecondRowButtonType, Settings as SettingsInterface, ThirdRowButtonType } from '../../../shared/src/reducers/settingsReducer'
+import { SecondOutRowButtonType, Settings as SettingsInterface, ThirdOutRowButtonType } from '../../../shared/src/reducers/settingsReducer'
 import { Store } from 'redux'
 import { ChangeEvent } from 'react'
 import { SOCKET_SAVE_SETTINGS } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
@@ -486,12 +486,12 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     SECOND ROW BUTTON :
                     <select
                         name="secondRowButton"
-                        value={this.state.settings.secondRowButton}
+                        value={this.state.settings.secondOutRowButton}
                         onChange={this.handleChange}
                     >
-                        <option value={SecondRowButtonType.NONE}>None</option>
-                        <option value={SecondRowButtonType.VO}>Voice Over</option>
-                        <option value={SecondRowButtonType.SLOW_FADE}>Slow Fade</option>
+                        <option value={SecondOutRowButtonType.NONE}>None</option>
+                        <option value={SecondOutRowButtonType.VO}>Voice Over</option>
+                        <option value={SecondOutRowButtonType.SLOW_FADE}>Slow Fade</option>
                     </select>
                 </label>
                 <br />
@@ -500,13 +500,13 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     THIRD ROW BUTTON :
                     <select
                         name="thirdRowButton"
-                        value={this.state.settings.thirdRowButton}
+                        value={this.state.settings.thirdOutRowButton}
                         onChange={this.handleChange}
                     >
-                        <option value={ThirdRowButtonType.NONE}>None</option>
-                        <option value={ThirdRowButtonType.PST}>PST</option>
-                        <option value={ThirdRowButtonType.PFL}>PFL</option>
-                        <option value={ThirdRowButtonType.CUE_NEXT}>Cue Next</option>
+                        <option value={ThirdOutRowButtonType.NONE}>None</option>
+                        <option value={ThirdOutRowButtonType.PST}>PST</option>
+                        <option value={ThirdOutRowButtonType.PFL}>PFL</option>
+                        <option value={ThirdOutRowButtonType.CUE_NEXT}>Cue Next</option>
                     </select>
                 </label>
                 <br />
