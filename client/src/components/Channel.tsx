@@ -33,6 +33,7 @@ import { ChannelLayoutSettingsButton } from './ChannelLayoutSettingsPopup'
 import LinkedIcon from '../assets/icons/link.svg'
 import UnlinkedLeftIcon from '../assets/icons/link-left.svg'
 import UnlinkedRightIcon from '../assets/icons/link-right.svg'
+import { RootState } from '../../../shared/src/reducers/indexReducer'
 
 interface ChannelInjectProps {
     t: any
@@ -40,6 +41,7 @@ interface ChannelInjectProps {
     settings: Settings
     channelType: number
     channelTypeIndex: number
+    channelTypeColor: string
     label: string
 }
 
@@ -424,12 +426,20 @@ class Channel extends React.Component<
 
     chanStripButton = () => {
         const isActive = this.props.settings.showChanStrip === this.faderIndex
+        //If multiple channeltype e.g. groups or master, style these:
+        const groupStyle = {
+            ...(this.props.channelType > 0 && {
+                backgroundColor: this.props.channelTypeColor,
+            }),
+        }
+
         return (
             <button
                 className={ClassNames('channel-strip-button', {
                     on: this.props.settings.showChanStrip,
                     active: isActive,
                 })}
+                style={groupStyle}
                 onClick={(event) => {
                     this.handleShowChanStrip()
                 }}
@@ -440,7 +450,11 @@ class Channel extends React.Component<
     }
 
     ignoreButton = () => {
-        if (this.props.settings.firstInRowButton !== FirstInRowButtonType.AUTO_MANUAL) return null
+        if (
+            this.props.settings.firstInRowButton !==
+            FirstInRowButtonType.AUTO_MANUAL
+        )
+            return null
         return (
             <button
                 className={ClassNames('channel-ignore-button', {
@@ -461,7 +475,10 @@ class Channel extends React.Component<
     }
 
     muteButton = () => {
-        if (this.props.settings.secondInRowButton !== SecondInRowButtonType.MUTE) return null
+        if (
+            this.props.settings.secondInRowButton !== SecondInRowButtonType.MUTE
+        )
+            return null
         return (
             window.mixerProtocol.channelTypes[0].toMixer.CHANNEL_MUTE_ON && (
                 <button
@@ -484,7 +501,8 @@ class Channel extends React.Component<
     }
 
     amixButton = () => {
-        if (this.props.settings.thirdInRowButton !== ThirdInRowButtonType.AMIX) return null
+        if (this.props.settings.thirdInRowButton !== ThirdInRowButtonType.AMIX)
+            return null
         return (
             window.mixerProtocol.channelTypes[0].toMixer.CHANNEL_AMIX && (
                 <button
@@ -510,7 +528,11 @@ class Channel extends React.Component<
     }
 
     channelLayoutLink = () => {
-        if (this.props.settings.thirdInRowButton !== ThirdInRowButtonType.LINK_CHANNELS) return null
+        if (
+            this.props.settings.thirdInRowButton !==
+            ThirdInRowButtonType.LINK_CHANNELS
+        )
+            return null
         return (
             <div className="channel-layout">
                 {!this.props.fader.capabilities?.isLinkableSecondary && (
@@ -543,7 +565,9 @@ class Channel extends React.Component<
         return this.shouldHideChannel() ? null : (
             <div
                 className={ClassNames('channel-body', {
-                    'with-pfl': this.props.settings.thirdOutRowButton === ThirdOutRowButtonType.PFL,
+                    'with-pfl':
+                        this.props.settings.thirdOutRowButton ===
+                        ThirdOutRowButtonType.PFL,
                     'pgm-on': this.props.fader.pgmOn,
                     'vo-on': this.props.fader.voOn,
                     'mute-on': this.props.fader.muteOn,
@@ -599,14 +623,22 @@ class Channel extends React.Component<
     }
 }
 
-const mapStateToProps = (state: any, props: any): ChannelInjectProps => {
+const mapStateToProps = (state: RootState, props: any): ChannelInjectProps => {
+    const firstAssingedIndex =
+        state.faders[0].fader[props.faderIndex].assignedChannels[0]
+
+    const firstAssingedChannel =
+        firstAssingedIndex &&
+        state.channels[0].chMixerConnection[firstAssingedIndex?.mixerIndex]
+            .channel[firstAssingedIndex?.channelIndex]
     return {
         t: props.t,
         fader: state.faders[0].fader[props.faderIndex],
         settings: state.settings[0],
-        channelType: 0 /* TODO: state.channels[0].channel[props.channelIndex].channelType, */,
-        channelTypeIndex:
-            props.faderIndex /* TODO: state.channels[0].channel[props.channelIndex].channelTypeIndex, */,
+        channelType: firstAssingedChannel?.channelType || 0, // If no channels assigned, use first channel type
+        channelTypeIndex: firstAssingedChannel?.channelTypeIndex || 0,
+        channelTypeColor:
+            '#FF3456' /* TODO: get the color from the mixer definition */,
         label: getFaderLabel(props.faderIndex),
     }
 }
