@@ -638,7 +638,9 @@ const mapStateToProps = (state: RootState, props: any): ChannelInjectProps => {
         channelType: firstAssingedChannel?.channelType || 0, // If no channels assigned, use first channel type
         channelTypeIndex: firstAssingedChannel?.channelTypeIndex || 0,
         channelTypeColor:
-            '#FF3456' /* TODO: get the color from the mixer definition */,
+            window.mixerProtocolPresets[
+                state.settings[0].mixers[0].mixerProtocol
+            ].channelTypes[firstAssingedChannel?.channelType || 0].channelTypeColor,
         label: getFaderLabel(props.faderIndex),
     }
 }
