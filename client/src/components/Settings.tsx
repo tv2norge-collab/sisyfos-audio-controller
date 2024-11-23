@@ -6,7 +6,14 @@ import { AppProps } from './App'
 
 //Utils:
 import '../assets/css/Settings.css'
-import { SecondOutRowButtonType, Settings as SettingsInterface, ThirdOutRowButtonType } from '../../../shared/src/reducers/settingsReducer'
+import {
+    FirstInRowButtonType,
+    SecondInRowButtonType,
+    SecondOutRowButtonType,
+    Settings as SettingsInterface,
+    ThirdInRowButtonType,
+    ThirdOutRowButtonType,
+} from '../../../shared/src/reducers/settingsReducer'
 import { Store } from 'redux'
 import { ChangeEvent } from 'react'
 import { SOCKET_SAVE_SETTINGS } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
@@ -96,21 +103,23 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
     handleChange = (
         event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) => {
-        let settingsCopy = Object.assign({}, this.state.settings)
+        let settingsCopy: SettingsInterface = { ...this.state.settings }
         if (event.target.type === 'checkbox') {
             ;(settingsCopy as any)[event.target.name] = !!(
                 event.target as HTMLInputElement
             ).checked
-        } else if (event.target.name === 'pgmOnFollowsMixer' || event.target.name === 'secondRowButton' || event.target.name === 'thirdRowButton') {
-            ;(settingsCopy as any)[event.target.name] = Number(
-                event.target.value
-            )
         } else {
             ;(settingsCopy as any)[event.target.name] = event.target.value
         }
         this.setState({ settings: settingsCopy })
     }
 
+    handleSelectChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const settingsCopy: SettingsInterface = { ...this.state.settings }
+        ;(settingsCopy as any)[event.target.name] = Number(event.target.value)
+        this.setState({ settings: settingsCopy })
+    }
+    
     handleNumberOfMixers = (event: ChangeEvent<HTMLInputElement>) => {
         let settingsCopy = Object.assign({}, this.state.settings)
         settingsCopy.numberOfMixers = parseInt(event.target.value) || 1
@@ -460,7 +469,6 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     %
                 </label>
                 <br />
-                <br />
                 <label className="settings-input-field">
                     NUMBER OF MIXERS :
                     <input
@@ -472,6 +480,16 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 </label>
                 <br />
                 <label className="settings-input-field">
+                    ENABLE PAGES:
+                    <input
+                        type="checkbox"
+                        name="enablePages"
+                        checked={this.state.settings.enablePages}
+                        onChange={this.handleChange}
+                    />
+                </label>
+                <br />
+                <label className="settings-input-field">
                     NUMBER OF CUSTOM PAGES:
                     <input
                         name="numberOfCustomPages"
@@ -479,49 +497,6 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                         value={this.state.settings.numberOfCustomPages}
                         onChange={this.handleChange}
                     />
-                </label>
-                <br />
-                <br />
-                <label className="settings-input-field">
-                    SECOND ROW BUTTON :
-                    <select
-                        name="secondRowButton"
-                        value={this.state.settings.secondOutRowButton}
-                        onChange={this.handleChange}
-                    >
-                        <option value={SecondOutRowButtonType.NONE}>None</option>
-                        <option value={SecondOutRowButtonType.VO}>Voice Over</option>
-                        <option value={SecondOutRowButtonType.SLOW_FADE}>Slow Fade</option>
-                    </select>
-                </label>
-                <br />
-                
-                <label className="settings-input-field">
-                    THIRD ROW BUTTON :
-                    <select
-                        name="thirdRowButton"
-                        value={this.state.settings.thirdOutRowButton}
-                        onChange={this.handleChange}
-                    >
-                        <option value={ThirdOutRowButtonType.NONE}>None</option>
-                        <option value={ThirdOutRowButtonType.PST}>PST</option>
-                        <option value={ThirdOutRowButtonType.PFL}>PFL</option>
-                        <option value={ThirdOutRowButtonType.CUE_NEXT}>Cue Next</option>
-                    </select>
-                </label>
-                <br />
-                <label className="settings-input-field">
-                    LABEL TYPE :
-                    <select
-                        name="labelType"
-                        value={this.state.settings.labelType}
-                        onChange={this.handleChange}
-                    >
-                        <option value="automatic">Automatic</option>
-                        <option value="user">User labels</option>
-                        <option value="automation">Automation labels</option>
-                        <option value="channel">Channel labels</option>
-                    </select>
                 </label>
                 <br />
                 <label
@@ -538,16 +513,6 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 </label>
                 <br />
                 <label className="settings-input-field">
-                    ENABLE PAGES:
-                    <input
-                        type="checkbox"
-                        name="enablePages"
-                        checked={this.state.settings.enablePages}
-                        onChange={this.handleChange}
-                    />
-                </label>
-                <br />
-                <label className="settings-input-field">
                     CHANNEL STRIP FOLLOWS PFL:
                     <input
                         type="checkbox"
@@ -557,7 +522,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     />
                 </label>
                 <br />
-                <br />
+                <div className="settings-header">AUTOMATION</div>
                 <label
                     className="settings-input-field"
                     title="Using the prefix label, it's possible for a mixer to control the AUTO/MANUAL 
@@ -593,7 +558,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     <select
                         name="pgmOnFollowsMixer"
                         value={Number(this.state.settings.pgmOnFollowsMixer)}
-                        onChange={this.handleChange}
+                        onChange={this.handleSelectChange}
                     >
                         <option value={0}>Disabled</option>
                         <option value={1}>All faders</option>
@@ -602,7 +567,116 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     </select>
                 </label>
                 <br />
+                <div className="settings-header">LAYOUT</div>
+                <label className="settings-input-field">
+                    IN 1.ROW BUTTON :
+                    <select
+                        name="firstInRowButton"
+                        
+                        value={this.state.settings.firstInRowButton}
+                        onChange={this.handleSelectChange}
+                    >
+                        <option value={FirstInRowButtonType.NONE}>
+                            None
+                        </option>
+                        <option value={FirstInRowButtonType.AUTO_MANUAL}>
+                            Auto/Manual
+                        </option>
+                    </select>
+                </label>
+                <br />
+                <label className="settings-input-field">
+                    IN 2.ROW BUTTON :
+                    <select
+                        name="secondInRowButton"
+                        
+                        value={this.state.settings.secondInRowButton}
+                        onChange={this.handleSelectChange}
+                    >
+                        <option value={SecondInRowButtonType.NONE}>
+                            None
+                        </option>
+                        <option value={SecondInRowButtonType.MUTE}>
+                            Mute
+                        </option>
+                    </select>
+                </label>
+                <br />
+                <label className="settings-input-field">
+                    IN 3.ROW BUTTON :
+                    <select
+                        name="thirdInRowButton"
+                        
+                        value={this.state.settings.thirdInRowButton}
+                        onChange={this.handleSelectChange}
+                    >
+                        <option value={ThirdInRowButtonType.NONE}>
+                            None
+                        </option>
+                        <option value={ThirdInRowButtonType.AMIX}>
+                            Amix
+                        </option>
+                        <option value={ThirdInRowButtonType.CHANNEL_OPTIONS}>
+                            Channel Options
+                        </option>
+                        <option value={ThirdInRowButtonType.LINK_CHANNELS}>
+                            Link Channels
+                        </option>
+                    </select>
+                </label>
+                <br />
+                <br />
+                <label className="settings-input-field">
+                    OUT 2.ROW BUTTON :
+                    <select
+                        name="secondOutRowButton"
+                        
+                        value={this.state.settings.secondOutRowButton}
+                        onChange={this.handleSelectChange}
+                    >
+                        <option value={SecondOutRowButtonType.NONE}>
+                            None
+                        </option>
+                        <option value={SecondOutRowButtonType.VO}>
+                            Voice Over
+                        </option>
+                        <option value={SecondOutRowButtonType.SLOW_FADE}>
+                            Slow Fade
+                        </option>
+                    </select>
+                </label>
+                <br />
 
+                <label className="settings-input-field">
+                    OUT 3.ROW BUTTON :
+                    <select
+                        name="thirdOutRowButton"
+                        value={this.state.settings.thirdOutRowButton}
+                        onChange={this.handleSelectChange}
+                    >
+                        <option value={ThirdOutRowButtonType.NONE}>None</option>
+                        <option value={ThirdOutRowButtonType.PST}>PST</option>
+                        <option value={ThirdOutRowButtonType.PFL}>PFL</option>
+                        <option value={ThirdOutRowButtonType.CUE_NEXT}>
+                            Cue Next
+                        </option>
+                    </select>
+                </label>
+                <br />
+                <label className="settings-input-field">
+                    LABEL TYPE :
+                    <select
+                        name="labelType"
+                        value={this.state.settings.labelType}
+                        onChange={this.handleChange}
+                    >
+                        <option value="automatic">Automatic</option>
+                        <option value="user">User labels</option>
+                        <option value="automation">Automation labels</option>
+                        <option value="channel">Channel labels</option>
+                    </select>
+                </label>
+                <br />
                 {this.renderMixerSettings()}
                 <button
                     className="settings-cancel-button"

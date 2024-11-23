@@ -14,8 +14,11 @@ import {
     Fader,
 } from '../../../shared/src/reducers/fadersReducer'
 import {
+    FirstInRowButtonType,
+    SecondInRowButtonType,
     SecondOutRowButtonType,
     Settings,
+    ThirdInRowButtonType,
     ThirdOutRowButtonType,
 } from '../../../shared/src/reducers/settingsReducer'
 import { SettingsActionTypes } from '../../../shared/src/actions/settingsActions'
@@ -437,6 +440,7 @@ class Channel extends React.Component<
     }
 
     ignoreButton = () => {
+        if (this.props.settings.firstInRowButton !== FirstInRowButtonType.AUTO_MANUAL) return null
         return (
             <button
                 className={ClassNames('channel-ignore-button', {
@@ -457,6 +461,7 @@ class Channel extends React.Component<
     }
 
     muteButton = () => {
+        if (this.props.settings.secondInRowButton !== SecondInRowButtonType.MUTE) return null
         return (
             window.mixerProtocol.channelTypes[0].toMixer.CHANNEL_MUTE_ON && (
                 <button
@@ -479,6 +484,7 @@ class Channel extends React.Component<
     }
 
     amixButton = () => {
+        if (this.props.settings.thirdInRowButton !== ThirdInRowButtonType.AMIX) return null
         return (
             window.mixerProtocol.channelTypes[0].toMixer.CHANNEL_AMIX && (
                 <button
@@ -503,7 +509,8 @@ class Channel extends React.Component<
         )
     }
 
-    channelLayout = () => {
+    channelLayoutLink = () => {
+        if (this.props.settings.thirdInRowButton !== ThirdInRowButtonType.LINK_CHANNELS) return null
         return (
             <div className="channel-layout">
                 {!this.props.fader.capabilities?.isLinkableSecondary && (
@@ -547,11 +554,10 @@ class Channel extends React.Component<
             >
                 <div className="channel-props">
                     {this.ignoreButton()}
-                    {/* TODO - amix and mute cannot be shown at the same time due to css. Depends on protocol right now. */}
                     {this.muteButton()}
                     {this.amixButton()}
                     {window.mixerProtocol.protocol ===
-                        MixerConnectionTypes.vMix && this.channelLayout()}
+                        MixerConnectionTypes.vMix && this.channelLayoutLink()}
                 </div>
                 <div className="fader">
                     {this.handleVuMeter()}

@@ -357,7 +357,10 @@ class Channels extends React.Component<
                         </div>
                         <div className="mid">
                             {this.renderAllManualButton()}
-                            {this.props.settings.thirdOutRowButton === ThirdOutRowButtonType.CUE_NEXT && (
+                            {(this.props.settings.thirdOutRowButton ===
+                                ThirdOutRowButtonType.CUE_NEXT ||
+                                this.props.settings.thirdOutRowButton ===
+                                    ThirdOutRowButtonType.PST) && (
                                 <React.Fragment>
                                     <button
                                         className="button channels-clear-button"
