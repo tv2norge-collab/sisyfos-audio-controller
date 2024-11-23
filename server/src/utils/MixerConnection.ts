@@ -3,13 +3,13 @@ import { logger } from './logger'
 import { remoteConnections } from '../mainClasses'
 
 //Utils:
-import {  MixerProtocolPresets } from '../../../shared/src/constants/MixerProtocolPresets'
+import { MixerProtocolPresets } from '../../../shared/src/constants/MixerProtocolPresets'
 import {
     MixerProtocol,
     MixerProtocolGeneric,
     CasparCGMixerGeometry,
     FxParam,
-    MixerConnectionTypes
+    MixerConnectionTypes,
 } from '../../../shared/src/constants/MixerProtocolInterface'
 import { OscMixerConnection } from './mixerConnections/OscMixerConnection'
 import { VMixMixerConnection } from './mixerConnections/VMixMixerConnection'
@@ -22,12 +22,8 @@ import { StuderMixerConnection } from './mixerConnections/StuderMixerConnection'
 import { StuderVistaMixerConnection } from './mixerConnections/StuderVistaMixerConnection'
 import { CasparCGConnection } from './mixerConnections/CasparCGConnection'
 import { ChMixerConnection } from '../../../shared/src/reducers/channelsReducer'
-import {
-    ChannelActionTypes,
-} from '../../../shared/src/actions/channelActions'
-import {
-    FaderActionTypes,
-} from '../../../shared/src/actions/faderActions'
+import { ChannelActionTypes } from '../../../shared/src/actions/channelActions'
+import { FaderActionTypes } from '../../../shared/src/actions/faderActions'
 import { AtemMixerConnection } from './mixerConnections/AtemConnection'
 import { ChannelReference } from '../../../shared/src/reducers/fadersReducer'
 import { sendChLevelsToOuputServer } from './outputLevelServer'
@@ -108,8 +104,8 @@ export class MixerGenericConnection {
                             this.mixerProtocol[index] as MixerProtocol,
                             index
                         )
-                        break
-                    }
+                    break
+                }
                 case MixerConnectionTypes.SSLSystemT: {
                     this.mixerConnection[index] = new SSLMixerConnection(
                         this.mixerProtocol[index] as MixerProtocol,
@@ -228,7 +224,8 @@ export class MixerGenericConnection {
 
                 // Set fadetime if SLOW FADE Button is ON:
                 if (
-                    state.settings[0].secondOutRowButton === SecondOutRowButtonType.SLOW_FADE &&
+                    state.settings[0].secondOutRowButton ===
+                        SecondOutRowButtonType.SLOW_FADE &&
                     state.faders[0].fader[faderIndex].slowFadeOn
                 ) {
                     fadeTime = state.settings[0].voFadeTime
@@ -283,8 +280,16 @@ export class MixerGenericConnection {
         )
     }
 
-    updatePflState = (channelIndex: number) => {
-        this.mixerConnection[0].updatePflState(channelIndex)
+    updatePflState = (faderIndex: number) => {
+        state.faders[0].fader[faderIndex].assignedChannels?.forEach(
+            (assignedChannel: ChannelReference) => {
+                this.mixerConnection[
+                    assignedChannel.mixerIndex
+                ].updatePflState(
+                    assignedChannel.channelIndex
+                )
+            }
+        )
     }
 
     updateMuteState = (faderIndex: number, mixerIndexToSkip: number = -1) => {
@@ -518,7 +523,18 @@ export class MixerGenericConnection {
             (endLevel - startLevel) *
                 Math.max(0, Math.min(1, elapsedTimeMS / fadeTime))
 
-        console.log('currentOutputLevel', currentOutputLevel, 'startLevel', startLevel, 'endLevel', endLevel, 'elapsedTimeMS', elapsedTimeMS, 'fadeTime', fadeTime)
+        console.log(
+            'currentOutputLevel',
+            currentOutputLevel,
+            'startLevel',
+            startLevel,
+            'endLevel',
+            endLevel,
+            'elapsedTimeMS',
+            elapsedTimeMS,
+            'fadeTime',
+            fadeTime
+        )
         this.mixerConnection[mixerIndex].updateFadeIOLevel(
             channelIndex,
             currentOutputLevel
@@ -542,4 +558,3 @@ export class MixerGenericConnection {
         this.fade(fadeTime, mixerIndex, channelIndex, outputLevel, 0)
     }
 }
-
