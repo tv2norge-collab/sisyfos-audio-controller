@@ -562,11 +562,12 @@ export class OscMixerConnection implements MixerConnection {
     }
 
     private sendOutMessage(
-        oscMessage: string,
+        oscMessage: string | undefined,
         channel: number,
         value: string | number,
         type: string,
     ) {
+        if (!oscMessage) return
         let channelString = this.mixerProtocol.leadingZeros
             ? ('0' + channel).slice(-2)
             : channel.toString()
@@ -719,13 +720,14 @@ export class OscMixerConnection implements MixerConnection {
 
     updateAuxLevel(channelIndex: number, auxSendIndex: number, level: number) {
         let channelType =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[
-                channelIndex
-            ].channelType
+        state.channels[0].chMixerConnection[this.mixerIndex].channel[
+            channelIndex
+        ].channelType
+        if (!this.mixerProtocol.channelTypes[channelType].toMixer.AUX_LEVEL) return
         let channel =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[
-                channelIndex
-            ].channelTypeIndex + 1
+        state.channels[0].chMixerConnection[this.mixerIndex].channel[
+            channelIndex
+        ].channelTypeIndex + 1
         let auxSendCmd =
             this.mixerProtocol.channelTypes[channelType].toMixer.AUX_LEVEL[0]
         let auxSendNumber = this.mixerProtocol.leadingZeros
@@ -774,7 +776,7 @@ export class OscMixerConnection implements MixerConnection {
                     .label
         }
         this.sendOutMessage(
-            this.mixerProtocol.channelTypes[channelType].toMixer.CHANNEL_NAME[0]
+            this.mixerProtocol.channelTypes[channelType].toMixer.CHANNEL_NAME?.[0]
                 .mixerMessage,
             channelTypeIndex + 1,
             channelName,

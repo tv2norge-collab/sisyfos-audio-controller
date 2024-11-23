@@ -640,7 +640,7 @@ const mapStateToProps = (state: RootState, props: any): ChannelInjectProps => {
         channelTypeColor:
             window.mixerProtocolPresets[
                 state.settings[0].mixers[0].mixerProtocol
-            ].channelTypes[firstAssingedChannel?.channelType || 0].channelTypeColor,
+            ].channelTypes[firstAssingedChannel?.channelType || 0]?.channelTypeColor,
         label: getFaderLabel(props.faderIndex),
     }
 }

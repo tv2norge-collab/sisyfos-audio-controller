@@ -437,12 +437,6 @@ export class MainThreadHandlers {
                             )
                                 ? oldLabel.slice(1)
                                 : oldLabel
-                            console.log(
-                                'Channel :',
-                                assignedChannel,
-                                'assigned to :',
-                                faderIndex
-                            )
                             store.dispatch({
                                 type: ChannelActionTypes.SET_CHANNEL_LABEL,
                                 channel: assignedChannel.channelIndex,
