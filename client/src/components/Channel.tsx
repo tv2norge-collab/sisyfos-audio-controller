@@ -428,9 +428,7 @@ class Channel extends React.Component<
         const isActive = this.props.settings.showChanStrip === this.faderIndex
         //style for if active or the color from the multiple channeltype e.g. groups or master
         const styleBackground = {
-            backgroundColor: isActive
-                ? '#2f475b'
-                : this.props.channelTypeColor,
+            backgroundColor: isActive ? '#2f475b' : this.props.channelTypeColor,
         }
 
         return (
@@ -474,8 +472,9 @@ class Channel extends React.Component<
     muteButton = () => {
         if (
             this.props.settings.secondInRowButton !== SecondInRowButtonType.MUTE
-        )
+        ) {
             return null
+        }
         return (
             window.mixerProtocol.channelTypes[0].toMixer.CHANNEL_MUTE_ON && (
                 <button
