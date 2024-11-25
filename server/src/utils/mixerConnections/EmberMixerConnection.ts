@@ -147,7 +147,8 @@ export class EmberMixerConnection implements MixerConnection {
         channelTypeIndex: number,
     ) {
         const protocol =
-            this.mixerProtocol.channelTypes[Number(typeIndex)].fromMixer
+            this.mixerProtocol.channelTypes[Number(typeIndex)]?.fromMixer
+        if (!protocol) return
 
         await this.subscribeFaderLevel(ch, Number(typeIndex), channelTypeIndex)
 
