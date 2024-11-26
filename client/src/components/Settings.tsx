@@ -470,6 +470,16 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 </label>
                 <br />
                 <label className="settings-input-field">
+                    NUMBER OF FADERS :
+                    <input
+                        name="numberOfFaders"
+                        type="text"
+                        value={this.state.settings.numberOfFaders}
+                        onChange={this.handleChange}
+                    />
+                </label>
+                <br />
+                <label className="settings-input-field">
                     NUMBER OF MIXERS :
                     <input
                         name="numberOfMixers"

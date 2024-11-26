@@ -128,6 +128,7 @@ class ChannelMonitorOptions extends React.PureComponent<
     renderFaderSelector() {
         return (
             <select
+                title='Select the fader configure the monitor settings for'
                 value={this.state.selectedFaderIndex}
                 onChange={this.handleFaderChange}
                 className="channel-monitor-selector"

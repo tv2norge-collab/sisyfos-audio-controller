@@ -109,6 +109,7 @@ class ChannelRouteSettings extends React.PureComponent<
         return (
             <select
                 value={this.state.selectedFaderIndex}
+                title='Select the fader to configure the channel routing for'
                 onChange={this.handleFaderChange}
                 className="channel-route-selector"
             >
