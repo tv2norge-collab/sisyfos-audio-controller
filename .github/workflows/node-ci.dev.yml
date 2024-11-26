@@ -116,6 +116,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
 
+      # Regenerate the lockfile explicitly
+      - name: Update Lockfile
+        run: yarn install --mode=update-lockfile
+
+      # actual installation
       - name: Install dependencies
         run: yarn install --mode=skip-build
 
