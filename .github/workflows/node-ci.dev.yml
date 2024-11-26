@@ -47,7 +47,7 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: yarn install --mode=skip-build
 
   test:
     runs-on: ubuntu-latest
@@ -108,7 +108,7 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: yarn install --mode=skip-build
 
       - name: Build
         run: yarn build
