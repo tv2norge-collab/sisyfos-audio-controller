@@ -117,7 +117,7 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --mode=skip-build
 
       - name: Build
         run: yarn build
