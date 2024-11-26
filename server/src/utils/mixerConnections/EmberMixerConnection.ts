@@ -552,9 +552,12 @@ export class EmberMixerConnection implements MixerConnection {
         channelTypeIndex: number,
     ) {
         // subscription for enabling input selectors
-        const mixerMessage = 'Channels.Inputs.${channel}.Channel States.Stereo'
-        const channel =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[chNumber - 1]
+        // Future: Add a CHECK_CAPABILITY feature in mixer protocol.
+        const mixerMessage =
+            typeIndex === 0
+                ? 'Channels.Inputs.${channel}.Channel States.Stereo'
+                : 'Channels.Groups.${channel}.Channel States.Stereo'
+
         const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
         await this.subscribeToEmberNode(
             channelTypeIndex,
