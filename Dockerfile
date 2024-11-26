@@ -8,9 +8,9 @@ RUN corepack prepare yarn@4.1.0 --activate
 WORKDIR /opt/sisyfos-audio-controller
 
 COPY . .
-RUN yarn --check-files --immutable 
+RUN yarn install  --mode=update-lockfile
 RUN yarn build
-RUN yarn --check-files --immutable --production --force
+RUN yarn install --mode=update-lockfile --production
 RUN yarn cache clean
 
 # DEPLOY IMAGE
