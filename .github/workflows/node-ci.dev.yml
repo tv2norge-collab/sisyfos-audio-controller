@@ -47,7 +47,11 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Install dependencies
-        run: yarn install --mode=skip-build
+        run: yarn install --immutable
+
+      - name: Copy Shared Package
+        run: |
+          cp -r shared server/node_modules/
 
   test:
     runs-on: ubuntu-latest
