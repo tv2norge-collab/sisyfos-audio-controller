@@ -3,16 +3,17 @@ description: "Test"
 runs:
   using: "composite"
   steps:
-    - uses: ./.github/actions/cache
-
-    # Regenerate the lockfile explicitly
+    - name: Clean and cache setup
+      uses: ./.github/actions/cache
+    
     - name: Update Lockfile
+      shell: bash
       run: yarn install --mode=update-lockfile
-
-    # actual installation
+      
     - name: Install dependencies
+      shell: bash
       run: yarn install --mode=skip-build
-      shell: bash
+      
     - name: Run tests
-      run: yarn test
       shell: bash
+      run: yarn test
