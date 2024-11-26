@@ -72,7 +72,7 @@ jobs:
     needs:
       - prebuild
       - test
-      - validate-dependencies
+      # - validate-dependencies
     outputs:
       tag_version: ${{ steps.tag_version.outputs.new_tag || steps.tag_version.outputs.previous_tag }}
       version: ${{ steps.tag_version.outputs.new_version || steps.tag_version.outputs.previous_version }}

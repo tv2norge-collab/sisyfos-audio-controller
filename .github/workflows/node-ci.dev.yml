@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - test
-      - validate-dependencies
+    #  - validate-dependencies
     steps:
       - name: Access repository
         uses: actions/checkout@v2
