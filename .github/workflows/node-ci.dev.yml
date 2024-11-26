@@ -106,7 +106,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: "tv2media/${{ github.event.repository.name }}"
+          images: "olzzon/${{ github.event.repository.name }}"
           tags: |
             type=ref,event=branch
 

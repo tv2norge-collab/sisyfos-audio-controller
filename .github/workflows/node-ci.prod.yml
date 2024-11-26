@@ -328,8 +328,8 @@ jobs:
           context: .
           push: true
           tags: |
-            "tv2media/${{ github.event.repository.name }}:latest"
-            "tv2media/${{ github.event.repository.name }}:${{ steps.version.outputs.version }}"
-            "tv2media/${{ github.event.repository.name }}:${{ steps.version.outputs.major }}"
-            "tv2media/${{ github.event.repository.name }}:${{ steps.version.outputs.major }}.${{ steps.version.outputs.minor }}"
+            "olzzon/${{ github.event.repository.name }}:latest"
+            "olzzon/${{ github.event.repository.name }}:${{ steps.version.outputs.version }}"
+            "olzzon/${{ github.event.repository.name }}:${{ steps.version.outputs.major }}"
+            "olzzon/${{ github.event.repository.name }}:${{ steps.version.outputs.major }}.${{ steps.version.outputs.minor }}"
 
