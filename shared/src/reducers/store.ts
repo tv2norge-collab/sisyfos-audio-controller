@@ -10,5 +10,5 @@ export interface ReduxStore {
   faders: Array<Faders>
 }
 
-export default createStore(indexReducer)
+export default configureStore({reducer: indexReducer})
 export { Store } from 'redux'

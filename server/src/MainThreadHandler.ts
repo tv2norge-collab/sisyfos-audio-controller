@@ -27,7 +27,6 @@ import {
     saveCustomPages,
     STORAGE_FOLDER,
 } from './utils/SettingsStorage'
-
 import {
     ChannelActionTypes,
 } from '../../shared/src/actions/channelActions'
@@ -40,6 +39,7 @@ import { ChannelReference } from '../../shared/src/reducers/fadersReducer'
 
 export class MainThreadHandlers {
     snapshotHandler: SnapshotHandler
+    dispatch: Dispatch<ChannelActions> = store.dispatch
 
     constructor() {
         logger.info('Setting up MainThreadHandlers')

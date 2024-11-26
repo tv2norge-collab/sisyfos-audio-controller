@@ -313,7 +313,6 @@ export class EmberMixerConnection {
                         mixerIndex: this.mixerIndex,
                         level: level,
                     })
-
                     // toggle pgm based on level
                     logger.trace(`Set Channel ${ch} pgmOn ${level > 0}`)
                     store.dispatch({

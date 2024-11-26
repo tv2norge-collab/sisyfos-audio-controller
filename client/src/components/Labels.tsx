@@ -13,12 +13,14 @@ import {
 } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 import { CustomPages } from '../../../shared/src/reducers/settingsReducer'
 import { getChannelLabel } from '../utils/labels'
+
 import {
     FaderActionTypes,
 } from '../../../shared/src/actions/faderActions'
 import {
     ChannelActionTypes,
 } from '../../../shared/src/actions/channelActions'
+
 
 interface LabelSettingsInjectProps {
     customPages: CustomPages[]
@@ -31,6 +33,7 @@ class LabelSettings extends React.PureComponent<
     state = {
         mutations: {} as Record<string, string>,
     }
+    dispatch: Dispatch<ChannelActions> = this.props.dispatch
 
     constructor(props: any) {
         super(props)

@@ -20,6 +20,7 @@ import {
 import { FaderActionTypes } from '../../../../shared/src/actions/faderActions'
 import { ChannelActionTypes } from '../../../../shared/src/actions/channelActions'
 import { FairlightAudioSource } from 'atem-connection/dist/state/fairlight'
+import { Dispatch } from '@reduxjs/toolkit'
 
 enum TrackIndex {
     Stereo = '-65280',
@@ -29,6 +30,7 @@ enum TrackIndex {
 }
 
 export class AtemMixerConnection {
+    dispatch: Dispatch<ChannelActions> = store.dispatch
     private _connection: Atem
 
     private _chNoToSource: Record<number, number> = {}

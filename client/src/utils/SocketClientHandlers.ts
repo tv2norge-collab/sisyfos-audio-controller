@@ -27,6 +27,7 @@ import { MixerSettings } from '../../../shared/src/reducers/settingsReducer'
 export const vuMeters: number[][] = []
 
 export const socketClientHandlers = () => {
+    const dispatch: Dispatch<ChannelActions> = window.storeRedux.dispatch
     window.socketIoClient
         .on('connect', () => {
             window.storeRedux.dispatch({
@@ -64,16 +65,19 @@ export const socketClientHandlers = () => {
                         ]
                     }
                 )
+
                 window.storeRedux.dispatch({
                     type: ChannelActionTypes.SET_COMPLETE_CH_STATE,
                     numberOfTypeChannels: numberOfChannels,
                     allState: payload.channels[0],
                 })
+
                 window.storeRedux.dispatch({
                     type: FaderActionTypes.SET_COMPLETE_FADER_STATE,
                     allState: payload.faders[0],
                     numberOfFaders: payload.settings[0].numberOfFaders,
                 })
+
                 payload.settings[0].mixers.forEach(
                     (mixer: MixerSettings, i: number) => {
                         window.storeRedux.dispatch({
