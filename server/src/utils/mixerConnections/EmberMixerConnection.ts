@@ -389,7 +389,7 @@ export class EmberMixerConnection implements MixerConnection {
                 store.dispatch({
                     type: ChannelActionTypes.SET_CHANNEL_LABEL,
                     mixerIndex: this.mixerIndex,
-                    channel: channelTypeIndex,
+                    channel: ch,
                     label: newLabel,
                 })
                 global.mainThreadHandler.updatePartialStore(assignedFaderIndex)
@@ -704,11 +704,10 @@ export class EmberMixerConnection implements MixerConnection {
 
     private sendOutMessage(
         mixerMessage: string,
-        channel: number,
-        value: string | number | boolean,
-        type: string,
+        channelIndex: number,
+        value: string | number | boolean
     ) {
-        let message = this._insertChannelName(mixerMessage, channel.toString())
+        let message = this._insertChannelName(mixerMessage, channelIndex.toString())
         logger.trace('Sending out message : ' + message + ', val: ' + value)
 
         this.emberConnection
@@ -727,36 +726,25 @@ export class EmberMixerConnection implements MixerConnection {
             })
     }
 
-    private sendOutLevelMessage(channel: number, value: number) {
-        logger.trace(`Sending out Level: ${value}\n  To CH: ${channel}`)
-        const node = this.emberNodeObject[channel - 1]
+    private sendOutLevelMessage(channelIndex: number, value: number) {
+        logger.trace(`Sending out Level: ${value}\n  To CH: ${channelIndex}`)
+        // As the command are already stored in the EmberNodeObject, we just need to send them out
+        // on the corresponding channel, without taking the channelIndex into account
+        const node = this.emberNodeObject[channelIndex - 1]
         if (!node) return
         if (node.contents.factor) {
             value *= node.contents.factor
         }
         this.emberConnection
-            .setValue(this.emberNodeObject[channel - 1], value, false)
+            .setValue(this.emberNodeObject[channelIndex - 1], value, false)
             .catch((error: any) => {
                 logger.data(error).error('Ember Error')
             })
     }
 
     updateFadeIOLevel(channelIndex: number, outputLevel: number) {
-        let channelType =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[
-                channelIndex
-            ].channelType
-        let channelTypeIndex =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[
-                channelIndex
-            ].channelTypeIndex
-        // let protocol = this.mixerProtocol.channelTypes[channelType].toMixer
-        //     .CHANNEL_OUT_GAIN[0]
-        // let level = (outputLevel - protocol.min) * (protocol.max - protocol.min)
-
-        const level = this._floatToFaderLevel(outputLevel, channelTypeIndex)
-
-        this.sendOutLevelMessage(channelTypeIndex + 1, level)
+        const level = this._floatToFaderLevel(outputLevel, channelIndex)
+        this.sendOutLevelMessage(channelIndex + 1, level)
     }
 
     updatePflState(channelIndex: number) {
@@ -776,8 +764,6 @@ export class EmberMixerConnection implements MixerConnection {
                 channelTypeIndex + 1,
                 !!this.mixerProtocol.channelTypes[channelType].toMixer.PFL_ON[0]
                     .value as any,
-                this.mixerProtocol.channelTypes[channelType].toMixer.PFL_ON[0]
-                    .type,
             )
         } else {
             this.sendOutMessage(
@@ -786,8 +772,6 @@ export class EmberMixerConnection implements MixerConnection {
                 channelTypeIndex + 1,
                 !!this.mixerProtocol.channelTypes[channelType].toMixer
                     .PFL_OFF[0].value as any,
-                this.mixerProtocol.channelTypes[channelType].toMixer.PFL_OFF[0]
-                    .type,
             )
         }
     }
@@ -813,8 +797,6 @@ export class EmberMixerConnection implements MixerConnection {
                 .CHANNEL_MUTE_ON[0].mixerMessage,
             channelTypeIndex + 1,
             muteOn,
-            this.mixerProtocol.channelTypes[channelType].toMixer
-                .CHANNEL_MUTE_ON[0].type,
         )
     }
 
@@ -841,7 +823,6 @@ export class EmberMixerConnection implements MixerConnection {
             protocol.mixerMessage,
             channelTypeIndex + 1,
             level,
-            '',
         )
     }
     updateInputSelector(channelIndex: number, inputSelected: number) {
@@ -862,14 +843,12 @@ export class EmberMixerConnection implements MixerConnection {
                         .CHANNEL_INPUT_SELECTOR[1].mixerMessage,
                     channelTypeIndex + 1,
                     false as any,
-                    'boolean',
                 )
                 this.sendOutMessage(
                     this.mixerProtocol.channelTypes[0].toMixer
                         .CHANNEL_INPUT_SELECTOR[2].mixerMessage,
                     channelTypeIndex + 1,
                     false as any,
-                    'boolean',
                 )
             } else if (inputSelected === 2) {
                 // LL
@@ -878,7 +857,6 @@ export class EmberMixerConnection implements MixerConnection {
                         .CHANNEL_INPUT_SELECTOR[1].mixerMessage,
                     channelTypeIndex + 1,
                     true as any,
-                    'boolean',
                 )
             } else if (inputSelected === 3) {
                 // RR
@@ -887,7 +865,6 @@ export class EmberMixerConnection implements MixerConnection {
                         .CHANNEL_INPUT_SELECTOR[2].mixerMessage,
                     channelTypeIndex + 1,
                     true as any,
-                    'boolean',
                 )
             }
         }
@@ -933,7 +910,6 @@ export class EmberMixerConnection implements MixerConnection {
                 .mixerMessage,
             channelTypeIndex + 1,
             channelName,
-            'string',
         )
     }
 
@@ -951,7 +927,6 @@ export class EmberMixerConnection implements MixerConnection {
             protocol.mixerMessage,
             channelTypeIndex + 1,
             amixOn,
-            '',
         )
     }
 
