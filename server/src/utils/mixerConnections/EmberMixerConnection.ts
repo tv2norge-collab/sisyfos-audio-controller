@@ -649,10 +649,12 @@ export class EmberMixerConnection implements MixerConnection {
         const channel =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[chNumber - 1]
         const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
-        if (this.mixerProtocol.label === LawoMC2.label) {
-            // subscription for enabling amix button
-            const mixerMessage =
-                'Channels.Inputs.${channel}.Automix.Automix Group Assignment'
+        if (this.mixerProtocol.label === LawoMC2.label) {             
+             // subscription for enabling amix button
+             // Future: Add a CHECK_CAPABILITY feature in mixer protocol.
+            const mixerMessage =  typeIndex === 0 ?
+                'Channels.Inputs.${channel}.Automix.Automix Group Assignment' :
+                'Channels.Groups.${channel}.Automix.Automix Group Assignment'
             await this.subscribeToEmberNode(
                 channelTypeIndex,
                 mixerMessage,
