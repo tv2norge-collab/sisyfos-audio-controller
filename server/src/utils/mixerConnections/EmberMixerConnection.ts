@@ -209,7 +209,6 @@ export class EmberMixerConnection implements MixerConnection {
         const channel =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[chNumber - 1]
         const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
-        console.log(chNumber, assignedFaderIndex)
 
         if (assignedFaderIndex < 0) return
 
@@ -357,7 +356,6 @@ export class EmberMixerConnection implements MixerConnection {
             channelTypeIndex,
             mixerMessage,
             (node) => {
-                console.log(node)
                 let newLabel = ''
                 if (node.contents.type === Model.ElementType.Node) {
                     newLabel = node.contents.description
