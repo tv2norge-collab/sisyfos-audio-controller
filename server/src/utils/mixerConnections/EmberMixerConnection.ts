@@ -213,8 +213,6 @@ export class EmberMixerConnection implements MixerConnection {
 
         if (assignedFaderIndex < 0) return
 
-        if (assignedFaderIndex < 0) return
-
         await this.subscribeToEmberNode(
             channelTypeIndex,
             mixerMessage,
