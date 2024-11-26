@@ -2,6 +2,7 @@ import {
     FaderActionTypes,
 } from '../../../shared/src/actions/faderActions'
 import {
+    ChannelActions,
     ChannelActionTypes,
 } from '../../../shared/src/actions/channelActions'
 import {
@@ -23,6 +24,7 @@ import {
 } from '../../../shared/src/reducers/channelsReducer'
 import { VuType } from '../../../shared/src/utils/vu-server-types'
 import { MixerSettings } from '../../../shared/src/reducers/settingsReducer'
+import { Dispatch } from 'redux'
 
 export const vuMeters: number[][] = []
 

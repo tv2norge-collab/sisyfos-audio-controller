@@ -28,6 +28,7 @@ import {
     STORAGE_FOLDER,
 } from './utils/SettingsStorage'
 import {
+    ChannelActions,
     ChannelActionTypes,
 } from '../../shared/src/actions/channelActions'
 import { logger } from './utils/logger'
@@ -36,6 +37,7 @@ import { fxParamsList } from '../../shared/src/constants/MixerProtocolInterface'
 import path from 'path'
 import { Channel } from '../../shared/src/reducers/channelsReducer'
 import { ChannelReference } from '../../shared/src/reducers/fadersReducer'
+import { Dispatch } from 'redux'
 
 export class MainThreadHandlers {
     snapshotHandler: SnapshotHandler

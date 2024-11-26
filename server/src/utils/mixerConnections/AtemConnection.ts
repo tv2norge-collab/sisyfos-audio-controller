@@ -18,7 +18,7 @@ import {
     FairlightInputConfiguration,
 } from 'atem-connection/dist/enums'
 import { FaderActionTypes } from '../../../../shared/src/actions/faderActions'
-import { ChannelActionTypes } from '../../../../shared/src/actions/channelActions'
+import { ChannelActions, ChannelActionTypes } from '../../../../shared/src/actions/channelActions'
 import { FairlightAudioSource } from 'atem-connection/dist/state/fairlight'
 import { Dispatch } from '@reduxjs/toolkit'
 

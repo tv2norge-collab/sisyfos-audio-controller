@@ -1,7 +1,7 @@
 import React, { ChangeEvent } from 'react'
 
 import '../assets/css/LabelSettings.css'
-import { Store } from 'redux'
+import { Dispatch, Store } from 'redux'
 import { connect } from 'react-redux'
 import {
     SettingsActionTypes,
@@ -18,6 +18,7 @@ import {
     FaderActionTypes,
 } from '../../../shared/src/actions/faderActions'
 import {
+    ChannelActions,
     ChannelActionTypes,
 } from '../../../shared/src/actions/channelActions'
 
