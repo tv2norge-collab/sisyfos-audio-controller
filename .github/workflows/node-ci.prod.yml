@@ -475,12 +475,12 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: ${{ github.event.repository.name }}-client-develop
+          name: ${{ github.event.repository.name }}-client
           path: client/dist
 
       - uses: actions/download-artifact@v3
         with:
-          name: ${{ github.event.repository.name }}-server-develop
+          name: ${{ github.event.repository.name }}-server
           path: server/dist
 
       - name: Docker meta
