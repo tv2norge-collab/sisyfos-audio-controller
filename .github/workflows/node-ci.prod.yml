@@ -64,9 +64,14 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
+   
+      # Regenerate the lockfile explicitly
+      - name: Update Lockfile
+        run: yarn install --mode=update-lockfile
 
+      # actual installation
       - name: Install dependencies
-        run: yarn install --immutable
+        run: yarn install --mode=skip-build
 
   prebuild:
     runs-on: ubuntu-latest
@@ -104,9 +109,14 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
+       
+      # Regenerate the lockfile explicitly
+      - name: Update Lockfile
+        run: yarn install --mode=update-lockfile
 
+      # actual installation
       - name: Install dependencies
-        run: yarn install --immutable
+        run: yarn install --mode=skip-build
         
       - name: Build
         run: yarn build
@@ -251,9 +261,14 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
-            
+                 
+      # Regenerate the lockfile explicitly
+      - name: Update Lockfile
+        run: yarn install --mode=update-lockfile
+
+      # actual installation
       - name: Install dependencies
-        run: yarn install --immutable
+        run: yarn install --mode=skip-build
         
       - name: Build
         run: yarn build
@@ -323,9 +338,14 @@ jobs:
         with:
           name: ${{ github.event.repository.name }}-server
           path: server/dist
-          
+                
+      # Regenerate the lockfile explicitly
+      - name: Update Lockfile
+        run: yarn install --mode=update-lockfile
+
+      # actual installation
       - name: Install dependencies
-        run: yarn install --immutable
+        run: yarn install --mode=skip-build
         
       - name: Build desktop
         run: yarn build:desktop
@@ -431,11 +451,13 @@ jobs:
     steps:
       - name: Access repository
         uses: actions/checkout@v4
+
       - name: Check if has username
         id: username
         uses: ./.github/actions/check-secret
         with:
           secret: ${{ secrets.DOCKER_USERNAME }}
+
       - name: Check if has password
         id: password
         uses: ./.github/actions/check-secret
@@ -446,17 +468,28 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.check-docker-credentials.outputs.defined == 'true'
     needs:
-      - bump-version
       - check-docker-credentials
     steps:
       - name: Access repository
         uses: actions/checkout@v4
 
-      - name: Extract version for tags
-        id: version
-        uses: ./.github/actions/extract-version
+      - uses: actions/download-artifact@v3
         with:
-          version: ${{ needs.bump-version.outputs.version }}
+          name: ${{ github.event.repository.name }}-client-develop
+          path: client/dist
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: ${{ github.event.repository.name }}-server-develop
+          path: server/dist
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: "olzzon/${{ github.event.repository.name }}"
+          tags: |
+            type=ref,event=branch
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -469,9 +502,5 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            "olzzon/${{ github.event.repository.name }}:latest"
-            "olzzon/${{ github.event.repository.name }}:${{ steps.version.outputs.version }}"
-            "olzzon/${{ github.event.repository.name }}:${{ steps.version.outputs.major }}"
-            "olzzon/${{ github.event.repository.name }}:${{ steps.version.outputs.major }}.${{ steps.version.outputs.minor }}"
-
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
