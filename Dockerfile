@@ -10,7 +10,7 @@ WORKDIR /opt/sisyfos-audio-controller
 COPY . .
 RUN yarn install
 RUN yarn build
-RUN yarn install --mode=update-lockfile --production
+RUN yarn workspaces focus --all --production
 RUN yarn cache clean
 
 # DEPLOY IMAGE
