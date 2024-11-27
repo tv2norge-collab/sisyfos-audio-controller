@@ -1,3 +1,80 @@
+## [4.20.0](https://github.com/olzzon/sisyfos-audio-controller/compare/v4.19.0...v4.20.0) (2024-11-27)
+
+
+### Features
+
+* added Type to Automation API ([3fd0d04](https://github.com/olzzon/sisyfos-audio-controller/commit/3fd0d04eeaedd18b7ee1c700ae87ab82f00cf371))
+* automation protocol use PST to set PFL when showPFL is turned on. ([eb46511](https://github.com/olzzon/sisyfos-audio-controller/commit/eb465112c3a4ef6b7c31c28d778b046d96e3a3da))
+* automation state now returns mute, inputGain, inputSelector ([7494b65](https://github.com/olzzon/sisyfos-audio-controller/commit/7494b6543548197a5d4d041c29b4f8d159925184))
+* Get Full state from fader ([97bc197](https://github.com/olzzon/sisyfos-audio-controller/commit/97bc197462e038c55f0be81a3dd5f7c810d1ff01))
+* Implemented type safety for ChannelReducer ([a2c10b5](https://github.com/olzzon/sisyfos-audio-controller/commit/a2c10b578cbf4e5696e6c72378439136e948283b))
+* Input gain and selector control via automation ([ae04cc3](https://github.com/olzzon/sisyfos-audio-controller/commit/ae04cc39b113a6909c7eb40cf4d20f3f97d38b3c))
+* make setChannel/xx payload arg optional. ([b43067a](https://github.com/olzzon/sisyfos-audio-controller/commit/b43067a90b987435caa61a42149a0eff7ead3b1c))
+* Mixer output level subscription ([5438e6e](https://github.com/olzzon/sisyfos-audio-controller/commit/5438e6e8d5dd44cc98068c9c1c3e3a7ff2974ccf))
+* moved MixerConnectionTypes to MixerProtocolInterface.ts ([af4aa17](https://github.com/olzzon/sisyfos-audio-controller/commit/af4aa17f6327d5969b174fa8a0789285e575e374))
+* Option to serve client on a different path ([e89fefe](https://github.com/olzzon/sisyfos-audio-controller/commit/e89fefe335f1910286706ee117e4a85c09b98107))
+* Rename Mixerconnections to MixerConnectionTypes ([20c729c](https://github.com/olzzon/sisyfos-audio-controller/commit/20c729c750697bac49305a74ba39273d5ddc1a63))
+* rename to STATE_CHANNEL ([8d4279f](https://github.com/olzzon/sisyfos-audio-controller/commit/8d4279f41e9268fab21f6abb513198d3119fe721))
+* SET_CHANNEL_STATE from automation ([5d273c3](https://github.com/olzzon/sisyfos-audio-controller/commit/5d273c3f94fc68a74e27cdfc7d34faa2c62b9b53))
+* SET_CHANNEL_STATE update README.md ([a335caf](https://github.com/olzzon/sisyfos-audio-controller/commit/a335cafeadf914211d2557ef027f8ee0a61e121d))
+* Type Safety on ChannelReducer ([4d4e11a](https://github.com/olzzon/sisyfos-audio-controller/commit/4d4e11ac50ff4c67d63615922296205212ab9770))
+* Type Safety on Fader Reducer ([0783142](https://github.com/olzzon/sisyfos-audio-controller/commit/07831429f704f192d523c68a237ee6691ee559ab))
+* Type Safety on Mixerconnections ([91d238d](https://github.com/olzzon/sisyfos-audio-controller/commit/91d238df810b429976b47c30dbc1c1bc9fa949ef))
+* Type Safety on Settings Reducer ([deecf32](https://github.com/olzzon/sisyfos-audio-controller/commit/deecf321dc284dbb67648abd2ebdd359576423ea))
+* Type Safety update indexReducer test ([d79fe2a](https://github.com/olzzon/sisyfos-audio-controller/commit/d79fe2ae7cd8414bceb2e7acedb53ad6a8eb074d))
+* Type Saftety MixerConnections types list ([df869e5](https://github.com/olzzon/sisyfos-audio-controller/commit/df869e5bc96e9976471e553088f6c2ba4f288ed5))
+* update readme with ch/xx/state ([aa1d286](https://github.com/olzzon/sisyfos-audio-controller/commit/aa1d28624eda8a60c1ac13400ff617924689b312))
+* update readme.md with inputGain and inputSelector commands ([353edce](https://github.com/olzzon/sisyfos-audio-controller/commit/353edcee96e7ddff79fc00b0e43f9526d423aab0))
+* update tests on Channel, Fader and settings reducers ([cd01cd9](https://github.com/olzzon/sisyfos-audio-controller/commit/cd01cd9dcd4caf027ba2e6d78baee0853eb05db2))
+
+
+### Bug Fixes
+
+* assign channel to fader trown error if fader.assignedChannels was undefined. ([098489c](https://github.com/olzzon/sisyfos-audio-controller/commit/098489cc6de6ed7111f91275f959b40ebe9c55fb))
+* Automation API returned STATE_CHANNEL as STATE_FULL ([4c99f29](https://github.com/olzzon/sisyfos-audio-controller/commit/4c99f29ac7997e142783053719677cad65e501c9))
+* change automation state commands so formatting fits with rest of the commands ([48980ed](https://github.com/olzzon/sisyfos-audio-controller/commit/48980ed3383bfab8e47ff247596a3fb6ef229a5e))
+* consistent storage path ([577a917](https://github.com/olzzon/sisyfos-audio-controller/commit/577a91794554f4d6fdc93e721b30c4716056ae93))
+* create all channels on first start ([ef4647e](https://github.com/olzzon/sisyfos-audio-controller/commit/ef4647e68149b5d44ee28e9694733cdb7a498b64))
+* Dispatch import missing after conversion ([2df79d9](https://github.com/olzzon/sisyfos-audio-controller/commit/2df79d9155d81e0b2aa60bb6babb86a2ec8bb752))
+* dispatch should use dispatchfunction with sendUpdate = True added ([56e9407](https://github.com/olzzon/sisyfos-audio-controller/commit/56e9407d3f1b4e0c01c248db8d241c15c4df49e9))
+* double inputGain and selector in state/full return ([9a20bc7](https://github.com/olzzon/sisyfos-audio-controller/commit/9a20bc78fea1c5b67a5d1b80b8378054f55be876))
+* Enable PFL when setting full state ([40ecbe1](https://github.com/olzzon/sisyfos-audio-controller/commit/40ecbe19b34b565c362af0fbab76d2c99623014d))
+* fader.assignedChannels may be undefined in UI ([0f2c798](https://github.com/olzzon/sisyfos-audio-controller/commit/0f2c79876b79fc8c7e76919b4945fed797ff6089))
+* if fadeTime is zero, jump to new level instead of fade ([6d17731](https://github.com/olzzon/sisyfos-audio-controller/commit/6d1773157c9fa579a7393ee327cf0fa4293012cc))
+* IStore is not equal to Redux store. Changed to only parse needed part of state ([599f833](https://github.com/olzzon/sisyfos-audio-controller/commit/599f8338ca9543370da2b44bc1efd82bc0a84b78))
+* Missing breaks in switch statement ([bad0591](https://github.com/olzzon/sisyfos-audio-controller/commit/bad0591380746c655798284024349c806777b6c3))
+* Missing type in comaprison of mixerconnectiontype ([7c6d8e5](https://github.com/olzzon/sisyfos-audio-controller/commit/7c6d8e5ffb298188eae95cf9e8ac88331d2d8eb4))
+* move jumpToLevel after fadeActive, for mixerfeedback timeout to be kept. Update currentOutputLevel ([ddd03f0](https://github.com/olzzon/sisyfos-audio-controller/commit/ddd03f09c869c5d605c2825b70af2df2691aca6a))
+* null-ish check rather than truthy ([38b4c28](https://github.com/olzzon/sisyfos-audio-controller/commit/38b4c2834b40730e497bb7764ca37e8cc96b1f24))
+* PFL follows ch-strip crash on midas, as PFL is not available on Midas ([3328800](https://github.com/olzzon/sisyfos-audio-controller/commit/3328800a3b87018077e23b021ccdfaff4e9eafeb))
+* Renaming of interfaces was not done in tests ([e9d135b](https://github.com/olzzon/sisyfos-audio-controller/commit/e9d135b624aa1599fb595ace284fe167a0f1a76e))
+* return channel automationstate  as array ([12d6359](https://github.com/olzzon/sisyfos-audio-controller/commit/12d63594fb6a857ba82ad7c9cce8b9d48f4bd980))
+* revert automation showChannel instead of visible for backward compatibility ([8ea6e09](https://github.com/olzzon/sisyfos-audio-controller/commit/8ea6e09bd2975bccae293cc9fd583347e600acd1))
+* revert log message back to logger (was changed during debugging.) ([4e8e9dc](https://github.com/olzzon/sisyfos-audio-controller/commit/4e8e9dc1aa18f0a85a0fa2017204b85dccc82093))
+* robustness while updating channels ([7ffe263](https://github.com/olzzon/sisyfos-audio-controller/commit/7ffe263781931b0fdb41fa93ec176325892ba8bf))
+* route 1:1 when initialising faders ([d681520](https://github.com/olzzon/sisyfos-audio-controller/commit/d68152099fdca1b3fee32ade4516efdb68b1958c))
+* ruby amix subscription ([5d8a651](https://github.com/olzzon/sisyfos-audio-controller/commit/5d8a65167c4e7ce73d7437359edaae117030c105))
+* setting PGM ON/OFF while faderLevel is fading caused level bump ([4b24ca2](https://github.com/olzzon/sisyfos-audio-controller/commit/4b24ca2726a9af014eb45d29d36fd4bbfb71b572))
+* setting PGM ON/OFF while faderLevel is fading caused level bump ([7586750](https://github.com/olzzon/sisyfos-audio-controller/commit/7586750da51eb35709e0ba4e74725578ff2bf39c))
+* tests update ([bee3880](https://github.com/olzzon/sisyfos-audio-controller/commit/bee388004418af5e24ddc51662649f07303df360))
+* Types in  Store, remove Dispatch type in code ([53d0c18](https://github.com/olzzon/sisyfos-audio-controller/commit/53d0c18162705de3fdf243ef62109dfdb659d186))
+* update ruby pgm from external update ([36604fb](https://github.com/olzzon/sisyfos-audio-controller/commit/36604fbf319bf63dc245ce65b168f20699d3846b))
+* Use root path for socket.io server ([cd5f44b](https://github.com/olzzon/sisyfos-audio-controller/commit/cd5f44b2694040b8289e021fdc176219bd5442d4))
+* vMix connection - check if vMix channel is assigned to a fader ([e6ae5d0](https://github.com/olzzon/sisyfos-audio-controller/commit/e6ae5d072fac4d7fcacba86e6fee916a9c2c1fd4))
+* **Lawo Ruby:** use callback to dispatch input selector update ([4ed7d48](https://github.com/olzzon/sisyfos-audio-controller/commit/4ed7d48a1004a0a824f5b9743d8579adb6ec9cfe))
+* when set-channel is called in the automaiton protocol mixerconnection was not updated, and if another setChannel was called in a merge state would conflict. ([d3d8bba](https://github.com/olzzon/sisyfos-audio-controller/commit/d3d8bba8aaa950efaa5ca71516cd950ee082a558))
+
+
+### Continuous Integration
+
+* Configure dependabot to look for updates in Yarn and GitHub Actions weekly and target 'develop' instead of 'master'. ([3bbfec8](https://github.com/olzzon/sisyfos-audio-controller/commit/3bbfec808ad68a63866a30b041a02710ecce9258))
+
+
+### Documentation
+
+* Fix Readme formatting ([e4e75f2](https://github.com/olzzon/sisyfos-audio-controller/commit/e4e75f2d15a78905ebd8c0f580d7bcca82ef7c92))
+
+
 ## [4.19.0](https://github.com/tv2/sisyfos-audio-controller/compare/v4.18.1...v4.19.0) (2023-09-08)
 
 
