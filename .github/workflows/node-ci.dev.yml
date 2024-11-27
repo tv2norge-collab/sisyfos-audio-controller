@@ -2,7 +2,7 @@ name: Dev Node CI
 
 env:
   node-version: 18
-  node-package-manager: yarn
+  yarn-version: 4.1.0
 
 on:
   push:
@@ -15,9 +15,48 @@ jobs:
     steps:
       - name: Access repository
         uses: actions/checkout@v4
-      - uses: ./.github/actions/cache
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.node-version }}
+          
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set Yarn Version
+        run: corepack prepare yarn@${{ env.yarn-version }} --activate
+        
+      - name: Get Yarn cache directory
+        id: yarn-cache-dir
+        run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+      - name: Cache Yarn dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir.outputs.dir }}
+            .yarn/cache
+            .yarn/patches
+            .yarn/plugins
+            .yarn/releases
+            .yarn/sdks
+            .yarn/versions
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      # Regenerate the lockfile explicitly
+      - name: Update Lockfile
+        run: yarn install --mode=update-lockfile
+
+      # actual installation
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --mode=skip-build
+
+      - name: Copy Shared Package
+        run: |
+          cp -r shared server/node_modules/
 
   test:
     runs-on: ubuntu-latest
@@ -25,27 +64,65 @@ jobs:
     steps:
       - name: Access repository
         uses: actions/checkout@v4
-      - uses: ./.github/actions/test
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.node-version }}
+          
+      - name: Enable Corepack
+        run: corepack enable
 
-  validate-dependencies:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Access repository
-        uses: actions/checkout@v4
-      - uses: ./.github/actions/validate-dependencies
+      - name: Set Yarn Version
+        run: corepack prepare yarn@${{ env.yarn-version }} --activate
+        
+      - uses: ./.github/actions/test
 
   build:
     runs-on: ubuntu-latest
     needs:
       - test
-      - validate-dependencies
     steps:
       - name: Access repository
-        uses: actions/checkout@v2
-      - uses: ./.github/actions/cache
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.node-version }}
+          
+      - name: Enable Corepack
+        run: corepack enable
 
+      - name: Set Yarn Version
+        run: corepack prepare yarn@${{ env.yarn-version }} --activate
+
+      - name: Get Yarn cache directory
+        id: yarn-cache-dir
+        run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+      - name: Cache Yarn dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir.outputs.dir }}
+            .yarn/cache
+            .yarn/patches
+            .yarn/plugins
+            .yarn/releases
+            .yarn/sdks
+            .yarn/versions
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      # Regenerate the lockfile explicitly
+      - name: Update Lockfile
+        run: yarn install --mode=update-lockfile
+
+      # actual installation
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --mode=skip-build
 
       - name: Build
         run: yarn build
@@ -106,7 +183,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: "tv2media/${{ github.event.repository.name }}"
+          images: "olzzon/${{ github.event.repository.name }}"
           tags: |
             type=ref,event=branch
 

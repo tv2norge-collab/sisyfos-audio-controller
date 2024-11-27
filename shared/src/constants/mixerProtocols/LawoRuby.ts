@@ -1,11 +1,12 @@
 import {
-    IMixerProtocol,
+    MixerProtocol,
     emptyMixerMessage,
     VuLabelConversionType,
+    MixerConnectionTypes
 } from '../MixerProtocolInterface'
 
-export const LawoRuby: IMixerProtocol = {
-    protocol: 'LAWORUBY',
+export const LawoRuby: MixerProtocol = {
+    protocol: MixerConnectionTypes.LawoRuby,
     label: 'Lawo Ruby',
     presetFileExtension: '',
     loadPresetCommand: [emptyMixerMessage()],
@@ -54,6 +55,13 @@ export const LawoRuby: IMixerProtocol = {
                         value: 1,
                         type: 'int',
                         label: 'RR',
+                    },
+                    {
+                        mixerMessage:
+                            'Ruby.Sources.{channel}.DSP.Input.LR Mode',
+                        value: 5,
+                        type: 'int',
+                        label: 'MONO',
                     },
                 ],
                 CHANNEL_OUT_GAIN: [
@@ -117,6 +125,13 @@ export const LawoRuby: IMixerProtocol = {
                         value: 1,
                         type: 'int',
                         label: 'RR',
+                    },
+                    {
+                        mixerMessage:
+                            'Ruby.Sources.{channel}.DSP.Input.LR Mode',
+                        value: 5,
+                        type: 'int',
+                        label: 'MONO',
                     },
                 ],
                 CHANNEL_OUT_GAIN: [

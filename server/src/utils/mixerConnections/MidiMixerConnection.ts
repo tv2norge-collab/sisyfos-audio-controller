@@ -9,31 +9,28 @@ import { remoteConnections } from '../../mainClasses'
 import { MixerProtocolPresets } from '../../../../shared/src/constants/MixerProtocolPresets'
 import {
     fxParamsList,
-    IMixerProtocol,
+    MixerProtocol,
 } from '../../../../shared/src/constants/MixerProtocolInterface'
 import {
     ChannelActionTypes,
-    ChannelActions,
+
 } from '../../../../shared/src/actions/channelActions'
 import {
-    storeFaderLevel,
-    storeTogglePgm,
+    FaderActionTypes,
 } from '../../../../shared/src/actions/faderActions'
 import { logger } from '../logger'
 import {
-    IChannelReference,
-    IFader,
+    ChannelReference,
+    Fader,
 } from '../../../../shared/src/reducers/fadersReducer'
-import { Dispatch } from '@reduxjs/toolkit'
 
 export class MidiMixerConnection {
-    dispatch: Dispatch<ChannelActions> = store.dispatch
     mixerProtocol: any
     mixerIndex: number
     midiInput: any
     midiOutput: any
 
-    constructor(mixerProtocol: IMixerProtocol, mixerIndex: number) {
+    constructor(mixerProtocol: MixerProtocol, mixerIndex: number) {
         this.sendOutMessage = this.sendOutMessage.bind(this)
         this.pingMixerCommand = this.pingMixerCommand.bind(this)
 
@@ -67,8 +64,8 @@ export class MidiMixerConnection {
     }
 
     private getAssignedFaderIndex(channelIndex: number) {
-        return state.faders[0].fader.findIndex((fader: IFader) =>
-            fader.assignedChannels?.some((assigned: IChannelReference) => {
+        return state.faders[0].fader.findIndex((fader: Fader) =>
+            fader.assignedChannels?.some((assigned: ChannelReference) => {
                 return (
                     assigned.mixerIndex === this.mixerIndex &&
                     assigned.channelIndex === channelIndex
@@ -101,11 +98,16 @@ export class MidiMixerConnection {
                             .CHANNEL_OUT_GAIN[0].mixerMessage
                     )
                 let faderChannel = this.getAssignedFaderIndex(ch - 1) + 1
-                store.dispatch(
-                    storeFaderLevel(faderChannel - 1, message.data[2])
-                )
+                store.dispatch({
+                    type: FaderActionTypes.SET_FADER_LEVEL,
+                    faderIndex: faderChannel - 1,
+                    level: message.data[2],
+                })
                 if (!state.faders[0].fader[faderChannel - 1].pgmOn) {
-                    store.dispatch(storeTogglePgm(faderChannel - 1))
+                    store.dispatch({
+                        type: FaderActionTypes.TOGGLE_PGM,
+                        faderIndex: faderChannel - 1,
+                    })
                 }
                 if (remoteConnections) {
                     remoteConnections.updateRemoteFaderState(
@@ -117,7 +119,7 @@ export class MidiMixerConnection {
                     state.faders[0].fader[
                         faderChannel - 1
                     ].assignedChannels?.forEach(
-                        (channel: IChannelReference) => {
+                        (channel: ChannelReference) => {
                             if (channel.mixerIndex === this.mixerIndex) {
                                 this.updateOutLevel(
                                     channel.channelIndex,
@@ -158,10 +160,10 @@ export class MidiMixerConnection {
 
     updateOutLevel(channelIndex: number, faderIndex: number) {
         if (state.faders[0].fader[faderIndex].pgmOn) {
-            this.dispatch({
+            store.dispatch({
                 type: ChannelActionTypes.SET_OUTPUT_LEVEL,
-                mixerIndex: this.mixerIndex,
                 channel: channelIndex,
+                mixerIndex: this.mixerIndex,
                 level: state.faders[0].fader[faderIndex].faderLevel,
             })
         }
@@ -248,4 +250,12 @@ export class MidiMixerConnection {
     injectCommand(command: string[]) {
         return true
     }
+
+    updateAMixState(channelIndex: number, amixOn: boolean) {}
+
+    updateChannelSetting(
+        channelIndex: number,
+        setting: string,
+        value: string
+    ) {}
 }

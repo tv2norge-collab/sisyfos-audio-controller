@@ -3,15 +3,15 @@ import {
     ChannelActionTypes,
 } from '../actions/channelActions'
 
-export interface IChannels {
-    chMixerConnection: IchMixerConnection[]
+export interface Channels {
+    chMixerConnection: ChMixerConnection[]
 }
 
-export interface IchMixerConnection {
-    channel: Array<IChannel>
+export interface ChMixerConnection {
+    channel: Array<Channel>
 }
 
-export interface IChannel {
+export interface Channel {
     channelType: number
     channelTypeIndex: number
     assignedFader: number
@@ -24,14 +24,14 @@ export interface IChannel {
     }
 }
 
-export interface InumberOfChannels {
+export interface NumberOfChannels {
     numberOfTypeInCh: number[]
 }
 
-const defaultChannelsReducerState = (
-    numberOfChannels: InumberOfChannels[]
-): IChannels[] => {
-    let defaultObj: IChannels[] = [
+export const defaultChannelsReducerState = (
+    numberOfChannels: NumberOfChannels[]
+): Channels[] => {
+    let defaultObj: Channels[] = [
         {
             chMixerConnection: [],
         },
@@ -69,12 +69,19 @@ const defaultChannelsReducerState = (
 export const channels = (
     state = defaultChannelsReducerState([{ numberOfTypeInCh: [1] }]),
     action: ChannelActions
-): Array<IChannels> => {
+): Array<Channels> => {
     let nextState = [
         {
             chMixerConnection: [...state[0].chMixerConnection],
         },
     ]
+
+    if ('mixerIndex' in action && nextState[0].chMixerConnection[action.mixerIndex] === undefined) {
+        return nextState
+    }
+    if ('mixerIndex' in action && 'channel' in action && nextState[0].chMixerConnection[action.mixerIndex]?.channel[action.channel] === undefined) {
+        return nextState
+    }
 
     switch (action.type) {
         case ChannelActionTypes.SET_OUTPUT_LEVEL:
@@ -86,7 +93,7 @@ export const channels = (
             nextState = defaultChannelsReducerState(action.numberOfTypeChannels)
 
             nextState[0].chMixerConnection.forEach(
-                (chMixerConnection: IchMixerConnection, mixerIndex: number) => {
+                (chMixerConnection: ChMixerConnection, mixerIndex: number) => {
                     chMixerConnection.channel.forEach(
                         (channel: any, index: number) => {
                             if (

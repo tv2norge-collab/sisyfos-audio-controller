@@ -63,17 +63,17 @@ Routing setups can be stored in STORAGE. So it´s possible to have different Rou
 ### Run as Docker: (On linux)
 
 ```
-docker pull tv2media/sisyfos-audio-controller:develop
+docker pull olzzon/sisyfos-audio-controller:develop
 docker volume create sisyfos-vol
-sudo docker run --mount source=sisyfos-vol,target=/opt/sisyfos-audio-controller/storage --network="host" --restart always tv2media/sisyfos-audio-controller:develop
+sudo docker run --mount source=sisyfos-vol,target=/opt/sisyfos-audio-controller/storage --network="host" --restart always olzzon/sisyfos-audio-controller:develop
 ```
 
 ### Run as Docker: (On windows)
 
 ```
-docker pull tv2media/sisyfos-audio-controller:develop
+docker pull olzzon/sisyfos-audio-controller:develop
 docker volume create sisyfos-vol
-docker run --mount source=sisyfos-vol,target=/opt/sisyfos-audio-controller/storage -p 1176:1176 -p 5255:5255 --restart always tv2media/sisyfos-audio-controller:develop
+docker run --mount source=sisyfos-vol,target=/opt/sisyfos-audio-controller/storage -p 1176:1176 -p 5255:5255 --restart always olzzon/sisyfos-audio-controller:develop
 ```
 
 ### Install Local node host:
@@ -81,7 +81,7 @@ docker run --mount source=sisyfos-vol,target=/opt/sisyfos-audio-controller/stora
 (Be aware that a server reload will quit server and you need an external source to restart)
 
 ```
-git clone https://github.com/tv2media/sisyfos-audio-controller.git
+git clone https://github.com/olzzon/sisyfos-audio-controller.git
 cd sisyfos-audio-controller
 yarn
 yarn build
@@ -97,6 +97,11 @@ When running Sisyfos you can define the log level by setting the environment var
 -   info (standard info regarding connectiviy and data from Automation protocol etc. including errors and warnings)
 -   debug (info level plus: data send and received from Audiomixer)
 -   trace (debug level plus: data send and received from Automation protocol)
+
+### Serve client on a different path:
+
+When running Sisyfos you can change the root path from the default of `/` to another value by setting the environment variable `ROOT_PATH`.
+
 
 ### Open GUI in browser:
 
@@ -192,11 +197,11 @@ The monitor sends are the same as those on the Channel Strip.
 
 ## Automation Support:
 
-It´s possible to control the Producers-Audio-Mixer from an automationsystem, for it to act as middleware.
+It´s possible to control Sisyfos from an automationsystem, for it to act as middleware.
 
 ## Set state:
 
-To set the state send these OSC commands from you Automation to ProducersAudioMixer Port: 5255:
+To set the state send these OSC commands from you Automation to Sisyfos Port: 5255:
 
 #### Set channel to PGM (optional: indiviaul fadetime):
 
@@ -205,7 +210,7 @@ To set the state send these OSC commands from you Automation to ProducersAudioMi
 /ch/1/mix/pgm - integer: { 0, 1 or 2 } - float { fadetime in ms }
 
 #### Set channel to PST:
-
+If showPFL in setting is enabled, this also sets the state of PFL
 /ch/1/mix/pst - integer: { 0, 1 or 2 } (the integer defines: 0 - Off, 1 - Pgm On, 2 - Voice Over)
 
 #### Mute channel:
@@ -222,10 +227,29 @@ To set the state send these OSC commands from you Automation to ProducersAudioMi
 
 /ch/1/label - string {name of channel}
 
-#### Inject Command:
+#### Set channel state:
+
+/setchannel/{value1} set the channel state of all settings exposed to automation parsing a json, with this type:
+
+```
+export interface AutomationChannelAPI {
+    faderLevel?: number
+    pgmOn?: boolean
+    voOn?: boolean
+    pstOn?: boolean
+    showChannel?: boolean
+    muteOn?: boolean
+    inputGain?: number
+    inputSelector?: number
+    label: string
+}
+```
+
+#### Inject Command: (currently not implemented)
 
 Pass a command directly from Automation to Audiomixer
 /inject
+
 
 #### Crossfade between PGM and PST:
 
@@ -251,35 +275,48 @@ Pass a command directly from Automation to Audiomixer
 
 #### Get full state of all channels:
 
-/state/full - returns a json string with an array of channels: { pgmOn: boolean, pstOn: boolean, faderLevel: boolean }
+/state/full - returns a json string with an array of channels with: 
+```
+export interface AutomationChannelAPI {
+    faderLevel: number
+    pgmOn: boolean
+    voOn: boolean
+    pstOn: boolean
+    showChannel: boolean
+    muteOn: boolean
+    inputGain: number
+    inputSelector: number
+    label: string
+}
+```
+
+#### Get all state of one fader:
+
+/ch/1/state - returns a json in same format as the full state but only for the channel specified in the path
 
 #### Get state channel PGM:
 
-/state/ch/1/mix/pgm - returns pgm state integer { 0 or 1 }
+/ch/1/pgm/state - returns pgm state integer { 0 or 1 }
 
 #### get state channel PST:
 
-/state/ch/1/mix/pst - returns pgm state integer { 0 or 1 }
+/ch/1/pst/state - returns pgm state integer { 0 or 1 }
 
 #### Get state channel faderlevel:
 
-/state/ch/1/mix/faderlevel - float {between 0 and 1}
+/ch/1/faderlevel/state - float {between 0 and 1}
 
 #### get state channel Mute:
 
-/state/ch/1/mute - returns mute state integer { 0 or 1 }
+/ch/1/mute/state - returns mute state integer { 0 or 1 }
 
-#### Get state group PGM:
+#### get state InputGain:
 
-/state/ch/1/mix/pgm - returns pgm state integer { 0 or 1 }
+/ch/1/inputgain/state - returns inputgain state float {between 0 and 1}
 
-#### get state group PST:
+#### get state InputSelector:
 
-/state/ch/1/mix/pst - returns pgm state integer { 0 or 1 }
-
-#### Get state group faderlevel:
-
-/state/ch/1/mix/faderlevel - float {between 0 and 1}
+/ch/1/inputselector/state - returns inputselector state integer { 0 or 1 }
 
 ## Check connectivity
 

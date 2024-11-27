@@ -1,12 +1,13 @@
 import {
-    IMixerProtocol,
+    MixerProtocol,
     fxParamsList,
     VuLabelConversionType,
+    MixerConnectionTypes,
 } from '../MixerProtocolInterface'
 
-export const Atem: IMixerProtocol = {
+export const Atem: MixerProtocol = {
     MAX_UPDATES_PER_SECOND: 10,
-    protocol: 'ATEM',
+    protocol: MixerConnectionTypes.Atem,
     label: 'ATEM Audio Control',
     vuLabelConversionType: VuLabelConversionType.Decibel,
     vuLabelValues: [0, 0.125, 0.25, 0.375, 0.5, 0.75, 1],
@@ -37,6 +38,10 @@ export const Atem: IMixerProtocol = {
                         mixerMessage: '',
                         label: 'RR',
                     },
+                    {
+                        mixerMessage: '',
+                        label: 'MONO',
+                    },
                 ],
                 // CHANNEL_OUT_GAIN: [{ mixerMessage: '' }],
                 // CHANNEL_VU?: Array<IMixerMessageProtocol>
@@ -64,6 +69,10 @@ export const Atem: IMixerProtocol = {
                     {
                         mixerMessage: '',
                         label: 'RR',
+                    },
+                    {
+                        mixerMessage: '',
+                        label: 'MONO',
                     },
                 ],
                 // CHANNEL_OUT_GAIN: [{ mixerMessage: '' }],
