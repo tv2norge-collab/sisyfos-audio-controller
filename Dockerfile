@@ -8,7 +8,7 @@ RUN corepack prepare yarn@4.1.0 --activate
 WORKDIR /opt/sisyfos-audio-controller
 
 COPY . .
-RUN yarn install  --mode=update-lockfile
+RUN yarn install
 RUN yarn build
 RUN yarn install --mode=update-lockfile --production
 RUN yarn cache clean

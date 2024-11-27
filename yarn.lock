@@ -8842,10 +8842,10 @@ asn1@evs-broadcast/node-asn1:
 
 "shared@file:../shared::locator=server%40workspace%3Aserver":
   version: 0.0.0
-  resolution: "shared@file:../shared#../shared::hash=662dc1&locator=server%40workspace%3Aserver"
+  resolution: "shared@file:../shared#../shared::hash=05df81&locator=server%40workspace%3Aserver"
   dependencies:
     redux: "npm:^5.0.1"
-  checksum: 10c0/9253a401ef7ec5806903f5de1c12651b40f253a6048fe0853d33894373e16e5bbf0d245abb187e6bd7b4f946d2db8a52fc3ca0c09745c1da2b53c52fa1a0fdc6
+  checksum: 10c0/e6e980a1497a8ae0c5d41b5af480c5ef62dcc85e2b4432220ab3e92647339b98fa1c864a97ed189db08bc940c887a10f86a5c1dbe0b33efdd13edcd9d221b7f0
   languageName: node
   linkType: hard
 
