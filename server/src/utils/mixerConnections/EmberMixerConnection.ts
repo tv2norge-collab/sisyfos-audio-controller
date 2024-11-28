@@ -22,6 +22,8 @@ import {
 import { EmberElement, NumberedTreeNode } from 'emberplus-connection/dist/model'
 import { STORAGE_FOLDER } from '../SettingsStorage'
 import { MixerConnection } from '.'
+import { sendVuLevel } from '../vuServer'
+import { VuType } from '../../../../shared/src/utils/vu-server-types'
 
 export class EmberMixerConnection implements MixerConnection {
     mixerProtocol: MixerProtocol
@@ -197,6 +199,14 @@ export class EmberMixerConnection implements MixerConnection {
                     channelTypeIndex,
                 )
             }
+        }
+
+        if (protocol.CHANNEL_VU) {
+            await this.subscribeVUMeter(
+                chNumber,
+                Number(typeIndex),
+                channelTypeIndex
+            )
         }
     }
 
@@ -697,6 +707,31 @@ export class EmberMixerConnection implements MixerConnection {
                     state: (node.contents as Model.Parameter).value as boolean,
                 })
                 global.mainThreadHandler.updatePartialStore(assignedFaderIndex)
+            },
+        )
+    }
+
+    private async subscribeVUMeter(
+        chNumber: number,
+        typeIndex: number,
+        channelTypeIndex: number,
+    ) {
+        const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
+        const mixerMessage =
+            this.mixerProtocol.channelTypes[typeIndex].fromMixer.CHANNEL_VU[0]
+                .mixerMessage
+        await this.subscribeToEmberNode(
+            channelTypeIndex,
+            mixerMessage,
+            (node) => {
+                if (node.contents.type !== Model.ElementType.Parameter) return
+
+                const value = Number(node.contents.value)
+                if (Number.isNaN(value)) return
+
+                const factor = node.contents.factor ?? 1
+
+                sendVuLevel(assignedFaderIndex, VuType.Channel, 0, dbToFloat(value / factor))
             },
         )
     }
