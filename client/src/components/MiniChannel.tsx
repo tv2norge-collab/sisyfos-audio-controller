@@ -35,7 +35,7 @@ class MiniChannel extends React.Component<
         this.faderIndex = this.props.faderIndex
     }
 
-    public shouldComponentUpdate(nextProps: ChannelInjectProps) {
+    public shouldComponentUpdate(nextProps: ChannelInjectProps): boolean {
         return (
             nextProps.fader.showChannel != this.props.fader.showChannel ||
             nextProps.label != this.props.label ||

@@ -32,12 +32,17 @@ module.exports = {
                 include: defaultInclude,
             },
             {
-                test: /\.(eot|svg|ttf|woff|woff2)$/,
+                test: /\.(eot|ttf|woff|woff2)$/,
                 use: [
                     {
                         loader: 'file-loader?name=font/[name]__[hash:base64:5].[ext]',
                     },
                 ],
+                include: defaultInclude,
+            },
+            {
+                test: /\.svg$/,
+                use: ['@svgr/webpack'],
                 include: defaultInclude,
             },
         ],

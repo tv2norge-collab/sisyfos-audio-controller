@@ -8,7 +8,7 @@ import { connect } from 'react-redux'
 import { Fader } from '../../../shared/src/reducers/fadersReducer'
 import { Channel } from '../../../shared/src/reducers/channelsReducer'
 import { SOCKET_SET_FX } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
-import { fxParamsList } from '../../../shared/src/constants/MixerProtocolInterface'
+import { FxParam } from '../../../shared/src/constants/MixerProtocolInterface'
 import { getFaderLabel } from '../utils/labels'
 
 interface ChanStripFullInjectProps {
@@ -94,7 +94,7 @@ class ChanStripEq extends React.PureComponent<
 
     shouldComponentUpdate(
         nextProps: ChanStripFullInjectProps & ChanStripFullProps
-    ) {
+    ): boolean {
         if (nextProps.faderIndex > -1) {
             return true
         } else {
@@ -102,7 +102,7 @@ class ChanStripEq extends React.PureComponent<
         }
     }
 
-    handleFx(fxParam: fxParamsList, level: any) {
+    handleFx(fxParam: FxParam, level: any) {
         if (level < 0) {
             level = 0
         }
@@ -119,11 +119,11 @@ class ChanStripEq extends React.PureComponent<
 
     handleDragCaptureEq(key: number, totalWidth: number, totalHeight: number, event: any) {
         let eqFreqKey =
-            fxParamsList[
-                String(fxParamsList[key]).replace(
+            FxParam[
+                String(FxParam[key]).replace(
                     'EqGain',
                     'EqFreq'
-                ) as keyof typeof fxParamsList
+                ) as keyof typeof FxParam
             ]
         let eventX = event.clientX ?? event.touches[0].clientX
         let eventY = event.clientY ?? event.touches[0].clientY
@@ -208,7 +208,7 @@ class ChanStripEq extends React.PureComponent<
         context.strokeText(
             String(
                 window.mixerProtocol.channelTypes[0].fromMixer[
-                    fxParamsList.EqGain01
+                    FxParam.EqGain01
                 ]?.[0].maxLabel
             ) + ' dB',
             1,
@@ -218,7 +218,7 @@ class ChanStripEq extends React.PureComponent<
         context.strokeText(
             String(
                 window.mixerProtocol.channelTypes[0].fromMixer[
-                    fxParamsList.EqGain01
+                    FxParam.EqGain01
                 ]?.[0].maxLabel
             ) + ' dB',
             1,
@@ -230,18 +230,18 @@ class ChanStripEq extends React.PureComponent<
     eqGraphics() {
         return (
             <div className="eq-window">
-                {Object.keys(fxParamsList)
+                {Object.keys(FxParam)
                     .filter((fxKey: number | string) => {
                         return String(fxKey).includes('EqGain')
                     })
                     .map((keyName: string) => {
-                        let fxKey = keyName as keyof typeof fxParamsList
+                        let fxKey = keyName as keyof typeof FxParam
                         let eqFreqKey =
-                            fxParamsList[
+                            FxParam[
                                 fxKey.replace(
                                     'EqGain',
                                     'EqFreq'
-                                ) as keyof typeof fxParamsList
+                                ) as keyof typeof FxParam
                             ]
                         return (
                             <Draggable
@@ -254,7 +254,7 @@ class ChanStripEq extends React.PureComponent<
                                     ),
                                     y: this.valueToGainPosition(
                                         this.props.fader[this.props.faderIndex][
-                                            fxParamsList[fxKey]
+                                            FxParam[fxKey]
                                         ]?.[0],
                                         window.innerHeight
                                     ),
@@ -263,7 +263,7 @@ class ChanStripEq extends React.PureComponent<
                                 scale={100}
                                 onDrag={(event) =>
                                     this.handleDragCaptureEq(
-                                        fxParamsList[fxKey],
+                                        FxParam[fxKey],
                                         window.innerWidth,
                                         window.innerHeight,
                                         event
@@ -274,7 +274,7 @@ class ChanStripEq extends React.PureComponent<
                                     className="dot"
                                     style={{
                                         color: String(
-                                            EqColors[fxParamsList[fxKey]]
+                                            EqColors[FxParam[fxKey]]
                                         ),
                                     }}
                                 >
@@ -290,33 +290,33 @@ class ChanStripEq extends React.PureComponent<
     eqText() {
         return (
             <div className="eq-text">
-                {Object.keys(fxParamsList)
+                {Object.keys(FxParam)
                     .filter((fxKey: number | string) => {
                         return String(fxKey).includes('EqGain')
                     })
                     .map((keyName: string, index: number) => {
-                        let fxKey = keyName as keyof typeof fxParamsList
+                        let fxKey = keyName as keyof typeof FxParam
                         let eqFreqKey =
-                            fxParamsList[
+                            FxParam[
                                 fxKey.replace(
                                     'EqGain',
                                     'EqFreq'
-                                ) as keyof typeof fxParamsList
+                                ) as keyof typeof FxParam
                             ]
                         let eqQKey =
-                            fxParamsList[
+                            FxParam[
                                 fxKey.replace(
                                     'EqGain',
                                     'EqQ'
-                                ) as keyof typeof fxParamsList
+                                ) as keyof typeof FxParam
                             ]
                         let maxGain: number =
                             window.mixerProtocol.channelTypes[0].fromMixer[
-                                fxParamsList[fxKey]
+                                FxParam[fxKey]
                             ]?.[0].maxLabel ?? 1
                         let minGain =
                             window.mixerProtocol.channelTypes[0].fromMixer[
-                                fxParamsList[fxKey]
+                                FxParam[fxKey]
                             ]?.[0].minLabel ?? 0
 
                         return (
@@ -324,7 +324,7 @@ class ChanStripEq extends React.PureComponent<
                                 className="eq-text-parameters"
                                 key={index}
                                 style={{
-                                    color: EqColors[fxParamsList[fxKey]],
+                                    color: EqColors[FxParam[fxKey]],
                                 }}
                             >
                                 <br />
@@ -334,7 +334,7 @@ class ChanStripEq extends React.PureComponent<
                                         ((maxGain - minGain) *
                                             (this.props.fader[
                                                 this.props.faderIndex
-                                            ][fxParamsList[fxKey]]?.[0] ?? 0) +
+                                            ][FxParam[fxKey]]?.[0] ?? 0) +
                                             minGain)
                                 ) / 10}
                                 {'  Freq :'}
@@ -351,7 +351,7 @@ class ChanStripEq extends React.PureComponent<
         )
     }
 
-    qFader(fxParam: fxParamsList) {
+    qFader(fxParam: FxParam) {
         let maxLabel: number =
             window.mixerProtocol.channelTypes[0].fromMixer[fxParam]?.[0]
                 .maxLabel ?? 1

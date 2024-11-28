@@ -8,7 +8,7 @@ import { remoteConnections } from '../../mainClasses'
 //Utils:
 import { MixerProtocolPresets } from '../../../../shared/src/constants/MixerProtocolPresets'
 import {
-    fxParamsList,
+    FxParam,
     MixerProtocol,
 } from '../../../../shared/src/constants/MixerProtocolInterface'
 import {
@@ -23,8 +23,9 @@ import {
     ChannelReference,
     Fader,
 } from '../../../../shared/src/reducers/fadersReducer'
+import { MixerConnection } from '.'
 
-export class MidiMixerConnection {
+export class MidiMixerConnection implements MixerConnection {
     mixerProtocol: any
     mixerIndex: number
     midiInput: any
@@ -32,7 +33,6 @@ export class MidiMixerConnection {
 
     constructor(mixerProtocol: MixerProtocol, mixerIndex: number) {
         this.sendOutMessage = this.sendOutMessage.bind(this)
-        this.pingMixerCommand = this.pingMixerCommand.bind(this)
 
         this.mixerProtocol = mixerProtocol || MixerProtocolPresets.genericMidi
         this.mixerIndex = mixerIndex
@@ -74,7 +74,7 @@ export class MidiMixerConnection {
         )
     }
 
-    setupMixerConnection() {
+    private setupMixerConnection() {
         this.midiInput.addListener('controlchange', 1, (message: any) => {
             logger.debug(`Received 'controlchange' message (${message.data}).`)
             if (
@@ -140,14 +140,7 @@ export class MidiMixerConnection {
         return true
     }
 
-    pingMixerCommand() {
-        //Ping OSC mixer if mixerProtocol needs it.
-        this.mixerProtocol.pingCommand.map((command: any) => {
-            this.sendOutMessage(command.mixerMessage, 0, command.value)
-        })
-    }
-
-    sendOutMessage(ctrlMessage: string, channel: number, value: string) {
+    private sendOutMessage(ctrlMessage: string, channel: number, value: string) {
         if (
             ctrlMessage != 'none' &&
             0 <= parseFloat(value) &&
@@ -158,7 +151,7 @@ export class MidiMixerConnection {
         }
     }
 
-    updateOutLevel(channelIndex: number, faderIndex: number) {
+    private updateOutLevel(channelIndex: number, faderIndex: number) {
         if (state.faders[0].fader[faderIndex].pgmOn) {
             store.dispatch({
                 type: ChannelActionTypes.SET_OUTPUT_LEVEL,
@@ -219,7 +212,7 @@ export class MidiMixerConnection {
         return true
     }
 
-    updateFx(fxParam: fxParamsList, channelIndex: number, level: number) {
+    updateFx(channelIndex: number, fxParam: FxParam, level: number) {
         return true
     }
     updateAuxLevel(channelIndex: number, auxSendIndex: number, level: number) {
@@ -247,9 +240,7 @@ export class MidiMixerConnection {
 
     loadMixerPreset(presetName: string) {}
 
-    injectCommand(command: string[]) {
-        return true
-    }
+    injectCommand(command: string[]) {}
 
     updateAMixState(channelIndex: number, amixOn: boolean) {}
 

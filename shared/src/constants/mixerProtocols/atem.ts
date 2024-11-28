@@ -1,6 +1,6 @@
 import {
     MixerProtocol,
-    fxParamsList,
+    FxParam,
     VuLabelConversionType,
     MixerConnectionTypes,
 } from '../MixerProtocolInterface'

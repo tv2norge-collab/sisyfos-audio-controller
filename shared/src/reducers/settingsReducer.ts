@@ -1,12 +1,49 @@
 import { MixerProtocolPresets } from '../constants/MixerProtocolPresets'
 import {
     SettingsActionTypes,
-    SettingsActions,
 } from '../actions/settingsActions'
+import { RootAction } from './indexReducer'
 
 export enum PageType {
     All,
     CustomPage,
+}
+
+export enum PgmOnFollowMixerBehaviour {
+    None = 0,
+    Global = 1,
+    Manual = 2,
+    Auto = 3,
+}
+
+export enum FirstInRowButtonType {
+    NONE = 0,
+    AUTO_MANUAL = 1,
+}
+
+export enum SecondInRowButtonType {
+    NONE = 0,
+    MUTE = 1,
+}
+
+export enum ThirdInRowButtonType {
+    NONE = 0,
+    AMIX = 1,
+    LINK_CHANNELS = 2,
+    CHANNEL_OPTIONS = 3,
+}
+
+export enum SecondOutRowButtonType {
+    NONE = 0,
+    VO = 1,
+    SLOW_FADE = 2,
+}
+
+export enum ThirdOutRowButtonType {
+    NONE = 0,
+    PST = 1,
+    PFL = 2,
+    CUE_NEXT = 3,
 }
 
 export interface Settings {
@@ -19,6 +56,7 @@ export interface Settings {
     showLabelSettings: boolean
     showChanStrip: number
     showChanStripFull: number
+    showChanLayoutSettings: number
     showOptions: number | false
     showMonitorOptions: number
     showStorage: boolean
@@ -40,16 +78,26 @@ export interface Settings {
     voFadeTime: number // Default fade time for VO ON - OFF
     voLevel: number // Relative level of PGM in %
     autoResetLevel: number // Autoreset before pgm on, if level is lower than in %
-    automationMode: boolean
+    firstInRowButton: FirstInRowButtonType
+    secondInRowButton: SecondInRowButtonType
+    thirdInRowButton: ThirdInRowButtonType
+    secondOutRowButton: SecondOutRowButtonType
+    thirdOutRowButton: ThirdOutRowButtonType
+    labelControlsIgnoreAutomation: boolean
+    labelIgnorePrefix: string
+    pgmOnFollowsMixer: PgmOnFollowMixerBehaviour
     offtubeMode: boolean
-    showPfl: boolean
     enablePages: boolean
     numberOfCustomPages: number
     chanStripFollowsPFL: boolean
     labelType: 'automatic' | 'user' | 'automation' | 'channel'
-
+    
     /** Connection state */
     serverOnline: boolean
+    
+    // Deprecated:
+    automationMode?: boolean
+    showPfl?: boolean
 }
 
 export interface CustomPages {
@@ -73,13 +121,14 @@ export interface MixerSettings {
     localOscPort: number
 }
 
-const defaultSettingsReducerState: Array<Settings> = [
+export const defaultSettingsReducerState: Array<Settings> = [
     {
         showSettings: false,
         showPagesSetup: false,
         showLabelSettings: false,
         showChanStrip: -1,
         showChanStripFull: -1,
+        showChanLayoutSettings: -1,
         showOptions: false,
         showMonitorOptions: -1,
         showStorage: false,
@@ -108,11 +157,17 @@ const defaultSettingsReducerState: Array<Settings> = [
         numberOfFaders: 8,
         voLevel: 30,
         autoResetLevel: 5,
-        automationMode: true,
+        firstInRowButton: FirstInRowButtonType.AUTO_MANUAL,
+        secondInRowButton: SecondInRowButtonType.MUTE,
+        thirdInRowButton: ThirdInRowButtonType.NONE,
+        secondOutRowButton: SecondOutRowButtonType.VO,
+        thirdOutRowButton: ThirdOutRowButtonType.CUE_NEXT,
+        labelControlsIgnoreAutomation: false,
+        labelIgnorePrefix: '#',
+        pgmOnFollowsMixer: PgmOnFollowMixerBehaviour.None,
         offtubeMode: false,
         fadeTime: 120,
         voFadeTime: 280,
-        showPfl: false,
         enablePages: true,
         numberOfCustomPages: 4,
         chanStripFollowsPFL: true,
@@ -123,8 +178,11 @@ const defaultSettingsReducerState: Array<Settings> = [
 
 export const settings = (
     state = defaultSettingsReducerState,
-    action: SettingsActions
+    action: RootAction
 ): Array<Settings> => {
+    if (!(action.type in SettingsActionTypes)) {
+        return state;
+    }
     let nextState = [Object.assign({}, state[0])]
 
     switch (action.type) {
@@ -149,6 +207,13 @@ export const settings = (
                 nextState[0].showChanStripFull = action.channel
             } else {
                 nextState[0].showChanStripFull = -1
+            }
+            return nextState
+        case SettingsActionTypes.TOGGLE_SHOW_CHAN_LAYOUT_SETTINGS:
+            if (nextState[0].showChanLayoutSettings !== action.channel) {
+                nextState[0].showChanLayoutSettings = action.channel
+            } else {
+                nextState[0].showChanLayoutSettings = -1
             }
             return nextState
         case SettingsActionTypes.TOGGLE_SHOW_MONITOR_OPTIONS:

@@ -4,10 +4,8 @@ import ClassNames from 'classnames'
 
 import Channel from './Channel'
 import '../assets/css/Channels.css'
-import { Store } from 'redux'
-import {
-    SettingsActionTypes,
-} from '../../../shared/src/actions/settingsActions'
+import { Store, UnknownAction } from 'redux'
+import { SettingsActionTypes } from '../../../shared/src/actions/settingsActions'
 import ChannelRouteSettings from './ChannelRouteSettings'
 import ChanStrip from './ChanStrip'
 import ChannelMonitorOptions from './ChannelMonitorOptions'
@@ -18,6 +16,7 @@ import {
     MixerSettings,
     Settings,
     PageType,
+    ThirdOutRowButtonType,
 } from '../../../shared/src/reducers/settingsReducer'
 import {
     SOCKET_NEXT_MIX,
@@ -27,6 +26,9 @@ import {
 } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 import ChanStripFull from './ChanStripFull'
 
+interface ChannelsProps {
+    page?: string
+}
 interface ChannelsInjectProps {
     channels: IChannels
     faders: Fader[]
@@ -35,14 +37,36 @@ interface ChannelsInjectProps {
     mixersOnline: boolean
 }
 
-class Channels extends React.Component<ChannelsInjectProps & Store> {
+class Channels extends React.Component<
+    ChannelsProps & ChannelsInjectProps & Store
+> {
     constructor(props: any) {
         super(props)
         this.props.settings.showMonitorOptions = -1
+        const urlParams = new URLSearchParams(window.location.search)
+        const pageId = props.page ?? urlParams.get('page')
+        if (pageId) {
+            this.handlePages(PageType.CustomPage, pageId)
+        }
     }
 
-    public shouldComponentUpdate(nextProps: ChannelsInjectProps) {
+    public componentDidUpdate(
+        prevProps: Readonly<
+            ChannelsProps &
+                ChannelsInjectProps &
+                Store<any, UnknownAction, unknown>
+        >
+    ) {
+        if (prevProps.page !== this.props.page) {
+            this.handlePages(PageType.CustomPage, this.props.page)
+        }
+    }
+
+    public shouldComponentUpdate(
+        nextProps: ChannelsProps & ChannelsInjectProps
+    ): boolean {
         return (
+            this.props.page !== nextProps.page ||
             this.props.settings.showOptions !==
                 nextProps.settings.showOptions ||
             this.props.settings.showChanStrip !==
@@ -86,25 +110,25 @@ class Channels extends React.Component<ChannelsInjectProps & Store> {
 
     handleShowSettings() {
         this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_SETTINGS
+            type: SettingsActionTypes.TOGGLE_SHOW_SETTINGS,
         })
     }
 
     handleShowStorage() {
         this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_STORAGE
+            type: SettingsActionTypes.TOGGLE_SHOW_STORAGE,
         })
     }
 
     handleShowPagesSetting() {
         this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_PAGES_SETUP
+            type: SettingsActionTypes.TOGGLE_SHOW_PAGES_SETUP,
         })
     }
 
     handleShowLabelSetting() {
         this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_LABEL_SETTINGS
+            type: SettingsActionTypes.TOGGLE_SHOW_LABEL_SETTINGS,
         })
     }
 
@@ -113,7 +137,6 @@ class Channels extends React.Component<ChannelsInjectProps & Store> {
             type: SettingsActionTypes.SET_PAGE,
             pageType: type,
             id: i,
-
         })
     }
 
@@ -138,6 +161,7 @@ class Channels extends React.Component<ChannelsInjectProps & Store> {
                         onClick={() => {
                             this.handlePages(PageType.CustomPage, p.id)
                         }}
+                        key={p.id}
                     >
                         {p.label}
                     </button>
@@ -196,13 +220,14 @@ class Channels extends React.Component<ChannelsInjectProps & Store> {
         const curPage = this.props.settings.currentPage
         switch (curPage.type) {
             case PageType.All:
-                return this.props.faders.map((value, index) => (
+                return this.props.faders.map((_value, index) => (
                     <Channel faderIndex={index} key={index} />
                 ))
             case PageType.CustomPage:
                 let pageIndex: number = this.props.customPages
                     .map((item: CustomPages) => item.id)
                     .indexOf(curPage.id || '')
+                if (pageIndex < 0) return null
                 return this.props.customPages[pageIndex].faders
                     .filter((value) => {
                         return (
@@ -210,7 +235,8 @@ class Channels extends React.Component<ChannelsInjectProps & Store> {
                             value < this.props.settings.numberOfFaders
                         )
                     })
-                    .map((faderIndex, index) => {
+                    .map((faderIndex) => {
+                        if (!this.props.faders[faderIndex]) return null
                         return (
                             <Channel key={faderIndex} faderIndex={faderIndex} />
                         )
@@ -254,105 +280,110 @@ class Channels extends React.Component<ChannelsInjectProps & Store> {
                 ) : null}
                 <div className="channels-body-inner">{this.renderFaders()}</div>
                 <br />
-                <div className="channels-mix-body">
-                    <div className="top">
-                        {this.props.mixersOnline ? (
-                            <button
-                                className={ClassNames(
-                                    'button half channels-show-mixer-online',
-                                    {
-                                        connected: this.props.mixersOnline,
-                                    }
-                                )}
-                                onClick={() => {
-                                    this.handleReconnect()
-                                }}
-                            >
-                                MIXER ONLINE
-                            </button>
-                        ) : (
-                            <button
-                                className={ClassNames(
-                                    'button half channels-show-mixer-online',
-                                    {
-                                        connected: this.props.mixersOnline,
-                                    }
-                                )}
-                                onClick={() => {
-                                    this.handleReconnect()
-                                }}
-                            >
-                                RESTART SERVER
-                            </button>
-                        )}
-
-                        {window.location.search.includes('settings=1') ? (
-                            <button
-                                className="button half channels-show-settings-button"
-                                onClick={() => {
-                                    this.handleShowSettings()
-                                }}
-                            >
-                                SETTINGS
-                            </button>
-                        ) : null}
-
-                        <button
-                            className="button half channels-show-storage-button"
-                            onClick={() => {
-                                this.handleShowStorage()
-                            }}
-                        >
-                            STORAGE
-                        </button>
-
-                        {window.location.search.includes('settings=1') ? (
-                            <button
-                                className="button half channels-show-settings-button"
-                                onClick={() => {
-                                    this.handleShowPagesSetting()
-                                }}
-                            >
-                                PAGES SETUP
-                            </button>
-                        ) : null}
-
-                        {window.location.search.includes('settings=1') ? (
-                            <button
-                                className="button half channels-show-settings-button"
-                                onClick={() => {
-                                    this.handleShowLabelSetting()
-                                }}
-                            >
-                                LABELS
-                            </button>
-                        ) : null}
-                    </div>
-                    <div className="mid">
-                        {this.renderAllManualButton()}
-                        {!this.props.settings.showPfl && (
-                            <React.Fragment>
+                {window.location.search.includes('sidebar=0') ? null : (
+                    <div className="channels-mix-body">
+                        <div className="top">
+                            {this.props.mixersOnline ? (
                                 <button
-                                    className="button channels-clear-button"
+                                    className={ClassNames(
+                                        'button half channels-show-mixer-online',
+                                        {
+                                            connected: this.props.mixersOnline,
+                                        }
+                                    )}
                                     onClick={() => {
-                                        this.handleClearAllPst()
+                                        this.handleReconnect()
                                     }}
                                 >
-                                    CLEAR NEXT
+                                    MIXER ONLINE
                                 </button>
+                            ) : (
                                 <button
-                                    className="button channels-mix-button"
+                                    className={ClassNames(
+                                        'button half channels-show-mixer-online',
+                                        {
+                                            connected: this.props.mixersOnline,
+                                        }
+                                    )}
                                     onClick={() => {
-                                        this.handleMix()
+                                        this.handleReconnect()
                                     }}
                                 >
-                                    NEXT TAKE
+                                    RESTART SERVER
                                 </button>
-                            </React.Fragment>
-                        )}
+                            )}
+
+                            {window.location.search.includes('settings=1') ? (
+                                <button
+                                    className="button half channels-show-settings-button"
+                                    onClick={() => {
+                                        this.handleShowSettings()
+                                    }}
+                                >
+                                    SETTINGS
+                                </button>
+                            ) : null}
+
+                            <button
+                                className="button half channels-show-storage-button"
+                                onClick={() => {
+                                    this.handleShowStorage()
+                                }}
+                            >
+                                STORAGE
+                            </button>
+
+                            {window.location.search.includes('settings=1') ? (
+                                <button
+                                    className="button half channels-show-settings-button"
+                                    onClick={() => {
+                                        this.handleShowPagesSetting()
+                                    }}
+                                >
+                                    PAGES SETUP
+                                </button>
+                            ) : null}
+
+                            {window.location.search.includes('settings=1') ? (
+                                <button
+                                    className="button half channels-show-settings-button"
+                                    onClick={() => {
+                                        this.handleShowLabelSetting()
+                                    }}
+                                >
+                                    LABELS
+                                </button>
+                            ) : null}
+                        </div>
+                        <div className="mid">
+                            {this.renderAllManualButton()}
+                            {(this.props.settings.thirdOutRowButton ===
+                                ThirdOutRowButtonType.CUE_NEXT ||
+                                this.props.settings.thirdOutRowButton ===
+                                    ThirdOutRowButtonType.PST) && (
+                                <React.Fragment>
+                                    <button
+                                        className="button channels-clear-button"
+                                        onClick={() => {
+                                            this.handleClearAllPst()
+                                        }}
+                                    >
+                                        CLEAR NEXT
+                                    </button>
+                                    <button
+                                        className="button channels-mix-button"
+                                        onClick={() => {
+                                            this.handleMix()
+                                        }}
+                                    >
+                                        NEXT TAKE
+                                    </button>
+                                </React.Fragment>
+                            )}
+                        </div>
+                        <div className="bot">{this.renderPageButtons()}</div>
                     </div>
-                    <div className="bot">{this.renderPageButtons()}</div>
-                </div>
+                )}
             </div>
         )
     }
@@ -370,6 +401,4 @@ const mapStateToProps = (state: any): ChannelsInjectProps => {
     }
 }
 
-export default connect<ChannelsInjectProps, any, any>(mapStateToProps)(
-    Channels
-)
+export default connect<ChannelsInjectProps, any, any>(mapStateToProps)(Channels)

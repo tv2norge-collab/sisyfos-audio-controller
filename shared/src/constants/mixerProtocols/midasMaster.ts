@@ -1,8 +1,8 @@
-import { MixerProtocol, fxParamsList, MixerConnectionTypes } from '../MixerProtocolInterface'
+import { MixerProtocol, FxParam, MixerConnectionTypes } from '../MixerProtocolInterface'
 
 export const MidasMaster: MixerProtocol = {
     protocol: MixerConnectionTypes.OSC,
-    fxList: fxParamsList,
+    fxList: FxParam,
     label: 'Midas M32 / Behringer X32 Master Mode',
     presetFileExtension: 'X32',
     loadPresetCommand: [
@@ -129,7 +129,12 @@ export const MidasMaster: MixerProtocol = {
                         mixerMessage: '/meters/1',
                     },
                 ],
-                [fxParamsList.GainTrim]: [
+                CHANNEL_NAME: [
+                    {
+                        mixerMessage: '/ch/{channel}/config/name',
+                    },
+                ],
+                [FxParam.GainTrim]: [
                     {
                         mixerMessage: '/ch/{channel}/preamp/trim',
                         minLabel: -18,
@@ -138,7 +143,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' dB',
                     },
                 ],
-                [fxParamsList.CompOnOff]: [
+                [FxParam.CompOnOff]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/on',
                         minLabel: 0,
@@ -146,7 +151,7 @@ export const MidasMaster: MixerProtocol = {
                         label: 'Comp On/Off',
                     },
                 ],
-                [fxParamsList.CompThrs]: [
+                [FxParam.CompThrs]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/thr',
                         minLabel: -60,
@@ -155,7 +160,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' dB',
                     },
                 ],
-                [fxParamsList.CompRatio]: [
+                [FxParam.CompRatio]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/ratio',
                         min: 0,
@@ -180,7 +185,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' :1',
                     },
                 ],
-                [fxParamsList.CompAttack]: [
+                [FxParam.CompAttack]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/attack',
                         minLabel: 0,
@@ -189,7 +194,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' ms',
                     },
                 ],
-                [fxParamsList.CompHold]: [
+                [FxParam.CompHold]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/hold',
                         minLabel: 0,
@@ -198,7 +203,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' ms',
                     },
                 ],
-                [fxParamsList.CompKnee]: [
+                [FxParam.CompKnee]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/knee',
                         minLabel: 0,
@@ -207,7 +212,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' ',
                     },
                 ],
-                [fxParamsList.CompMakeUp]: [
+                [FxParam.CompMakeUp]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/mgain',
                         minLabel: 0,
@@ -216,7 +221,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' dB',
                     },
                 ],
-                [fxParamsList.CompRelease]: [
+                [FxParam.CompRelease]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/release',
                         minLabel: 5,
@@ -225,7 +230,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' ms',
                     },
                 ],
-                [fxParamsList.DelayTime]: [
+                [FxParam.DelayTime]: [
                     {
                         mixerMessage: '/ch/{channel}/delay/time',
                         minLabel: 0,
@@ -234,7 +239,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' ms',
                     },
                 ],
-                [fxParamsList.EqGain01]: [
+                [FxParam.EqGain01]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/1/g',
                         minLabel: -15,
@@ -243,7 +248,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' dB',
                     },
                 ],
-                [fxParamsList.EqGain02]: [
+                [FxParam.EqGain02]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/2/g',
                         minLabel: -15,
@@ -252,7 +257,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' dB',
                     },
                 ],
-                [fxParamsList.EqGain03]: [
+                [FxParam.EqGain03]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/3/g',
                         minLabel: -15,
@@ -261,7 +266,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' dB',
                     },
                 ],
-                [fxParamsList.EqGain04]: [
+                [FxParam.EqGain04]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/4/g',
                         minLabel: -15,
@@ -270,7 +275,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' dB',
                     },
                 ],
-                [fxParamsList.EqFreq01]: [
+                [FxParam.EqFreq01]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/1/f',
                         minLabel: 20,
@@ -279,7 +284,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' Freq',
                     },
                 ],
-                [fxParamsList.EqFreq02]: [
+                [FxParam.EqFreq02]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/2/f',
                         minLabel: 20,
@@ -288,7 +293,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' Freq',
                     },
                 ],
-                [fxParamsList.EqFreq03]: [
+                [FxParam.EqFreq03]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/3/f',
                         minLabel: 20,
@@ -297,7 +302,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' Freq',
                     },
                 ],
-                [fxParamsList.EqFreq04]: [
+                [FxParam.EqFreq04]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/4/f',
                         minLabel: 20,
@@ -306,7 +311,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' Freq',
                     },
                 ],
-                [fxParamsList.EqQ01]: [
+                [FxParam.EqQ01]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/1/q',
                         minLabel: 10,
@@ -315,7 +320,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' Q',
                     },
                 ],
-                [fxParamsList.EqQ02]: [
+                [FxParam.EqQ02]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/2/q',
                         minLabel: 10,
@@ -324,7 +329,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' Q',
                     },
                 ],
-                [fxParamsList.EqQ03]: [
+                [FxParam.EqQ03]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/3/q',
                         minLabel: 10,
@@ -333,7 +338,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' Q',
                     },
                 ],
-                [fxParamsList.EqQ04]: [
+                [FxParam.EqQ04]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/4/q',
                         minLabel: 10,
@@ -359,7 +364,12 @@ export const MidasMaster: MixerProtocol = {
                         mixerMessage: '/ch/{channel}/mix/fader',
                     },
                 ],
-                [fxParamsList.GainTrim]: [
+                CHANNEL_NAME: [
+                    {
+                        mixerMessage: '/ch/{channel}/config/name',
+                    },
+                ],
+                [FxParam.GainTrim]: [
                     {
                         mixerMessage: '/ch/{channel}/preamp/trim',
                         minLabel: -18,
@@ -368,7 +378,7 @@ export const MidasMaster: MixerProtocol = {
                         valueLabel: ' dB',
                     },
                 ],
-                [fxParamsList.CompOnOff]: [
+                [FxParam.CompOnOff]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/on',
                         minLabel: 0,
@@ -376,102 +386,102 @@ export const MidasMaster: MixerProtocol = {
                         label: 'Comp On/Off',
                     },
                 ],
-                [fxParamsList.CompThrs]: [
+                [FxParam.CompThrs]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/thr',
                     },
                 ],
-                [fxParamsList.CompRatio]: [
+                [FxParam.CompRatio]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/ratio',
                     },
                 ],
-                [fxParamsList.CompAttack]: [
+                [FxParam.CompAttack]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/attack',
                     },
                 ],
-                [fxParamsList.CompHold]: [
+                [FxParam.CompHold]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/hold',
                     },
                 ],
-                [fxParamsList.CompKnee]: [
+                [FxParam.CompKnee]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/knee',
                     },
                 ],
-                [fxParamsList.CompMakeUp]: [
+                [FxParam.CompMakeUp]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/mgain',
                     },
                 ],
-                [fxParamsList.CompRelease]: [
+                [FxParam.CompRelease]: [
                     {
                         mixerMessage: '/ch/{channel}/dyn/release',
                     },
                 ],
-                [fxParamsList.DelayTime]: [
+                [FxParam.DelayTime]: [
                     {
                         mixerMessage: '/ch/{channel}/delay/time',
                     },
                 ],
-                [fxParamsList.EqGain01]: [
+                [FxParam.EqGain01]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/1/g',
                     },
                 ],
-                [fxParamsList.EqGain02]: [
+                [FxParam.EqGain02]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/2/g',
                     },
                 ],
-                [fxParamsList.EqGain03]: [
+                [FxParam.EqGain03]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/3/g',
                     },
                 ],
-                [fxParamsList.EqGain04]: [
+                [FxParam.EqGain04]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/4/g',
                     },
                 ],
-                [fxParamsList.EqFreq01]: [
+                [FxParam.EqFreq01]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/1/f',
                     },
                 ],
-                [fxParamsList.EqFreq02]: [
+                [FxParam.EqFreq02]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/2/f',
                     },
                 ],
-                [fxParamsList.EqFreq03]: [
+                [FxParam.EqFreq03]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/3/f',
                     },
                 ],
-                [fxParamsList.EqFreq04]: [
+                [FxParam.EqFreq04]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/4/f',
                     },
                 ],
-                [fxParamsList.EqQ01]: [
+                [FxParam.EqQ01]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/1/q',
                     },
                 ],
-                [fxParamsList.EqQ02]: [
+                [FxParam.EqQ02]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/2/q',
                     },
                 ],
-                [fxParamsList.EqQ03]: [
+                [FxParam.EqQ03]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/3/q',
                     },
                 ],
-                [fxParamsList.EqQ04]: [
+                [FxParam.EqQ04]: [
                     {
                         mixerMessage: '/ch/{channel}/eq/4/q',
                     },
