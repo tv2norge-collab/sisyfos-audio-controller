@@ -1,7 +1,7 @@
 import {
-    ChannelActions,
     ChannelActionTypes,
 } from '../actions/channelActions'
+import { RootAction, RootState } from './indexReducer'
 
 export interface Channels {
     chMixerConnection: ChMixerConnection[]
@@ -19,7 +19,7 @@ export interface Channel {
     fadeActive: boolean
     outputLevel: number
     auxLevel: number[]
-    private?: {
+    privateData?: {
         [key: string]: string
     }
 }
@@ -68,8 +68,12 @@ export const defaultChannelsReducerState = (
 
 export const channels = (
     state = defaultChannelsReducerState([{ numberOfTypeInCh: [1] }]),
-    action: ChannelActions
+    action: RootAction,
+    fullState?: RootState
 ): Array<Channels> => {
+    if (!(action.type in ChannelActionTypes)) {
+        return state;
+    }
     let nextState = [
         {
             chMixerConnection: [...state[0].chMixerConnection],
@@ -151,15 +155,15 @@ export const channels = (
             if (
                 !nextState[0].chMixerConnection[action.mixerIndex].channel[
                     action.channel
-                ].private
+                ].privateData
             ) {
                 nextState[0].chMixerConnection[action.mixerIndex].channel[
                     action.channel
-                ].private = {}
+                ].privateData = {}
             }
             nextState[0].chMixerConnection[action.mixerIndex].channel[
                 action.channel
-            ].private![action.tag] = action.value
+            ].privateData![action.tag] = action.value
             return nextState
         case ChannelActionTypes.SET_CHANNEL_LABEL:
             nextState[0].chMixerConnection[action.mixerIndex].channel[

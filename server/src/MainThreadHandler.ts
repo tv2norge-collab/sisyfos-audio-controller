@@ -8,13 +8,9 @@ import {
 import { SnapshotHandler } from './utils/SnapshotHandler'
 import { socketServer } from './expressHandler'
 
-import {
-    SettingsActionTypes,
-} from '../../shared/src/actions/settingsActions'
+import { SettingsActionTypes } from '../../shared/src/actions/settingsActions'
 import * as IO from '../../shared/src/constants/SOCKET_IO_DISPATCHERS'
-import {
-    FaderActionTypes,
-} from '../../shared/src/actions/faderActions'
+import { FaderActionTypes } from '../../shared/src/actions/faderActions'
 
 import {
     loadSettings,
@@ -33,7 +29,7 @@ import {
 } from '../../shared/src/actions/channelActions'
 import { logger } from './utils/logger'
 import { CustomPages } from '../../shared/src/reducers/settingsReducer'
-import { fxParamsList } from '../../shared/src/constants/MixerProtocolInterface'
+import { FxParam } from '../../shared/src/constants/MixerProtocolInterface'
 import path from 'path'
 import { Channel } from '../../shared/src/reducers/channelsReducer'
 import { ChannelReference } from '../../shared/src/reducers/fadersReducer'
@@ -120,6 +116,25 @@ export class MainThreadHandlers {
         })
     }
 
+    setLink(faderIndex: number, linkOn: boolean) {
+        store.dispatch({
+            type: FaderActionTypes.SET_LINK,
+            faderIndex,
+            linkOn,
+        })
+        mixerGenericConnection.updateOutLevel(faderIndex, -1)
+        mixerGenericConnection.updateOutLevel(faderIndex + 1, -1)
+        this.reIndexAssignedChannelsRelation()
+        this.updateFullClientStore()
+    }
+
+    loadMixerPreset(presetName: string) {
+        logger.info(`Load Mixer Preset: ${presetName}`)
+        mixerGenericConnection.loadMixerPreset(presetName)
+        this.reIndexAssignedChannelsRelation()
+        this.updateFullClientStore()
+    }
+
     socketServerHandlers(socket: any) {
         logger.info('Setting up socket IO main handlers.')
 
@@ -191,12 +206,7 @@ export class MainThreadHandlers {
                 this.reIndexAssignedChannelsRelation()
                 this.updateFullClientStore()
             })
-            .on(IO.SOCKET_LOAD_MIXER_PRESET, (payload: any) => {
-                logger.info(`Set Mixer Preset: ${payload}`)
-                mixerGenericConnection.loadMixerPreset(payload)
-                this.reIndexAssignedChannelsRelation()
-                this.updateFullClientStore()
-            })
+            .on(IO.SOCKET_LOAD_MIXER_PRESET, (payload: any) => this.loadMixerPreset(payload))
             .on(IO.SOCKET_GET_PAGES_LIST, () => {
                 logger.info('Get custom pages list')
                 let customPages: CustomPages[] = getCustomPages()
@@ -270,6 +280,17 @@ export class MainThreadHandlers {
                 this.reIndexAssignedChannelsRelation()
                 this.updateFullClientStore()
             })
+            .on(IO.SOCKET_ASSIGN_ONE_TO_ONE, () => {
+                logger.trace(`Assign 1:1.\n`)
+                store.dispatch({
+                    type: FaderActionTypes.REMOVE_ALL_ASSIGNED_CHANNELS,
+                })
+                store.dispatch({
+                    type: FaderActionTypes.ASSIGN_ONE_TO_ONE,
+                })
+                this.reIndexAssignedChannelsRelation()
+                this.updateFullClientStore()
+            })
             .on(IO.SOCKET_SET_FADER_MONITOR, (payload: any) => {
                 store.dispatch({
                     type: FaderActionTypes.SET_FADER_MONITOR,
@@ -313,7 +334,7 @@ export class MainThreadHandlers {
             })
             .on(IO.SOCKET_SET_FX, (payload: any) => {
                 logger.trace(
-                    `Set ${fxParamsList[payload.fxParam]}: ${payload.channel}`
+                    `Set ${FxParam[payload.fxParam]}: ${payload.channel}`
                 )
                 store.dispatch({
                     type: FaderActionTypes.SET_FADER_FX,
@@ -344,7 +365,7 @@ export class MainThreadHandlers {
             .on(IO.SOCKET_TOGGLE_PGM, (faderIndex: any) => {
                 mixerGenericConnection.checkForAutoResetThreshold(faderIndex)
                 store.dispatch({
-                    type: FaderActionTypes.TOGGLE_PGM,
+                    type: FaderActionTypes.TOGGLE_PGM_UI,
                     faderIndex: faderIndex,
                 })
                 mixerGenericConnection.updateOutLevel(faderIndex, -1)
@@ -398,11 +419,46 @@ export class MainThreadHandlers {
                 mixerGenericConnection.updateAMixState(faderIndex)
                 this.updatePartialStore(faderIndex)
             })
+            .on(IO.SOCKET_SET_LINK, (payload: any) =>
+                this.setLink(payload.faderIndex, payload.linkOn)
+            )
             .on(IO.SOCKET_TOGGLE_IGNORE, (faderIndex: any) => {
-                store.dispatch({
-                    type: FaderActionTypes.IGNORE_AUTOMATION,
-                    faderIndex: faderIndex,
-                })
+                if (!state.settings[0].labelControlsIgnoreAutomation) {
+                    store.dispatch({
+                        type: FaderActionTypes.IGNORE_AUTOMATION,
+                        faderIndex: faderIndex,
+                    })
+                } else {
+                    // If the Auto Manual is Labelprefix based, the label should have set prefix set
+                    // Label will then be send to the Mixer, and the mixer response sets the automation
+                    // This way we ensure only one state that is the external Mixer
+                    state.faders[0].fader[faderIndex].assignedChannels.forEach(
+                        (assignedChannel) => {
+                            const oldLabel =
+                                state.channels[0].chMixerConnection[0].channel[
+                                    assignedChannel.channelIndex
+                                ].label || ''
+                            const newLabel = oldLabel.startsWith(
+                                state.settings[0].labelIgnorePrefix
+                            )
+                                ? oldLabel.slice(1)
+                                : oldLabel
+                            store.dispatch({
+                                type: ChannelActionTypes.SET_CHANNEL_LABEL,
+                                channel: assignedChannel.channelIndex,
+                                label: state.faders[0].fader[faderIndex]
+                                    .ignoreAutomation
+                                    ? newLabel
+                                    : state.settings[0].labelIgnorePrefix +
+                                      newLabel,
+                                mixerIndex: assignedChannel.mixerIndex,
+                            })
+                            mixerGenericConnection.updateChannelName(
+                                assignedChannel.channelIndex
+                            )
+                        }
+                    )
+                }
                 this.updatePartialStore(faderIndex)
             })
             .on(IO.SOCKET_SET_FADERLEVEL, (payload: any) => {

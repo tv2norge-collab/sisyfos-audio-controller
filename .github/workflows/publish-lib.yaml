@@ -1,0 +1,84 @@
+name: Publish prerelease
+
+env:
+  node-version: 18
+  node-package-manager: yarn
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  prerelease:
+    name: Prerelease
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.node-version }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Configure CodeArtifact Token
+        run: |
+          echo CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain selma --domain-owner ${{ secrets.AWS_ACCOUNT_ID }} --query authorizationToken --output text --region ${{ secrets.AWS_REGION }}) >> $GITHUB_ENV
+      - name: Check release is desired
+        id: do-publish
+        run: |
+          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            echo "No Token"
+          elif [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+            echo "Publish nightly"
+            echo "publish=nightly" >> $GITHUB_OUTPUT
+          else
+            echo "Publish experimental"
+            echo "publish=experimental" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Prepare Environment
+        if: ${{ steps.do-publish.outputs.publish }}
+        run: |
+          yarn install
+          yarn build
+        env:
+          CI: true
+      - name: Bump version
+        if: ${{ steps.do-publish.outputs.publish }}
+        run: |
+          git config --global user.email "chandrashekar.nallamilli@tv2.no"
+          git config --global user.name "chandrashekar-nallamilli"
+
+          COMMIT_TIMESTAMP=$(git log -1 --pretty=format:%ct HEAD)
+          COMMIT_DATE=$(date -d @$COMMIT_TIMESTAMP +%Y%m%d-%H%M%S)
+          GIT_HASH=$(git rev-parse --short HEAD)
+          PRERELEASE_TAG=nightly-$(echo "${{ github.ref_name }}" | sed -r 's/[^a-z0-9]+/-/gi')
+          cd component-lib
+          yarn version --prerelease --preid "$PRERELEASE_TAG-$COMMIT_DATE-$GIT_HASH"
+        env:
+          CI: true
+      - name: Publish to Code Artifatct
+        if: ${{ steps.do-publish.outputs.publish }}
+        run: |
+          aws codeartifact login --tool npm --repository selma-store --domain selma --domain-owner ${{ secrets.AWS_ACCOUNT_ID }} --region ${{ secrets.AWS_REGION }}
+          NEW_VERSION=$(node -p "require('./component-lib/package.json').version")
+
+          yarn config set version-git-tag false
+          yarn config set version-tag-prefix ""
+          yarn publish component-lib --new-version "$NEW_VERSION" --tag "$NEW_VERSION"
+
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "**Published:** $NEW_VERSION" >> $GITHUB_STEP_SUMMARY
+        env:
+          CI: true

@@ -15,11 +15,11 @@ import {
     SOCKET_SET_INPUT_SELECTOR,
 } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 import ReductionMeter from './ReductionMeter'
-import ClassNames from 'classnames'
-import { fxParamsList } from '../../../shared/src/constants/MixerProtocolInterface'
+import { FxParam } from '../../../shared/src/constants/MixerProtocolInterface'
 import { Channel } from '../../../shared/src/reducers/channelsReducer'
 import { getFaderLabel } from '../utils/labels'
 import ChanStripEq from './ChanStripEq'
+import { InputSelector } from './InputSelector'
 
 interface ChanStripFullInjectProps {
     label: string
@@ -46,28 +46,6 @@ class ChanStripFull extends React.PureComponent<
         super(props)
     }
 
-    handleShowRoutingOptions() {
-        this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_OPTION,
-            channel: this.props.faderIndex,
-        })
-        this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_CHAN_STRIP_FULL,
-            channel: -1,
-        })
-    }
-
-    handleShowMonitorOptions() {
-        this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_MONITOR_OPTIONS,
-            channel: this.props.faderIndex,
-        })
-        this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_CHAN_STRIP_FULL,
-            channel: -1,
-        })
-    }
-
     handleClose = () => {
         this.props.dispatch({
             type: SettingsActionTypes.TOGGLE_SHOW_CHAN_STRIP_FULL,
@@ -89,13 +67,13 @@ class ChanStripFull extends React.PureComponent<
 
     changeDelay(currentValue: number, addValue: number) {
         window.socketIoClient.emit(SOCKET_SET_FX, {
-            fxParam: fxParamsList.DelayTime,
+            fxParam: FxParam.DelayTime,
             faderIndex: this.props.faderIndex,
             level: currentValue + addValue,
         })
     }
 
-    handleFx(fxParam: fxParamsList, level: any) {
+    handleFx(fxParam: FxParam, level: any) {
         if (level < 0) {
             level = 0
         }
@@ -116,52 +94,6 @@ class ChanStripFull extends React.PureComponent<
             auxIndex: this.props.auxSendIndex,
             level: parseFloat(event),
         })
-    }
-
-    inputSelectorButton(index: number) {
-        const isActive =
-            this.props.fader[this.props.faderIndex].inputSelector === index + 1
-        return (
-            <button
-                className={ClassNames('input-select', {
-                    active: isActive,
-                })}
-                // className={'input-select' + (isActive ? ' active' : '')}
-                onClick={() => {
-                    this.handleInputSelect(index + 1)
-                }}
-            >
-                {window.mixerProtocol.channelTypes[0].toMixer
-                    .CHANNEL_INPUT_SELECTOR
-                    ? window.mixerProtocol.channelTypes[0].toMixer
-                          .CHANNEL_INPUT_SELECTOR[index].label
-                    : null}
-            </button>
-        )
-    }
-
-    inputSelector() {
-        return (
-            <div
-                className={ClassNames('input-buttons', {
-                    disabled:
-                        this.props.fader[this.props.faderIndex].capabilities &&
-                        !this.props.fader[this.props.faderIndex].capabilities!
-                            .hasInputSelector,
-                })}
-            >
-                {window.mixerProtocol.channelTypes[0].toMixer
-                    .CHANNEL_INPUT_SELECTOR ? (
-                    <React.Fragment>
-                        {window.mixerProtocol.channelTypes[0].toMixer.CHANNEL_INPUT_SELECTOR.map(
-                            (none: any, index: number) => {
-                                return this.inputSelectorButton(index)
-                            }
-                        )}
-                    </React.Fragment>
-                ) : null}
-            </div>
-        )
     }
 
     inputGain() {
@@ -209,7 +141,7 @@ class ChanStripFull extends React.PureComponent<
     delay() {
         return (
             <React.Fragment>
-                {this.fxParamFader(fxParamsList.DelayTime)}
+                {this.fxParamFader(FxParam.DelayTime)}
                 <div className="chstrip-full-delay-buttons">
                     {DEL_VALUES.map((value: number, index: number) => {
                         return (
@@ -219,7 +151,7 @@ class ChanStripFull extends React.PureComponent<
                                 onClick={() => {
                                     this.changeDelay(
                                         this.props.fader[this.props.faderIndex][
-                                            fxParamsList.DelayTime
+                                            FxParam.DelayTime
                                         ]?.[0] || 0,
                                         value / 500
                                     )
@@ -235,7 +167,7 @@ class ChanStripFull extends React.PureComponent<
         )
     }
 
-    fxParamFader(fxParam: fxParamsList) {
+    fxParamFader(fxParam: FxParam) {
         if (!this.doesParamExists(fxParam)) {
             return
         }
@@ -302,7 +234,7 @@ class ChanStripFull extends React.PureComponent<
         )
     }
 
-    fxParamButton(fxParam: fxParamsList) {
+    fxParamButton(fxParam: FxParam) {
         if (!this.doesParamExists(fxParam)) {
             return
         }
@@ -362,7 +294,7 @@ class ChanStripFull extends React.PureComponent<
         )
     }
 
-    doesParamExists(fxParam: fxParamsList): boolean {
+    doesParamExists(fxParam: FxParam): boolean {
         return !!window.mixerProtocol.channelTypes[0].fromMixer[fxParam]
     }
 
@@ -379,49 +311,49 @@ class ChanStripFull extends React.PureComponent<
                             <div className="chstrip-full-content-group">
                                 <div className="title">INPUT</div>
                                 <div className="chstrip-full-content">
-                                    {this.inputSelector()}
+                                    <InputSelector fader={this.props.fader[this.props.faderIndex]} faderIndex={this.props.faderIndex} />
                                     {this.inputGain()}
                                 </div>
                             </div>
                     )}
-                        {this.doesParamExists(fxParamsList.GainTrim) ? (
+                        {this.doesParamExists(FxParam.GainTrim) ? (
                             <div className="chstrip-full-content-group">
                                 <div className="title">INPUT</div>
                                 <div className="chstrip-full-content">
-                                    {this.fxParamFader(fxParamsList.GainTrim)}
+                                    {this.fxParamFader(FxParam.GainTrim)}
                                 </div>
                             </div>
                         ) : (
                             <div/>
                         )}
-                        {this.doesParamExists(fxParamsList.CompThrs) ? (
+                        {this.doesParamExists(FxParam.CompThrs) ? (
                             <div className="chstrip-full-content-group">
                                 <div className="title">COMPRESSOR</div>
                                 <div className="chstrip-full-content">
-                                    {this.fxParamButton(fxParamsList.CompOnOff)}
-                                    {this.fxParamFader(fxParamsList.CompThrs)}
+                                    {this.fxParamButton(FxParam.CompOnOff)}
+                                    {this.fxParamFader(FxParam.CompThrs)}
                                     <p className="chstrip-full-zero-comp">
                                         ______
                                     </p>
-                                    {this.fxParamFader(fxParamsList.CompRatio)}
+                                    {this.fxParamFader(FxParam.CompRatio)}
                                     <p className="chstrip-full-zero-comp">
                                         ______
                                     </p>
                                     {this.gainReduction()}
-                                    {this.fxParamFader(fxParamsList.CompMakeUp)}
+                                    {this.fxParamFader(FxParam.CompMakeUp)}
                                     <p className="chstrip-full-zero-comp">
                                         ______
                                     </p>
-                                    {this.fxParamFader(fxParamsList.CompAttack)}
+                                    {this.fxParamFader(FxParam.CompAttack)}
                                     <p className="chstrip-full-zero-comp">
                                         ______
                                     </p>
-                                    {this.fxParamFader(fxParamsList.CompHold)}
+                                    {this.fxParamFader(FxParam.CompHold)}
                                     <p className="chstrip-full-zero-comp">
                                         ______
                                     </p>
                                     {this.fxParamFader(
-                                        fxParamsList.CompRelease
+                                        FxParam.CompRelease
                                     )}
                                     <p className="chstrip-full-zero-comp">
                                         ______
@@ -431,7 +363,7 @@ class ChanStripFull extends React.PureComponent<
                         ) : (
                             <div/>
                         )}
-                        {this.doesParamExists(fxParamsList.DelayTime) ? (
+                        {this.doesParamExists(FxParam.DelayTime) ? (
                             <div className="chstrip-full-content-group">
                                 <div className="title">DELAY</div>
                                 <div className="chstrip-full-content">
@@ -472,7 +404,7 @@ class ChanStripFull extends React.PureComponent<
     eq() {
         return (
             <React.Fragment>
-                {this.doesParamExists(fxParamsList.EqGain01) ? (
+                {this.doesParamExists(FxParam.EqGain01) ? (
                     <div className="chstrip-full-eq-window">
                         <ChanStripEq faderIndex={this.props.faderIndex} />
                     </div>
@@ -494,22 +426,6 @@ class ChanStripFull extends React.PureComponent<
                         >
                             X
                         </button>
-                        {window.location.search.includes('settings=1') ? (
-                            <button
-                                className="button half"
-                                onClick={() => this.handleShowRoutingOptions()}
-                            >
-                                Channel-Fader Routing
-                            </button>
-                        ) : null}
-                        {window.location.search.includes('settings=1') ? (
-                            <button
-                                className="button half"
-                                onClick={() => this.handleShowMonitorOptions()}
-                            >
-                                Monitor Routing
-                            </button>
-                        ) : null}
                     </div>
                     <hr />
                     {this.parameters()}

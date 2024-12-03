@@ -5,7 +5,7 @@ import { remoteConnections } from '../../mainClasses'
 
 //Utils:
 import {
-    fxParamsList,
+    FxParam,
     MixerProtocol,
 } from '../../../../shared/src/constants/MixerProtocolInterface'
 import {
@@ -24,8 +24,9 @@ import {
     ChannelReference,
     Fader,
 } from '../../../../shared/src/reducers/fadersReducer'
+import { MixerConnection } from '.'
 
-export class QlClMixerConnection {
+export class QlClMixerConnection implements MixerConnection {
     mixerProtocol: MixerProtocol
     mixerIndex: number
     cmdChannelIndex: number
@@ -61,7 +62,7 @@ export class QlClMixerConnection {
         this.setupMixerConnection()
     }
 
-    setupMixerConnection() {
+    private setupMixerConnection() {
         this.midiConnection
             .on('ready', () => {
                 logger.info('Receiving state of desk')
@@ -248,7 +249,7 @@ export class QlClMixerConnection {
         }
     }
 
-    pingMixerCommand() {
+    private pingMixerCommand() {
         this.mixerOnlineTimer = setTimeout(() => {
             store.dispatch({
                 type: SettingsActionTypes.SET_MIXER_ONLINE,
@@ -269,7 +270,7 @@ export class QlClMixerConnection {
         )
     }
 
-    checkMidiCommand(midiMessage: number[], command: string) {
+    private checkMidiCommand(midiMessage: number[], command: string) {
         if (!midiMessage) return false
         let commandArray = command.split(' ')
         let valid = true
@@ -288,7 +289,7 @@ export class QlClMixerConnection {
         return valid
     }
 
-    sendOutMessage(
+    private sendOutMessage(
         message: string,
         channel: number,
         value: string | number,
@@ -328,7 +329,7 @@ export class QlClMixerConnection {
         this.midiConnection.write(buf)
     }
 
-    updateOutLevel(channelIndex: number) {
+    private updateOutLevel(channelIndex: number) {
         let channelType =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[
                 channelIndex
@@ -428,7 +429,7 @@ export class QlClMixerConnection {
         return true
     }
 
-    updateFx(fxParam: fxParamsList, channelIndex: number, level: number) {
+    updateFx(channelIndex: number, fxParam: FxParam, level: number) {
         return true
     }
     updateAuxLevel(channelIndex: number, auxSendIndex: number, level: number) {
@@ -474,12 +475,9 @@ export class QlClMixerConnection {
 
     loadMixerPreset(presetName: string) {}
 
-    injectCommand(command: string[]) {
-        return true
-    }
+    injectCommand(command: string[]) {}
 
     updateAMixState(channelIndex: number, amixOn: boolean) {}
-
 
     updateChannelSetting(
         channelIndex: number,
