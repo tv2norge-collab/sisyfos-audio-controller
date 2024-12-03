@@ -127,7 +127,6 @@ export class OscMixerConnection implements MixerConnection {
                     )
                     this.mixerOnline(true)
                 }
-                console.log('OSC object received :', message)
                 logger.trace(`Received OSC message: ${message.address}`)
 
                 if (

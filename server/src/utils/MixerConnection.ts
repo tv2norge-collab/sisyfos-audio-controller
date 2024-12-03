@@ -567,18 +567,6 @@ export class MixerGenericConnection {
             (endLevel - startLevel) *
                 Math.max(0, Math.min(1, elapsedTimeMS / fadeTime))
 
-        console.log(
-            'currentOutputLevel',
-            currentOutputLevel,
-            'startLevel',
-            startLevel,
-            'endLevel',
-            endLevel,
-            'elapsedTimeMS',
-            elapsedTimeMS,
-            'fadeTime',
-            fadeTime
-        )
         this.mixerConnection[mixerIndex].updateFadeIOLevel(
             channelIndex,
             this.currentOutputLevel[channelIndex]
