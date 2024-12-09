@@ -28,9 +28,9 @@
         "webmidi": "^2.5.1"
     },
     "devDependencies": {
+        "@babel/core": "^7.23.9",
         "@svgr/webpack": "^8.1.0",
         "@types/lodash": "^4.17.7",
-        "@babel/core": "^7.23.9",
         "@types/node": "^18.16.0",
         "@types/react-dom": "^18.2.18",
         "@types/react-test-renderer": "^18.0.7",
