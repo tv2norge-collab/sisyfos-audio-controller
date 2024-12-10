@@ -274,7 +274,7 @@ export class EmberMixerConnection implements MixerConnection {
 
             cb(node)
         } catch (e) {
-            logger.data(e).debug('Error when subscribing to fader label')
+            logger.data(e).debug('Error when subscribing to ' + mixerMessage)
         }
     }
 
