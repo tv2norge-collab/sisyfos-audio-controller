@@ -214,7 +214,9 @@ export class EmberMixerConnection implements MixerConnection {
         typeIndex: number,
         channelTypeIndex: number,
     ) {
-        const mixerMessage = 'Channels.Inputs.${channel}.Fader'
+        const mixerMessage = typeIndex === 0 ? 
+            'Channels.Inputs.${channel}.Fader' : 
+            'Channels.Groups.${channel}.Fader'
         const channel =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[chNumber - 1]
         const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
