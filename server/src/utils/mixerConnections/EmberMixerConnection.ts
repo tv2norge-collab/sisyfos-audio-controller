@@ -716,30 +716,59 @@ export class EmberMixerConnection implements MixerConnection {
             },
         )
     }
-
     private async subscribeVUMeter(
-        chNumber: number,
+        chNumber: number, 
         typeIndex: number,
         channelTypeIndex: number,
     ) {
+        if (chNumber > 1) return
         const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
-        const mixerMessage =
-            this.mixerProtocol.channelTypes[typeIndex].fromMixer.CHANNEL_VU[0]
-                .mixerMessage
-        await this.subscribeToEmberNode(
-            channelTypeIndex,
-            mixerMessage,
-            (node) => {
-                if (node.contents.type !== Model.ElementType.Parameter) return
-
-                const value = Number(node.contents.value)
-                if (Number.isNaN(value)) return
-
-                const factor = node.contents.factor ?? 1
-
-                sendVuLevel(assignedFaderIndex, VuType.Channel, 0, dbToFloat(value / factor))
-            },
-        )
+        const mixerMessage = this.mixerProtocol.channelTypes[typeIndex].fromMixer.CHANNEL_VU[0].mixerMessage
+    
+        logger.info(`Subscribe to VU meter ` + mixerMessage)
+    
+        try {
+            const node = await this.emberConnection.getElementByPath(
+                this._insertChannelName(mixerMessage, String(channelTypeIndex + 1))
+            )
+            
+            if (!node?.contents || node.contents.type !== Model.ElementType.Parameter) {
+                logger.error('Invalid node type for VU meter')
+                return
+            }
+    
+            const param = node.contents
+            if (!param.streamIdentifier) {
+                logger.error('No stream identifier found for VU meter')
+                return
+            }
+    
+            logger.info(`Setting up subscription to VU meter parameter: ${JSON.stringify(param, null, 2)}`)
+    
+            // Subscribe to the parameter - this will also subscribe to its stream
+            const subscription = await this.emberConnection.subscribe(
+                node as NumberedTreeNode<EmberElement>,
+                (node) => {
+                    logger.info('VU meter update' + JSON.stringify(node.contents, null, 2))
+                    if (node.contents.type !== Model.ElementType.Parameter) return
+                    const value = Number(node.contents.value)
+                    if (Number.isNaN(value)) return
+    
+                    const factor = param.factor ?? 1
+    
+                    sendVuLevel(
+                        assignedFaderIndex,
+                        VuType.Channel,
+                        0,
+                        dbToFloat(value / factor)
+                    )
+                }
+            )
+            await subscription.response
+    
+        } catch (e) {
+            logger.data(e).error('Error when subscribing to VU meter: ' + mixerMessage)
+        }
     }
 
     private sendOutMessage(
