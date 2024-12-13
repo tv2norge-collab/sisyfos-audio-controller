@@ -725,7 +725,7 @@ export class EmberMixerConnection implements MixerConnection {
         const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
         const mixerMessage = this.mixerProtocol.channelTypes[typeIndex].fromMixer.CHANNEL_VU[0].mixerMessage
     
-        logger.info(`Subscribe to VU meter ` + mixerMessage)
+        console.log(`Subscribe to VU meter ` + mixerMessage)
     
         try {
             const node = await this.emberConnection.getElementByPath(
@@ -733,23 +733,23 @@ export class EmberMixerConnection implements MixerConnection {
             )
             
             if (!node?.contents || node.contents.type !== Model.ElementType.Parameter) {
-                logger.error('Invalid node type for VU meter')
+                console.log('Invalid node type for VU meter')
                 return
             }
     
             const param = node.contents
             if (!param.streamIdentifier) {
-                logger.error('No stream identifier found for VU meter')
+                console.log('No stream identifier found for VU meter')
                 return
             }
     
-            logger.info(`Setting up subscription to VU meter parameter: ${JSON.stringify(param, null, 2)}`)
+            console.log(`Setting up subscription to VU meter parameter: ${JSON.stringify(param, null, 2)}`)
     
             // Subscribe to the parameter - this will also subscribe to its stream
             const subscription = await this.emberConnection.subscribe(
                 node as NumberedTreeNode<EmberElement>,
                 (node) => {
-                    logger.info('VU meter update' + JSON.stringify(node.contents, null, 2))
+                    console.log('VU meter update' + JSON.stringify(node.contents, null, 2))
                     if (node.contents.type !== Model.ElementType.Parameter) return
                     const value = Number(node.contents.value)
                     if (Number.isNaN(value)) return
@@ -767,7 +767,7 @@ export class EmberMixerConnection implements MixerConnection {
             await subscription.response
     
         } catch (e) {
-            logger.data(e).error('Error when subscribing to VU meter: ' + mixerMessage)
+            console.log('Error when subscribing to VU meter: ' + mixerMessage)
         }
     }
 
