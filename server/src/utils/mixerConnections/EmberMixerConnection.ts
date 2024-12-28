@@ -55,29 +55,6 @@ export class EmberMixerConnection implements MixerConnection {
         )
     }
 
-    // This function handles the fact that the path in the Ember+ tree is not always the same as the path in the mixer protocol 
-    private getInternalNodePath(node: any): string | undefined {
-        if ('path' in node && node.path) {
-            // QualifiedElement has path property
-            return node.path;
-        } else if ('number' in node) {
-            // NumberedTreeNode needs to have it's internal path constructed:
-            const numbers: number[] = [];
-            let current = node;
-            
-            while (current) {
-                numbers.unshift(current.number);
-                current = current.parent;
-            }
-            
-            // Join the numbers with dots to create the path
-            return numbers.join('.');
-        }
-        
-        return undefined;
-    }
-    
-
     private setupEmberSocket() {
         logger.info('Setting up new Ember connection')
         this.emberConnection = new EmberClient(
@@ -780,7 +757,7 @@ export class EmberMixerConnection implements MixerConnection {
                 return
             }
                 
-            const internalPath = this.getInternalNodePath(node)
+            const internalPath = this.emberConnection.getInternalNodePath(node)
             if (!internalPath) return
             this.meteringRef[String(internalPath)] ={ faderIndex: assignedFaderIndex, factor: param.factor, lastUpdated: Date.now() }
 
