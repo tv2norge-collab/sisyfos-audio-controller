@@ -1,4 +1,4 @@
-import { EmberClient, Model } from 'emberplus-connection'
+import { EmberClient, Model, StreamManager } from 'emberplus-connection'
 import { store, state } from '../../reducers/store'
 import { remoteConnections } from '../../mainClasses'
 import path from 'path'
@@ -32,6 +32,7 @@ export class EmberMixerConnection implements MixerConnection {
     deviceRoot: any
     emberNodeObject: Array<any>
     isSubscribedToChannel: Array<boolean> = []
+    meteringRef: Record< string, {faderIndex: number, factor: number, lastUpdated: number }> = {}
 
     constructor(mixerProtocol: MixerProtocol, mixerIndex: number) {
         this.sendOutMessage = this.sendOutMessage.bind(this)
@@ -53,6 +54,29 @@ export class EmberMixerConnection implements MixerConnection {
             }),
         )
     }
+
+    // This function handles the fact that the path in the Ember+ tree is not always the same as the path in the mixer protocol 
+    private getInternalNodePath(node: any): string | undefined {
+        if ('path' in node && node.path) {
+            // QualifiedElement has path property
+            return node.path;
+        } else if ('number' in node) {
+            // NumberedTreeNode needs to have it's internal path constructed:
+            const numbers: number[] = [];
+            let current = node;
+            
+            while (current) {
+                numbers.unshift(current.number);
+                current = current.parent;
+            }
+            
+            // Join the numbers with dots to create the path
+            return numbers.join('.');
+        }
+        
+        return undefined;
+    }
+    
 
     private setupEmberSocket() {
         logger.info('Setting up new Ember connection')
@@ -87,6 +111,20 @@ export class EmberMixerConnection implements MixerConnection {
         })
         this.emberConnection.on('connected', async () => {
             logger.info('Found Ember connection')
+
+            StreamManager.getInstance().on('streamUpdate', (path: string, value: number) => {
+                const refTofader = this.meteringRef[path]
+                if (refTofader && Date.now() - refTofader.lastUpdated > 1000) {
+                    logger.trace('Metering Update:' + JSON.stringify({ path, value }, null, 2))
+                    this.meteringRef[path].lastUpdated = Date.now()
+                    sendVuLevel(
+                        refTofader.faderIndex,
+                        VuType.Channel,
+                        0,
+                        dbToFloat(value / refTofader.factor)
+                    )
+                }
+            })
 
             store.dispatch({
                 type: SettingsActionTypes.SET_MIXER_ONLINE,
@@ -723,33 +761,36 @@ export class EmberMixerConnection implements MixerConnection {
     ) {
         if (chNumber > 1) return
         const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
-        const mixerMessage = this.mixerProtocol.channelTypes[typeIndex].fromMixer.CHANNEL_VU[0].mixerMessage
-    
-        console.log(`Subscribe to VU meter ` + mixerMessage)
-    
+        const mixerMessage = 
+                this._insertChannelName(
+                    this.mixerProtocol.channelTypes[typeIndex].fromMixer.CHANNEL_VU[0].mixerMessage, String(channelTypeIndex + 1)
+                )
+        
         try {
-            const node = await this.emberConnection.getElementByPath(
-                this._insertChannelName(mixerMessage, String(channelTypeIndex + 1))
-            )
+            const node = await this.emberConnection.getElementByPath(mixerMessage)
             
             if (!node?.contents || node.contents.type !== Model.ElementType.Parameter) {
-                console.log('Invalid node type for VU meter')
+                logger.error('Invalid node type for VU meter')
                 return
             }
     
             const param = node.contents
             if (!param.streamIdentifier) {
-                console.log('No stream identifier found for VU meter')
+                logger.error('No stream identifier found for VU meter')
                 return
             }
-    
-            console.log(`Setting up subscription to VU meter parameter: ${JSON.stringify(param, null, 2)}`)
-    
+                
+            const internalPath = this.getInternalNodePath(node)
+            if (!internalPath) return
+            this.meteringRef[String(internalPath)] ={ faderIndex: assignedFaderIndex, factor: param.factor, lastUpdated: Date.now() }
+
+            logger.info(`Setting up subscription for VU : ${mixerMessage} Internal Path : ${internalPath}`)
+            logger.debug(`VU meter parameters: ${JSON.stringify(param, null, 2)}`)
             // Subscribe to the parameter - this will also subscribe to its stream
             const subscription = await this.emberConnection.subscribe(
                 node as NumberedTreeNode<EmberElement>,
                 (node) => {
-                    console.log('VU meter update' + JSON.stringify(node.contents, null, 2))
+                    logger.trace('VU meter update' + JSON.stringify(node.contents, null, 2))
                     if (node.contents.type !== Model.ElementType.Parameter) return
                     const value = Number(node.contents.value)
                     if (Number.isNaN(value)) return
@@ -767,7 +808,7 @@ export class EmberMixerConnection implements MixerConnection {
             await subscription.response
     
         } catch (e) {
-            console.log('Error when subscribing to VU meter: ' + mixerMessage)
+            logger.error('Error when subscribing to VU meter: ' + mixerMessage)
         }
     }
 
