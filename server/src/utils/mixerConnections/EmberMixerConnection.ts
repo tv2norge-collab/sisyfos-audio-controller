@@ -1,4 +1,4 @@
-import { EmberClient, Model, StreamManager } from 'emberplus-connection'
+import { EmberClient, Model } from 'emberplus-connection'
 import { store, state } from '../../reducers/store'
 import { remoteConnections } from '../../mainClasses'
 import path from 'path'
@@ -89,20 +89,6 @@ export class EmberMixerConnection implements MixerConnection {
         this.emberConnection.on('connected', async () => {
             logger.info('Found Ember connection')
 
-            StreamManager.getInstance().on('streamUpdate', (path: string, value: number) => {
-                const refTofader = this.meteringRef[path]
-                if (refTofader && Date.now() - refTofader.lastUpdated > 1000) {
-                    logger.trace('Metering Update:' + JSON.stringify({ path, value }, null, 2))
-                    this.meteringRef[path].lastUpdated = Date.now()
-                    sendVuLevel(
-                        refTofader.faderIndex,
-                        VuType.Channel,
-                        0,
-                        dbToFloat(value / refTofader.factor)
-                    )
-                }
-            })
-
             store.dispatch({
                 type: SettingsActionTypes.SET_MIXER_ONLINE,
                 mixerIndex: this.mixerIndex,
@@ -117,6 +103,19 @@ export class EmberMixerConnection implements MixerConnection {
            }
             catch (error) {
                 logger.error(`Error initiating directory request: ${error}`)
+            }
+        })
+        this.emberConnection.on('streamUpdate', (path: string, value: number) => {
+            const refTofader = this.meteringRef[path]
+            if (refTofader && Date.now() - refTofader.lastUpdated > 1000) {
+                logger.trace('Metering Update:' + JSON.stringify({ path, value }, null, 2))
+                this.meteringRef[path].lastUpdated = Date.now()
+                sendVuLevel(
+                    refTofader.faderIndex,
+                    VuType.Channel,
+                    0,
+                    dbToFloat(value / refTofader.factor)
+                )
             }
         })
         logger.info('Connecting to Ember')
