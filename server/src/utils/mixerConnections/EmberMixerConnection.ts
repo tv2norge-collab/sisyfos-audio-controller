@@ -106,9 +106,10 @@ export class EmberMixerConnection implements MixerConnection {
             }
         })
         this.emberConnection.on('streamUpdate', (path: string, value: number) => {
+            // This log should be removed in production:
+            console.log('Stream Update:' + JSON.stringify({ path, value }, null, 2))
             const refTofader = this.meteringRef[path]
             if (refTofader && Date.now() - refTofader.lastUpdated > 1000) {
-                logger.trace('Metering Update:' + JSON.stringify({ path, value }, null, 2))
                 this.meteringRef[path].lastUpdated = Date.now()
                 sendVuLevel(
                     refTofader.faderIndex,
