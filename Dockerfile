@@ -21,4 +21,4 @@ EXPOSE 1176/tcp
 EXPOSE 1176/udp
 EXPOSE 5255/tcp
 EXPOSE 5255/udp
-CMD ["node dist/server/index.js"]
+CMD ["node server/dist/index.js"]
