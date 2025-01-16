@@ -736,7 +736,6 @@ export class EmberMixerConnection implements MixerConnection {
         typeIndex: number,
         channelTypeIndex: number,
     ) {
-        if (chNumber > 1) return
         const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
         const mixerMessage = 
                 this._insertChannelName(
