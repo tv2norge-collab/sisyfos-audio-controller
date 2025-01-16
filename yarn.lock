@@ -5056,7 +5056,7 @@ electron@16.2.6:
 
 emberplus-connection@SuperFlyTV/sofie-emberplus-connection#dist-branch/subscription-of-meters:
   version "0.2.2"
-  resolved "https://codeload.github.com/SuperFlyTV/sofie-emberplus-connection/tar.gz/e8052fc502298f6b8f09254ed9c27d1323ca5e46"
+  resolved "https://codeload.github.com/SuperFlyTV/sofie-emberplus-connection/tar.gz/2a421d22db132831d8d2c02801cfe605512e03dd"
   dependencies:
     asn1 evs-broadcast/node-asn1
     debug "^4.3.4"
