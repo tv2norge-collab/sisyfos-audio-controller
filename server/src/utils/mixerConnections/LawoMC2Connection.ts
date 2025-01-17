@@ -11,7 +11,6 @@ import {
 } from '../../../../shared/src/constants/MixerProtocolInterface'
 import { FaderActionTypes } from '../../../../shared/src/actions/faderActions'
 import { logger } from '../logger'
-import { LawoMC2 } from '../../../../shared/src/constants/mixerProtocols/LawoMC2'
 import { dbToFloat, floatToDB } from './LawoRubyConnection'
 import { ChannelActionTypes } from '../../../../shared/src/actions/channelActions'
 import { SettingsActionTypes } from '../../../../shared/src/actions/settingsActions'
@@ -139,20 +138,11 @@ export class LawoMC2Connection implements MixerConnection {
                 channelTypeIndex < numberOfChannels;
                 channelTypeIndex++
             ) {
-                if (this.mixerProtocol.label === LawoMC2.label) {
-                    await this.subscribeToMc2ChannelOnline(
-                        chNumber,
-                        Number(typeIndex),
-                        channelTypeIndex,
-                    )
-                } else {
-                    await this.setupFaderSubscriptions(
-                        chNumber,
-                        Number(typeIndex),
-                        channelTypeIndex,
-                    )
-                }
-
+                await this.subscribeToMc2ChannelOnline(
+                    chNumber,
+                    Number(typeIndex),
+                    channelTypeIndex,
+                )
                 chNumber++
             }
         }
@@ -201,19 +191,11 @@ export class LawoMC2Connection implements MixerConnection {
             )
 
         if (protocol.CHANNEL_INPUT_SELECTOR) {
-            if (this.mixerProtocol.label === LawoMC2.label) {
-                await this.subscribeToMc2InputSelector(
-                    chNumber,
-                    Number(typeIndex),
-                    channelTypeIndex,
-                )
-            } else {
-                await this.subscribeChannelInputSelector(
-                    chNumber,
-                    Number(typeIndex),
-                    channelTypeIndex,
-                )
-            }
+            await this.subscribeToMc2InputSelector(
+                chNumber,
+                Number(typeIndex),
+                channelTypeIndex,
+            )
         }
 
         if (protocol.CHANNEL_VU) {
@@ -528,53 +510,6 @@ export class LawoMC2Connection implements MixerConnection {
         )
     }
 
-    private async subscribeChannelInputSelector(
-        chNumber: number,
-        typeIndex: number,
-        channelTypeIndex: number,
-    ) {
-        const channel =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[chNumber - 1]
-        const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
-        for (const i in this.mixerProtocol.channelTypes[typeIndex].fromMixer
-            .CHANNEL_INPUT_SELECTOR) {
-            const proto =
-                this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                    .CHANNEL_INPUT_SELECTOR[i]
-            const mixerMessage = proto.mixerMessage
-
-            await this.subscribeToEmberNode(
-                channelTypeIndex,
-                mixerMessage,
-                (node) => {
-                    logger.trace(
-                        `Receiving input selector from Ch "${chNumber}", val: ${i}: ${
-                            (node.contents as Model.Parameter).value
-                        }`,
-                    )
-
-                    let value = (node.contents as Model.Parameter).value
-
-                    if (value === proto.value) {
-                        logger.trace(
-                            `Dispatching input selector Ch "${chNumber}", selected: ${
-                                i + 1
-                            }`,
-                        )
-                        store.dispatch({
-                            type: FaderActionTypes.SET_INPUT_SELECTOR,
-                            faderIndex: assignedFaderIndex,
-                            selected: Number(i) + 1,
-                        })
-                    }
-                    global.mainThreadHandler.updatePartialStore(
-                        assignedFaderIndex,
-                    )
-                },
-            )
-        }
-    }
-
     private async subscribeToMc2InputSelector(
         chNumber: number,
         typeIndex: number,
@@ -677,45 +612,40 @@ export class LawoMC2Connection implements MixerConnection {
         typeIndex: number,
         channelTypeIndex: number,
     ) {
-        const channel =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[chNumber - 1]
         const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
-        if (this.mixerProtocol.label === LawoMC2.label) {             
-             // subscription for enabling amix button
-             // Future: Add a CHECK_CAPABILITY feature in mixer protocol.
-            const mixerMessage =  typeIndex === 0 ?
-                'Channels.Inputs.${channel}.Automix.Automix Group Assignment' :
-                'Channels.Groups.${channel}.Automix.Automix Group Assignment'
-            await this.subscribeToEmberNode(
-                channelTypeIndex,
-                mixerMessage,
-                (node) => {
-                    logger.trace(
-                        `Update received for amix capability: ${
-                            (node.contents as Model.Parameter).value
-                        }`,
-                    )
-                    store.dispatch({
-                        type: FaderActionTypes.SET_CAPABILITY,
-                        faderIndex: assignedFaderIndex,
-                        capability: 'hasAMix',
-                        enabled:
-                            (node.contents as Model.Parameter).value !==
-                            ((node.contents as Model.Parameter).maximum || 63), // max is unassigned, max = 63 in firmware 6.4
-                    })
-                    global.mainThreadHandler.updatePartialStore(
-                        assignedFaderIndex,
-                    )
-                },
-            )
-        }
+        const mixerMessage =  typeIndex === 0 ?
+            'Channels.Inputs.${channel}.Automix.Automix Group Assignment' :
+            'Channels.Groups.${channel}.Automix.Automix Group Assignment'
+        await this.subscribeToEmberNode(
+            channelTypeIndex,
+            mixerMessage,
+            (node) => {
+                logger.trace(
+                    `Update received for amix capability: ${
+                        (node.contents as Model.Parameter).value
+                    }`,
+                )
+                store.dispatch({
+                    type: FaderActionTypes.SET_CAPABILITY,
+                    faderIndex: assignedFaderIndex,
+                    capability: 'hasAMix',
+                    enabled:
+                        (node.contents as Model.Parameter).value !==
+                        ((node.contents as Model.Parameter).maximum || 63), // max is unassigned, max = 63 in firmware 6.4
+                })
+                global.mainThreadHandler.updatePartialStore(
+                    assignedFaderIndex,
+                )
+            },
+        )
+    
         // subscribe to amix
-        const mixerMessage =
+        const aMixMessage =
             this.mixerProtocol.channelTypes[typeIndex].fromMixer.CHANNEL_AMIX[0]
                 .mixerMessage
         await this.subscribeToEmberNode(
             channelTypeIndex,
-            mixerMessage,
+            aMixMessage,
             (node) => {
                 logger.trace(
                     `Receiving AMix from Ch "${chNumber}", val: ${
@@ -923,38 +853,36 @@ export class LawoMC2Connection implements MixerConnection {
 
         logger.debug(`select in ${channelIndex} ${inputSelected}`)
 
-        if (this.mixerProtocol.label === LawoMC2.label) {
-            if (inputSelected === 1) {
-                // LR
-                this.sendOutMessage(
-                    this.mixerProtocol.channelTypes[0].toMixer
-                        .CHANNEL_INPUT_SELECTOR[1].mixerMessage,
-                    channelTypeIndex + 1,
-                    false as any,
-                )
-                this.sendOutMessage(
-                    this.mixerProtocol.channelTypes[0].toMixer
-                        .CHANNEL_INPUT_SELECTOR[2].mixerMessage,
-                    channelTypeIndex + 1,
-                    false as any,
-                )
-            } else if (inputSelected === 2) {
-                // LL
-                this.sendOutMessage(
-                    this.mixerProtocol.channelTypes[0].toMixer
-                        .CHANNEL_INPUT_SELECTOR[1].mixerMessage,
-                    channelTypeIndex + 1,
-                    true as any,
-                )
-            } else if (inputSelected === 3) {
-                // RR
-                this.sendOutMessage(
-                    this.mixerProtocol.channelTypes[0].toMixer
-                        .CHANNEL_INPUT_SELECTOR[2].mixerMessage,
-                    channelTypeIndex + 1,
-                    true as any,
-                )
-            }
+        if (inputSelected === 1) {
+            // LR
+            this.sendOutMessage(
+                this.mixerProtocol.channelTypes[0].toMixer
+                    .CHANNEL_INPUT_SELECTOR[1].mixerMessage,
+                channelTypeIndex + 1,
+                false as any,
+            )
+            this.sendOutMessage(
+                this.mixerProtocol.channelTypes[0].toMixer
+                    .CHANNEL_INPUT_SELECTOR[2].mixerMessage,
+                channelTypeIndex + 1,
+                false as any,
+            )
+        } else if (inputSelected === 2) {
+            // LL
+            this.sendOutMessage(
+                this.mixerProtocol.channelTypes[0].toMixer
+                    .CHANNEL_INPUT_SELECTOR[1].mixerMessage,
+                channelTypeIndex + 1,
+                true as any,
+            )
+        } else if (inputSelected === 3) {
+            // RR
+            this.sendOutMessage(
+                this.mixerProtocol.channelTypes[0].toMixer
+                    .CHANNEL_INPUT_SELECTOR[2].mixerMessage,
+                channelTypeIndex + 1,
+                true as any,
+            )
         }
 
         return true
@@ -1020,26 +948,24 @@ export class LawoMC2Connection implements MixerConnection {
 
     async loadMixerPreset(presetName: string) {
         logger.info(`Loading preset: ${presetName}`)
-        if (this.mixerProtocol.presetFileExtension === 'MC2') {
-            let data = JSON.parse(
-                fs
-                    .readFileSync(path.resolve(STORAGE_FOLDER, presetName))
-                    .toString(),
-            )
+        let data = JSON.parse(
+            fs
+                .readFileSync(path.resolve(STORAGE_FOLDER, presetName))
+                .toString(),
+        )
 
-            const loadFunction = await this.emberConnection.getElementByPath(
-                this.mixerProtocol.loadPresetCommand[0].mixerMessage,
-            )
+        const loadFunction = await this.emberConnection.getElementByPath(
+            this.mixerProtocol.loadPresetCommand[0].mixerMessage,
+        )
 
-            if (loadFunction.contents.type === Model.ElementType.Function) {
-                await (
-                    await this.emberConnection.invoke(
-                        loadFunction as any,
-                        data.sceneAddress
-                    )
-                ).response
+        if (loadFunction.contents.type === Model.ElementType.Function) {
+            await (
+                await this.emberConnection.invoke(
+                    loadFunction as any,
+                    data.sceneAddress
+                )
+            ).response
             }
-        }
     }
 
     injectCommand(command: string[]) {}
@@ -1054,47 +980,15 @@ export class LawoMC2Connection implements MixerConnection {
         const pad = (inp: string | number, l: number) =>
             ('   ' + inp).substr(-l)
 
-        if (this.mixerProtocol.label === LawoMC2.label) {
-            const channelName = '_' + Number(channel).toString(16) // 'INP ' + pad(channel, 3)
-            return command.replace('${channel}', channelName)
-        } else if (this.mixerProtocol.leadingZeros) {
-            return command.replace('${channel}', pad(channel, 2))
-        } else {
-            return command.replace('${channel}', channel + '')
-        }
+        const channelName = '_' + Number(channel).toString(16) // 'INP ' + pad(channel, 3)
+        return command.replace('${channel}', channelName)
     }
 
     private _floatToFaderLevel(value: number, typeIndex: number) {
-        if (this.mixerProtocol.label === LawoMC2.label) {
-            return floatToDB(value)
-        } else {
-            const range =
-                this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                    .CHANNEL_OUT_GAIN[0].max -
-                this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                    .CHANNEL_OUT_GAIN[0].min
-            const min =
-                this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                    .CHANNEL_OUT_GAIN[0].min
-
-            return value / range + min
-        }
+        return floatToDB(value)
     }
 
     private _faderLevelToFloat(value: number, typeIndex: number) {
-        if (this.mixerProtocol.label === LawoMC2.label) {
-            return dbToFloat(value)
-        } else {
-            const range =
-                this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                    .CHANNEL_OUT_GAIN[0].max -
-                this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                    .CHANNEL_OUT_GAIN[0].min
-            const min =
-                this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                    .CHANNEL_OUT_GAIN[0].min
-
-            return (value - min) / range
-        }
+        return dbToFloat(value)
     }
 }
