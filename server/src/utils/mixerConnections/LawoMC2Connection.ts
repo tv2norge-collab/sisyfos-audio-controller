@@ -107,9 +107,9 @@ export class LawoMC2Connection implements MixerConnection {
         })
         this.emberConnection.on('streamUpdate', (path: string, value: number) => {
             // This log should be removed in production:
-            console.log('Stream Update:' + JSON.stringify({ path, value }, null, 2))
+            logger.trace('Stream Update:' + JSON.stringify({ path, value }, null, 2))
             const refTofader = this.meteringRef[path]
-            if (refTofader && Date.now() - refTofader.lastUpdated > 1000) {
+            if (refTofader && Date.now() - refTofader.lastUpdated > 100) {
                 this.meteringRef[path].lastUpdated = Date.now()
                 sendVuLevel(
                     refTofader.faderIndex,
