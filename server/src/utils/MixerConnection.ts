@@ -29,6 +29,7 @@ import { ChannelReference } from '../../../shared/src/reducers/fadersReducer'
 import { sendChLevelsToOuputServer } from './outputLevelServer'
 import { MixerConnection } from './mixerConnections'
 import { SecondOutRowButtonType } from '../../../shared/src/reducers/settingsReducer'
+import { LawoMC2Connection } from './mixerConnections/LawoMC2Connection'
 
 export class MixerGenericConnection {
     mixerProtocol: MixerProtocolGeneric[]
@@ -79,6 +80,13 @@ export class MixerGenericConnection {
                 }
                 case MixerConnectionTypes.EMBER: {
                     this.mixerConnection[index] = new EmberMixerConnection(
+                        this.mixerProtocol[index] as MixerProtocol,
+                        index
+                    )
+                    break
+                }
+                case MixerConnectionTypes.LawoMC2: {
+                    this.mixerConnection[index] = new LawoMC2Connection(
                         this.mixerProtocol[index] as MixerProtocol,
                         index
                     )
