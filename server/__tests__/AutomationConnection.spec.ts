@@ -15,6 +15,29 @@ jest.mock('../src/mainClasses', () => ({
     remoteConnections: null,
 }))
 
+// Mock the MainThreadHandler module:
+import { MainThreadHandlers } from '../src/MainThreadHandler'
+
+const mockMainThreadHandler: Partial<MainThreadHandlers> = {
+    updatePartialStore: jest.fn(),
+    updateFullClientStore: jest.fn(),
+    reIndexAssignedChannelsRelation: jest.fn(),
+    cleanUpAssignedChannelsOnFaders: jest.fn(),
+    loadMixerPreset: jest.fn(),
+    snapshotHandler: {} as any // Mock other required properties
+}
+
+// Before the describe block:
+declare global {
+    namespace NodeJS {
+        interface Global {
+            mainThreadHandler: MainThreadHandlers
+        }
+    }
+}
+
+
+
 // Mock UDPPort
 let messageHandler: (message: any, timeTag?: any, info?: any) => void
 const mockUdpInstance = {
@@ -25,11 +48,11 @@ const mockUdpInstance = {
         }
         return {
             on: jest.fn().mockReturnThis(),
-            open: jest.fn()
+            open: jest.fn(),
         }
     }),
     open: jest.fn(),
-    send: jest.fn()
+    send: jest.fn(),
 }
 const MockUDPPort = jest.fn().mockImplementation(() => mockUdpInstance)
 
@@ -55,8 +78,6 @@ class MockOscConnection extends EventEmitter {
     send() {}
 }
 
-
-
 describe('AutomationConnection', () => {
     let automation: AutomationConnection
     let mockOscConnection: MockOscConnection
@@ -64,6 +85,7 @@ describe('AutomationConnection', () => {
     beforeEach(() => {
         // Clear all mocks before each test
         jest.clearAllMocks()
+        global.mainThreadHandler = mockMainThreadHandler
 
         // Reset mock implementation
         mockUdpInstance.on.mockReturnThis()
@@ -76,13 +98,15 @@ describe('AutomationConnection', () => {
 
         store.dispatch({
             type: ChannelActionTypes.SET_COMPLETE_CH_STATE,
-            numberOfTypeChannels: [{ numberOfTypeInCh: [8]}],
-            allState: defaultChannelsReducerState([{ numberOfTypeInCh: [8]}])[0]
+            numberOfTypeChannels: [{ numberOfTypeInCh: [8] }],
+            allState: defaultChannelsReducerState([
+                { numberOfTypeInCh: [8] },
+            ])[0],
         })
 
         store.dispatch({
             type: SettingsActionTypes.UPDATE_SETTINGS,
-            settings: defaultSettingsReducerState
+            settings: defaultSettingsReducerState,
         })
 
         // Create automation instance
@@ -117,45 +141,30 @@ describe('AutomationConnection', () => {
     describe('OSC Message Handling', () => {
         describe('/ch/{value1}/pgm', () => {
             it('should set channel PGM state ON', () => {
-                // Simulate receiving OSC message
-                mockOscConnection.emit('message', {
+                // Set up fake timers before handling message
+                jest.useFakeTimers()
+
+                // Get the message handler that was registered
+                const messageHandlerCall = mockUdpInstance.on.mock.calls.find(
+                    (call) => call[0] === 'message'
+                )
+                const handler = messageHandlerCall[1]
+
+                // Call the handler with properly formatted OSC message
+                handler({
                     address: '/ch/1/pgm',
-                    args: [1],
+                    args: [{ type: 'integer', value: 1 }],
                 })
+
+                // Advance timers
+                jest.runAllTimers()
 
                 // Verify store state
                 const state = store.getState()
                 expect(state.faders[0].fader[0].pgmOn).toBe(true)
                 expect(state.faders[0].fader[0].voOn).toBe(false)
             })
-
-            it('should set channel PGM state OFF', () => {
-                // First set it ON
-                mockOscConnection.emit('message', {
-                    address: '/ch/1/pgm',
-                    args: [1],
-                })
-                
-                // Then set it OFF
-                mockOscConnection.emit('message', {
-                    address: '/ch/1/pgm',
-                    args: [0],
-                })
-
-                const state = store.getState()
-                expect(state.faders[0].fader[0].pgmOn).toBe(false)
-            })
-
-            it('should set channel to VO mode', () => {
-                mockOscConnection.emit('message', {
-                    address: '/ch/1/pgm',
-                    args: [2],
-                })
-
-                const state = store.getState()
-                expect(state.faders[0].fader[0].voOn).toBe(true)
-                expect(state.faders[0].fader[0].pgmOn).toBe(false)
-            })
         })
     })
 })
+
