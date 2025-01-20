@@ -15,50 +15,147 @@ jest.mock('../src/mainClasses', () => ({
     remoteConnections: null,
 }))
 
-// Mock UDPPort instance that will be returned
+// Mock UDPPort
+let messageHandler: (message: any, timeTag?: any, info?: any) => void
 const mockUdpInstance = {
-    on: jest.fn().mockReturnThis(), // Return this to allow chaining
+    on: jest.fn().mockImplementation((event, handler) => {
+        // Store the message handler when it's registered
+        if (event === 'message') {
+            messageHandler = handler
+        }
+        return {
+            on: jest.fn().mockReturnThis(),
+            open: jest.fn()
+        }
+    }),
     open: jest.fn(),
     send: jest.fn()
 }
-
-// Create the mock UDPPort constructor
-const MockUDPPort = jest.fn(() => mockUdpInstance)
+const MockUDPPort = jest.fn().mockImplementation(() => mockUdpInstance)
 
 // Mock the osc module
 jest.mock('osc', () => ({
-    UDPPort: MockUDPPort
+    UDPPort: MockUDPPort,
 }))
 
+import { EventEmitter } from 'events'
+import { ChannelActionTypes } from '../../shared/src/actions/channelActions'
+import { FaderActionTypes } from '../../shared/src/actions/faderActions'
+import { SettingsActionTypes } from '../../shared/src/actions/settingsActions'
+import { defaultChannelsReducerState } from '../../shared/src/reducers/channelsReducer'
+import { defaultFadersReducerState } from '../../shared/src/reducers/fadersReducer'
+import { defaultSettingsReducerState } from '../../shared/src/reducers/settingsReducer'
+import { store } from '../src/reducers/store'
 import { AutomationConnection } from '../src/utils/AutomationConnection'
 import osc from 'osc'
 
+// Update the mock to extend EventEmitter
+class MockOscConnection extends EventEmitter {
+    open() {}
+    send() {}
+}
+
+
+
 describe('AutomationConnection', () => {
     let automation: AutomationConnection
-    
+    let mockOscConnection: MockOscConnection
+
     beforeEach(() => {
         // Clear all mocks before each test
         jest.clearAllMocks()
-        
+
         // Reset mock implementation
         mockUdpInstance.on.mockReturnThis()
-        
+
+        store.dispatch({
+            type: FaderActionTypes.SET_COMPLETE_FADER_STATE,
+            numberOfFaders: 8,
+            allState: defaultFadersReducerState(8)[0],
+        })
+
+        store.dispatch({
+            type: ChannelActionTypes.SET_COMPLETE_CH_STATE,
+            numberOfTypeChannels: [{ numberOfTypeInCh: [8]}],
+            allState: defaultChannelsReducerState([{ numberOfTypeInCh: [8]}])[0]
+        })
+
+        store.dispatch({
+            type: SettingsActionTypes.UPDATE_SETTINGS,
+            settings: defaultSettingsReducerState
+        })
+
         // Create automation instance
         automation = new AutomationConnection()
+        mockOscConnection = new MockOscConnection()
     })
 
     describe('initialization', () => {
         it('should create UDP connection with correct settings', () => {
             expect(MockUDPPort).toHaveBeenCalledWith({
                 localAddress: '0.0.0.0',
-                localPort: 5255
+                localPort: 5255,
             })
         })
 
         it('should set up event listeners', () => {
-            expect(mockUdpInstance.on).toHaveBeenCalledWith('ready', expect.any(Function))
-            expect(mockUdpInstance.on).toHaveBeenCalledWith('message', expect.any(Function))
-            expect(mockUdpInstance.on).toHaveBeenCalledWith('error', expect.any(Function))
+            expect(mockUdpInstance.on).toHaveBeenCalledWith(
+                'ready',
+                expect.any(Function)
+            )
+            expect(mockUdpInstance.on).toHaveBeenCalledWith(
+                'message',
+                expect.any(Function)
+            )
+            expect(mockUdpInstance.on).toHaveBeenCalledWith(
+                'error',
+                expect.any(Function)
+            )
+        })
+    })
+
+    describe('OSC Message Handling', () => {
+        describe('/ch/{value1}/pgm', () => {
+            it('should set channel PGM state ON', () => {
+                // Simulate receiving OSC message
+                mockOscConnection.emit('message', {
+                    address: '/ch/1/pgm',
+                    args: [1],
+                })
+
+                // Verify store state
+                const state = store.getState()
+                expect(state.faders[0].fader[0].pgmOn).toBe(true)
+                expect(state.faders[0].fader[0].voOn).toBe(false)
+            })
+
+            it('should set channel PGM state OFF', () => {
+                // First set it ON
+                mockOscConnection.emit('message', {
+                    address: '/ch/1/pgm',
+                    args: [1],
+                })
+                
+                // Then set it OFF
+                mockOscConnection.emit('message', {
+                    address: '/ch/1/pgm',
+                    args: [0],
+                })
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].pgmOn).toBe(false)
+            })
+
+            it('should set channel to VO mode', () => {
+                mockOscConnection.emit('message', {
+                    address: '/ch/1/pgm',
+                    args: [2],
+                })
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].voOn).toBe(true)
+                expect(state.faders[0].fader[0].pgmOn).toBe(false)
+            })
         })
     })
 })
