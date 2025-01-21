@@ -121,7 +121,6 @@ describe('AutomationConnection', () => {
         // Set up fake timers before handling message
         jest.useFakeTimers()
     })
-
     describe('initialization', () => {
         it('should create UDP connection with correct settings', () => {
             expect(MockUDPPort).toHaveBeenCalledWith({
