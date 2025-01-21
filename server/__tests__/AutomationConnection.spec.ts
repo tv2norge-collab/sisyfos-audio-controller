@@ -24,7 +24,7 @@ const mockMainThreadHandler: Partial<MainThreadHandlers> = {
     reIndexAssignedChannelsRelation: jest.fn(),
     cleanUpAssignedChannelsOnFaders: jest.fn(),
     loadMixerPreset: jest.fn(),
-    snapshotHandler: {} as any // Mock other required properties
+    snapshotHandler: {} as any, // Mock other required properties
 }
 
 // Before the describe block:
@@ -35,8 +35,6 @@ declare global {
         }
     }
 }
-
-
 
 // Mock UDPPort
 let messageHandler: (message: any, timeTag?: any, info?: any) => void
@@ -81,6 +79,7 @@ class MockOscConnection extends EventEmitter {
 describe('AutomationConnection', () => {
     let automation: AutomationConnection
     let mockOscConnection: MockOscConnection
+    let messageHandler: any
 
     beforeEach(() => {
         // Clear all mocks before each test
@@ -112,6 +111,16 @@ describe('AutomationConnection', () => {
         // Create automation instance
         automation = new AutomationConnection()
         mockOscConnection = new MockOscConnection()
+
+        // Get the message handler that was registered
+        const messageHandlerCall = mockUdpInstance.on.mock.calls.find(
+            (call) => call[0] === 'message'
+        )
+        messageHandler = messageHandlerCall[1]
+
+        // Set up fake timers before handling message
+        jest.useFakeTimers()
+
     })
 
     describe('initialization', () => {
@@ -140,28 +149,34 @@ describe('AutomationConnection', () => {
 
     describe('OSC Message Handling', () => {
         describe('/ch/{value1}/pgm', () => {
+            it('The initial state should be' , () => {
+                const state = store.getState()
+                expect(state.faders[0].fader[0].pgmOn).toBe(false)
+                expect(state.faders[0].fader[0].voOn).toBe(false)
+            })
             it('should set channel PGM state ON', () => {
-                // Set up fake timers before handling message
-                jest.useFakeTimers()
-
-                // Get the message handler that was registered
-                const messageHandlerCall = mockUdpInstance.on.mock.calls.find(
-                    (call) => call[0] === 'message'
-                )
-                const handler = messageHandlerCall[1]
-
                 // Call the handler with properly formatted OSC message
-                handler({
+                messageHandler({
                     address: '/ch/1/pgm',
                     args: [{ type: 'integer', value: 1 }],
                 })
 
-                // Advance timers
                 jest.runAllTimers()
 
-                // Verify store state
                 const state = store.getState()
                 expect(state.faders[0].fader[0].pgmOn).toBe(true)
+                expect(state.faders[0].fader[0].voOn).toBe(false)
+            })
+            it('should set channel PGM state OFF', () => {
+                // Call the handler with properly formatted OSC message
+                messageHandler({
+                    address: '/ch/1/pgm',
+                    args: [{ type: 'integer', value: 0 }],
+                })
+                jest.runAllTimers()
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].pgmOn).toBe(false)
                 expect(state.faders[0].fader[0].voOn).toBe(false)
             })
         })
