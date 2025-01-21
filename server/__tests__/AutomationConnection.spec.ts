@@ -147,7 +147,7 @@ describe('AutomationConnection', () => {
         })
     })
 
-    describe('OSC Message Handling', () => {
+    describe('OSC Message Set State Handling', () => {
         describe('/ch/{value1}/pgm', () => {
             it('The initial state should be' , () => {
                 const state = store.getState()
@@ -155,7 +155,6 @@ describe('AutomationConnection', () => {
                 expect(state.faders[0].fader[0].voOn).toBe(false)
             })
             it('should set channel PGM state ON', () => {
-                // Call the handler with properly formatted OSC message
                 messageHandler({
                     address: '/ch/1/pgm',
                     args: [1],
@@ -168,7 +167,6 @@ describe('AutomationConnection', () => {
                 expect(state.faders[0].fader[0].voOn).toBe(false)
             })
             it('should set channel PGM state OFF', () => {
-                // Call the handler with properly formatted OSC message
                 messageHandler({
                     address: '/ch/1/pgm',
                     args: [0],
@@ -178,6 +176,187 @@ describe('AutomationConnection', () => {
                 const state = store.getState()
                 expect(state.faders[0].fader[0].pgmOn).toBe(false)
                 expect(state.faders[0].fader[0].voOn).toBe(false)
+            })
+            it('should set channel VO state ON', () => {
+                messageHandler({
+                    address: '/ch/1/pgm',
+                    args: [2],
+                })
+                jest.runAllTimers()
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].pgmOn).toBe(false)
+                expect(state.faders[0].fader[0].voOn).toBe(true)
+            })
+            it('Shold set PGM on with fadeTime 1000ms', () => {
+                messageHandler({
+                    address: '/ch/1/pgm',
+                    args: [1, 1000.0],
+                })
+                jest.runAllTimers()
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].pgmOn).toBe(true)
+                expect(state.faders[0].fader[0].voOn).toBe(false)
+            })
+            it('Shold set PGM off with fadeTime 1000ms', () => {
+                messageHandler({
+                    address: '/ch/1/pgm',
+                    args: [0, 1000.0],
+                })
+                jest.runAllTimers()
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].pgmOn).toBe(false)
+                expect(state.faders[0].fader[0].voOn).toBe(false)
+            })
+        })
+        describe('/ch/{value1}/pst', () => {
+            it('The initial state should be', () => {
+                const state = store.getState()
+                expect(state.faders[0].fader[0].pstOn).toBe(false)
+            })
+            it('should set channel PST state ON', () => {
+                messageHandler({
+                    address: '/ch/1/pst',
+                    args: [1],
+                })
+                jest.runAllTimers()
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].pstOn).toBe(true)
+            })
+            it('should set channel PST state OFF', () => {
+                messageHandler({
+                    address: '/ch/1/pst',
+                    args: [0],
+                })
+                jest.runAllTimers()
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].pstOn).toBe(false)
+            })
+        })
+        describe('/ch/{value1}/faderlevel', () => {
+            it('The initial state should be', () => {
+                const state = store.getState()
+                expect(state.faders[0].fader[0].faderLevel).toBe(0.75)
+            })
+            it('should set channel fader level', () => {
+                messageHandler({
+                    address: '/ch/1/faderlevel',
+                    args: [0.5],
+                })
+                jest.runAllTimers()
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].faderLevel).toBe(0.5)
+            })
+        })
+        describe('/ch/{value1}/mute', () => {
+            it('The initial state should be', () => {
+                const state = store.getState()
+                expect(state.faders[0].fader[0].muteOn).toBe(false)
+            })
+            it('should set channel mute state ON', () => {
+                messageHandler({
+                    address: '/ch/1/mute',
+                    args: [1],
+                })
+                jest.runAllTimers()
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].muteOn).toBe(true)
+            })
+            it('should set channel mute state OFF', () => {
+                messageHandler({
+                    address: '/ch/1/mute',
+                    args: [0],
+                })
+                jest.runAllTimers()
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].muteOn).toBe(false)
+            })
+        })
+        describe('/ch/{value1}/inputgain', () => {
+            it('The initial state should be', () => {
+                const state = store.getState()
+                expect(state.faders[0].fader[0].inputGain).toBe(0.75)
+            })
+            it('should set channel input gain', () => {
+                messageHandler({
+                    address: '/ch/1/inputgain',
+                    args: [0.5],
+                })
+                jest.runAllTimers()
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].inputGain).toBe(0.5)
+            })
+        })
+        describe('/ch/{value1}/inputselector', () => {
+            it('The initial state should be', () => {
+                const state = store.getState()
+                expect(state.faders[0].fader[0].inputSelector).toBe(1)
+            })
+            it('should set channel input selector', () => {
+                messageHandler({
+                    address: '/ch/1/inputselector',
+                    args: [2],
+                })
+                jest.runAllTimers()
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].inputSelector).toBe(2)
+            })
+        })
+        describe('/ch/{value1}/visible', () => {
+            it('The initial state should be', () => {
+                const state = store.getState()
+                expect(state.faders[0].fader[0].showChannel).toBe(true)
+            })
+            it('should set channel visible state', () => {
+                messageHandler({
+                    address: '/ch/1/visible',
+                    args: [0],
+                })
+                jest.runAllTimers()
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].showChannel).toBe(false)
+            })
+        })
+        describe('/setchannel/{value1}', () => {
+            it('should set channel state', () => {
+                messageHandler({
+                    address: '/setchannel/1',
+                    args: [
+                        JSON.stringify({
+                            faderLevel: 0.75,
+                            pgmOn: true,
+                            voOn: false,
+                            pstOn: true,
+                            showChannel: true,
+                            muteOn: true,
+                            inputGain: 0.75,
+                            inputSelector: 1,
+                            label: 'CH 1',
+                        }),
+                    ],
+                })
+                jest.runAllTimers()
+
+                const state = store.getState()
+                expect(state.faders[0].fader[0].showChannel).toBe(true)
+                expect(state.faders[0].fader[0].pgmOn).toBe(true)
+                expect(state.faders[0].fader[0].voOn).toBe(false)
+                expect(state.faders[0].fader[0].pstOn).toBe(true)
+                expect(state.faders[0].fader[0].faderLevel).toBe(0.75)
+                expect(state.faders[0].fader[0].muteOn).toBe(true)
+                expect(state.faders[0].fader[0].inputGain).toBe(0.75)
+                expect(state.faders[0].fader[0].inputSelector).toBe(1)
+                expect(state.faders[0].fader[0].label).toBe('CH 1')
             })
         })
     })
