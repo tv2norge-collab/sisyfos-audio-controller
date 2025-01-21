@@ -158,7 +158,7 @@ describe('AutomationConnection', () => {
                 // Call the handler with properly formatted OSC message
                 messageHandler({
                     address: '/ch/1/pgm',
-                    args: [{ type: 'integer', value: 1 }],
+                    args: [1],
                 })
 
                 jest.runAllTimers()
@@ -171,7 +171,7 @@ describe('AutomationConnection', () => {
                 // Call the handler with properly formatted OSC message
                 messageHandler({
                     address: '/ch/1/pgm',
-                    args: [{ type: 'integer', value: 0 }],
+                    args: [0],
                 })
                 jest.runAllTimers()
 
