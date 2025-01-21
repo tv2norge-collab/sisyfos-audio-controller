@@ -120,7 +120,6 @@ describe('AutomationConnection', () => {
 
         // Set up fake timers before handling message
         jest.useFakeTimers()
-
     })
 
     describe('initialization', () => {
@@ -149,7 +148,7 @@ describe('AutomationConnection', () => {
 
     describe('OSC Message Set State Handling', () => {
         describe('/ch/{value1}/pgm', () => {
-            it('The initial state should be' , () => {
+            it('The initial state should be', () => {
                 const state = store.getState()
                 expect(state.faders[0].fader[0].pgmOn).toBe(false)
                 expect(state.faders[0].fader[0].voOn).toBe(false)
@@ -357,6 +356,41 @@ describe('AutomationConnection', () => {
                 expect(state.faders[0].fader[0].inputGain).toBe(0.75)
                 expect(state.faders[0].fader[0].inputSelector).toBe(1)
                 expect(state.faders[0].fader[0].label).toBe('CH 1')
+            })
+        })
+    })
+    describe('OSC Message Get State Handling', () => {
+        describe('/ch/{value1}/state', () => {
+            it('should send channel state', () => {
+                // Need to include info about where to send the response
+                messageHandler(
+                    {
+                        address: '/ch/1/state',
+                        args: [],
+                    },
+                    undefined,
+                    {
+                        address: '127.0.0.1',
+                        port: 5255,
+                    }
+                )
+
+                jest.runAllTimers()
+
+                // The expected response should match the OSC message format
+                expect(mockUdpInstance.send).toHaveBeenCalledWith(
+                    {
+                        address: '/ch/01/state',
+                        args: [
+                            {
+                                type: 's',
+                                value: '{"channel":[{"faderLevel":0.75,"pgmOn":false,"voOn":false,"pstOn":false,"showChannel":true,"label":"CH 1","muteOn":false,"inputGain":0.75,"inputSelector":1}]}',
+                            },
+                        ],
+                    },
+                    '127.0.0.1',
+                    5255
+                )
             })
         })
     })
