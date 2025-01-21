@@ -360,6 +360,61 @@ describe('AutomationConnection', () => {
         })
     })
     describe('OSC Message Get State Handling', () => {
+        describe('ping pong', () => {
+            it('should respond to a ping message', () => {
+                messageHandler(
+                    {
+                        address: '/ping/12',
+                        args: [],
+                    },
+                    undefined,
+                    {
+                        address: '127.0.0.1',
+                        port: 5255,
+                    }
+                )
+                jest.runAllTimers()
+
+                expect(mockUdpInstance.send).toHaveBeenCalledWith(
+                    {
+                        address: '/pong',
+                        args: [{type: 's', value: '12'}],
+                    },
+                    '127.0.0.1',
+                    5255
+                )
+            })
+        })
+        describe('Full Sisyfos State', () => {
+            it('/info should send full state', () => {
+                messageHandler(
+                    {
+                        address: '/state/full',
+                        args: [],
+                    },
+                    undefined,
+                    {
+                        address: '127.0.0.1',
+                        port: 5255,
+                    }
+                )
+                jest.runAllTimers()
+
+                expect(mockUdpInstance.send).toHaveBeenCalledWith(
+                    {
+                        address: '/state/full',
+                        args: [
+                            {
+                                type: 's',
+                                value: '{"channel":[{"faderLevel":0.75,"pgmOn":false,"voOn":false,"pstOn":false,"showChannel":true,"inputGain":0.75,"inputSelector":1,"label":"CH 1","muteOn":false},{"faderLevel":0.75,"pgmOn":false,"voOn":false,"pstOn":false,"showChannel":true,"inputGain":0.75,"inputSelector":1,"label":"CH 2","muteOn":false},{"faderLevel":0.75,"pgmOn":false,"voOn":false,"pstOn":false,"showChannel":true,"inputGain":0.75,"inputSelector":1,"label":"CH 3","muteOn":false},{"faderLevel":0.75,"pgmOn":false,"voOn":false,"pstOn":false,"showChannel":true,"inputGain":0.75,"inputSelector":1,"label":"CH 4","muteOn":false},{"faderLevel":0.75,"pgmOn":false,"voOn":false,"pstOn":false,"showChannel":true,"inputGain":0.75,"inputSelector":1,"label":"CH 5","muteOn":false},{"faderLevel":0.75,"pgmOn":false,"voOn":false,"pstOn":false,"showChannel":true,"inputGain":0.75,"inputSelector":1,"label":"CH 6","muteOn":false},{"faderLevel":0.75,"pgmOn":false,"voOn":false,"pstOn":false,"showChannel":true,"inputGain":0.75,"inputSelector":1,"label":"CH 7","muteOn":false},{"faderLevel":0.75,"pgmOn":false,"voOn":false,"pstOn":false,"showChannel":true,"inputGain":0.75,"inputSelector":1,"label":"CH 8","muteOn":false}]}',
+                            },
+                        ],
+                    },
+                    '127.0.0.1',
+                    5255
+                )
+            })
+        })
         describe('/ch/{value1}/state', () => {
             it('should send channel state', () => {
                 // Need to include info about where to send the response
@@ -385,6 +440,176 @@ describe('AutomationConnection', () => {
                             {
                                 type: 's',
                                 value: '{"channel":[{"faderLevel":0.75,"pgmOn":false,"voOn":false,"pstOn":false,"showChannel":true,"label":"CH 1","muteOn":false,"inputGain":0.75,"inputSelector":1}]}',
+                            },
+                        ],
+                    },
+                    '127.0.0.1',
+                    5255
+                )
+            })
+        })
+        describe('All channel state options', () => {
+            it('/ch/{value1}/pgm/state should return channel PGM state', () => {
+                messageHandler(
+                    {
+                        address: '/ch/1/pgm/state',
+                        args: [],
+                    },
+                    undefined,
+                    {
+                        address: '127.0.0.1',
+                        port: 5255,
+                    }
+                )
+                jest.runAllTimers()
+
+                expect(mockUdpInstance.send).toHaveBeenCalledWith(
+                    {
+                        address: '/ch/01/pgm/state',
+                        args: [
+                            {
+                                type: 'i',
+                                value: false,
+                            },
+                        ],
+                    },
+                    '127.0.0.1',
+                    5255
+                )
+            })
+            it('/ch/{value1}/pst/state should return channel PST state', () => {
+                messageHandler(
+                    {
+                        address: '/ch/1/pst/state',
+                        args: [],
+                    },
+                    undefined,
+                    {
+                        address: '127.0.0.1',
+                        port: 5255,
+                    }
+                )
+                jest.runAllTimers()
+
+                expect(mockUdpInstance.send).toHaveBeenCalledWith(
+                    {
+                        address: '/ch/01/pst/state',
+                        args: [
+                            {
+                                type: 'i',
+                                value: false,
+                            },
+                        ],
+                    },
+                    '127.0.0.1',
+                    5255
+                )
+            })
+            it('/ch/{value1}/faderlevel/state should return channel fader level', () => {
+                messageHandler(
+                    {
+                        address: '/ch/1/faderlevel/state',
+                        args: [],
+                    },
+                    undefined,
+                    {
+                        address: '127.0.0.1',
+                        port: 5255,
+                    }
+                )
+                jest.runAllTimers()
+
+                expect(mockUdpInstance.send).toHaveBeenCalledWith(
+                    {
+                        address: '/ch/01/faderlevel/state',
+                        args: [
+                            {
+                                type: 'f',
+                                value: 0.75,
+                            },
+                        ],
+                    },
+                    '127.0.0.1',
+                    5255
+                )
+            })
+            it('/ch/{value1}/mute/state should return channel mute state', () => {
+                messageHandler(
+                    {
+                        address: '/ch/1/mute/state',
+                        args: [],
+                    },
+                    undefined,
+                    {
+                        address: '127.0.0.1',
+                        port: 5255,
+                    }
+                )
+                jest.runAllTimers()
+
+                expect(mockUdpInstance.send).toHaveBeenCalledWith(
+                    {
+                        address: '/ch/01/mute/state',
+                        args: [
+                            {
+                                type: 'i',
+                                value: false,
+                            },
+                        ],
+                    },
+                    '127.0.0.1',
+                    5255
+                )
+            })
+            it('/ch/{value1}/inputgain/state should return channel input gain', () => {
+                messageHandler(
+                    {
+                        address: '/ch/1/inputgain/state',
+                        args: [],
+                    },
+                    undefined,
+                    {
+                        address: '127.0.0.1',
+                        port: 5255,
+                    }
+                )
+                jest.runAllTimers()
+
+                expect(mockUdpInstance.send).toHaveBeenCalledWith(
+                    {
+                        address: '/ch/01/inputgain/state',
+                        args: [
+                            {
+                                type: 'f',
+                                value: 0.75,
+                            },
+                        ],
+                    },
+                    '127.0.0.1',
+                    5255
+                )
+            })
+            it('/ch/{value1}/inputselector/state should return channel input selector', () => {
+                messageHandler(
+                    {
+                        address: '/ch/1/inputselector/state',
+                        args: [],
+                    },
+                    undefined,
+                    {
+                        address: '127.0.0.1',
+                        port: 5255,
+                    }
+                )
+                jest.runAllTimers()
+
+                expect(mockUdpInstance.send).toHaveBeenCalledWith(
+                    {
+                        address: '/ch/01/inputselector/state',
+                        args: [
+                            {
+                                type: 'i',
+                                value: 1,
                             },
                         ],
                     },
