@@ -452,18 +452,10 @@ export class AutomationConnection {
     checkOscCommand(message: string, command: string) {
         if (message === command) return true
 
-        let cmdArray = command.split('{value1}')
-
-        if (
-            message.substr(0, cmdArray[0].length) === cmdArray[0] &&
-            (message.substr(-cmdArray[1].length) === cmdArray[1] ||
-                cmdArray[1].length === 0) &&
-            message.length >= command.replace('{value1}', '').length
-        ) {
-            return true
-        } else {
-            return false
-        }
+        // Pattern match with {value1}
+        const pattern = command.replace('{value1}', '([^/]+)')
+        const regex = new RegExp(`^${pattern}$`)
+        return regex.test(message)
     }
 
     sendOutMessage(

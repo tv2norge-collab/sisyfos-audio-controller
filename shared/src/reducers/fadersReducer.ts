@@ -236,9 +236,13 @@ export const faders = (
             nextState[0].fader[action.faderIndex].voOn = false
             return nextState
         case FaderActionTypes.SET_PGM:
-            nextState[0].fader[action.faderIndex].pgmOn = !!action.pgmOn
-            nextState[0].fader[action.faderIndex].pgmOn = nextState[0].fader[action.faderIndex].faderLevel >= 0.01
-
+            if (isPgmOnFollowsMixer(action.faderIndex, fullState)) {
+                console.log('Setting PGM following mixer')
+                nextState[0].fader[action.faderIndex].pgmOn = (nextState[0].fader[action.faderIndex].faderLevel >= 0.01)
+            } else {
+                console.log('Setting PGM manually to', !!action.pgmOn)
+                nextState[0].fader[action.faderIndex].pgmOn = !!action.pgmOn
+            }
             nextState[0].fader[action.faderIndex].voOn = false
             return nextState
         case FaderActionTypes.TOGGLE_VO:
@@ -534,4 +538,28 @@ function setAssignedChannel(
     }
 
     nextState[0].fader[action.faderIndex].assignedChannels = newAssignments
+}
+
+function isPgmOnFollowsMixer(
+    faderIndex: number,
+    fullState: RootState
+): boolean {
+    const fader = fullState.faders[0].fader[faderIndex]
+    const settings = fullState.settings[0]
+
+    if (settings.pgmOnFollowsMixer === PgmOnFollowMixerBehaviour.Global) {
+        return true
+    }
+
+    if (settings.pgmOnFollowsMixer === PgmOnFollowMixerBehaviour.Auto 
+        && !fader.ignoreAutomation) {
+        return true
+    }
+
+    if (settings.pgmOnFollowsMixer === PgmOnFollowMixerBehaviour.Manual 
+        && fader.ignoreAutomation) {
+        return true
+    }
+
+    return false
 }
