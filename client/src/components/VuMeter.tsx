@@ -2,6 +2,8 @@ import * as React from 'react'
 import { connect } from 'react-redux'
 import { vuMeters } from '../utils/SocketClientHandlers'
 
+const FPS_INTERVAL = 1000 / 15
+
 //assets:
 import '../assets/css/VuMeter.css'
 //Utils:
@@ -43,9 +45,10 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
     private meterZero: number = 0.75
     private readonly WINDOW: number = 2000
 
-    private _painting = false
     private _previousVal = -1
     private _value = 0
+
+    private lastUpdateTime = Date.now()
 
     constructor(props: any) {
         super(props)
@@ -67,6 +70,16 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
             cancelAnimationFrame(this.animationFrame)
         }
     }
+
+    shouldComponentUpdate(): boolean {
+        const currentTime = Date.now();
+        if (currentTime - this.lastUpdateTime < FPS_INTERVAL) {
+            return false;
+        }
+        this.lastUpdateTime = currentTime;
+        return true;
+    }
+
 
     private initializeCanvas() {
         if (!this.canvas) return
@@ -199,8 +212,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
                 ></canvas>
             </div>
         )
-    }
-    
+    }    
 }
 
 const mapStateToProps = (state: any, props: any): VuMeterInjectedProps => {
