@@ -696,6 +696,8 @@ export class LawoMC2Connection implements MixerConnection {
             const subscription = await this.emberConnection.subscribe(
                 node as NumberedTreeNode<EmberElement>,
                 (node) => {
+                    console.log('This subscription should only update on initialization : ', mixerMessage)
+                    console.log('The rest should be handled by the streamUpdate event')
                     logger.trace('VU meter update' + JSON.stringify(node.contents, null, 2))
                     if (node.contents.type !== Model.ElementType.Parameter) return
                     const value = Number(node.contents.value)
