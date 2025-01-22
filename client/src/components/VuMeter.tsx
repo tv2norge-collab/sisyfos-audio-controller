@@ -15,17 +15,33 @@ interface VuMeterProps {
     faderIndex: number
 }
 
-export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
-    canvas: HTMLCanvasElement | undefined
+// Define colors as constants to avoid object creation in render loop
+const COLORS = {
+    LOWER: 'rgb(0, 122, 37)',
+    MIDDLE: 'rgb(53, 167, 0)',
+    UPPER: 'rgb(206, 0, 0)',
+    WINDOW_PEAK_LOW: 'rgb(16, 56, 0)',
+    WINDOW_PEAK_HIGH: 'rgb(100, 100, 100)',
+    TOTAL_PEAK_LOW: 'rgb(64, 64, 64)',
+    TOTAL_PEAK_HIGH: 'rgb(255, 0, 0)'
+}
 
-    totalPeak: number = 0
-    windowPeak: number = 0
-    windowLast: number = 0
-    meterMax: number = 1
-    meterMin: number = 0
-    meterTest: number = 0.75
-    meterZero: number = 0.75
-    WINDOW: number = 2000
+
+export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
+    private canvas: HTMLCanvasElement | undefined
+    private _context: CanvasRenderingContext2D | undefined
+    private animationFrame: number | undefined
+    
+    private totalHeight: number = 400
+    private totalPeak: number = 0
+    private windowPeak: number = 0
+    private windowLast: number = 0
+    private meterMax: number = 1
+    private meterMin: number = 0
+    private range: number = 1
+    private meterTest: number = 0.75
+    private meterZero: number = 0.75
+    private readonly WINDOW: number = 2000
 
     private _painting = false
     private _previousVal = -1
@@ -35,23 +51,40 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
         super(props)
         this.meterMax = window.mixerProtocol.meter?.max || 1
         this.meterMin = window.mixerProtocol.meter?.min || 0
+        this.range = this.meterMax - this.meterMin
         this.meterTest = window.mixerProtocol.meter?.test || 0.75
         this.meterZero = window.mixerProtocol.meter?.zero || 0.75
+        this.totalHeight = 400
     }
 
     componentDidMount() {
-        if (this._painting) this.paintVuMeter()
+        this.initializeCanvas()
+        this.paintVuMeter()
     }
 
-    totalHeight = () => {
-        return (this.canvas?.height ?? 400) / (this.meterMax - this.meterMin)
+    componentWillUnmount() {
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame)
+        }
+    }
+
+    private initializeCanvas() {
+        if (!this.canvas) return
+        
+        this._context = this.canvas.getContext('2d', {
+            antialias: false,
+            stencil: false,
+            preserveDrawingBuffer: true
+        }) as CanvasRenderingContext2D
+
+        this.totalHeight = (this.canvas.height ?? 400) / (this.meterMax - this.meterMin)
     }
 
     getTotalPeak = () => {
         if (this._value > this.totalPeak) {
             this.totalPeak = this._value
         }
-        return this.totalHeight() * this.totalPeak
+        return this.totalHeight * this.totalPeak
     }
 
     getWindowPeak = () => {
@@ -62,38 +95,26 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
             this.windowPeak = this._value
             this.windowLast = Date.now()
         }
-        return this.totalHeight() * this.windowPeak
+        return this.totalHeight * this.windowPeak
     }
 
-    calcLower = () => {
-        let val = this._value
-        if (val >= this.meterTest) {
-            val = this.meterTest
-        }
-        return this.totalHeight() * val
+    private calcLower = () => {
+        return this.totalHeight * Math.min(this._value, this.meterTest)
     }
 
-    calcMiddle = () => {
-        let val = this._value
-        if (val < this.meterTest) {
-            val = this.meterTest
-        } else if (val >= this.meterZero) {
-            val = this.meterZero
-        }
-        return this.totalHeight() * (val - this.meterTest) + 1
+    private calcMiddle = () => {
+        const val = Math.max(this.meterTest, Math.min(this._value, this.meterZero))
+        return this.totalHeight * (val - this.meterTest) + 1
     }
 
-    calcUpper = () => {
-        let val = this._value
-        if (val < this.meterZero) {
-            val = this.meterZero
-        }
-        return this.totalHeight() * (val - this.meterZero) + 1
+    private calcUpper = () => {
+        const val = Math.max(this.meterZero, this._value)
+        return this.totalHeight * (val - this.meterZero) + 1
     }
 
-    setRef = (el: HTMLCanvasElement) => {
+    private setRef = (el: HTMLCanvasElement) => {
         this.canvas = el
-
+        this.initializeCanvas()
         this.paintVuMeter()
     }
 
@@ -102,85 +123,63 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
     }
 
     paintVuMeter = () => {
-        if (!this.canvas) {
-            this._painting = false
+        if (!this.canvas || !this._context) {
+            this.animationFrame = requestAnimationFrame(this.paintVuMeter)
             return
         }
-        this._painting = true
 
         this._value = vuMeters[this.props.faderIndex]?.[this.props.channel] || 0
 
         if (this._value === this._previousVal) {
-            this._painting = false
             window.requestAnimationFrame(this.paintVuMeter)
             return
         }
         this._previousVal = this._value
 
-        const context = this.canvas.getContext('2d', {
-            antialias: false,
-            stencil: false,
-            preserveDrawingBuffer: true,
-        }) as CanvasRenderingContext2D
-
-        if (!context) return
-
-        const range = this.meterMax - this.meterMin
-        context.clearRect(0, 0, this.canvas.width, this.canvas.height)
+        if (!this._context) return
+        this._context.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
         // lower part
-        context.fillStyle = 'rgb(0, 122, 37)'
-        context.fillRect(
+        this._context.fillStyle = COLORS.LOWER
+        this._context.fillRect(
             0,
-            this.totalHeight() - this.calcLower(),
+            this.totalHeight - this.calcLower(),
             this.canvas.height,
             this.calcLower(),
         )
 
         // middle part
-        context.fillStyle = 'rgb(53, 167, 0)'
-        context.fillRect(
+        this._context.fillStyle = COLORS.MIDDLE
+        this._context.fillRect(
             0,
-            this.totalHeight() * (range - this.meterTest) - this.calcMiddle(),
+            this.totalHeight * (this.range - this.meterTest) - this.calcMiddle(),
             this.canvas.width,
             this.calcMiddle(),
         )
 
         // upper part (too high/clip)
-        context.fillStyle = 'rgb(206, 0, 0)'
-        context.fillRect(
+        this._context.fillStyle = COLORS.UPPER
+        this._context.fillRect(
             0,
-            this.totalHeight() * (range - this.meterZero) - this.calcUpper(),
+            this.totalHeight * (this.range - this.meterZero) - this.calcUpper(),
             this.canvas.width,
             this.calcUpper(),
         )
 
+
         // windowed peak
         const windowPeak = this.getWindowPeak()
-        if (this.windowPeak < this.meterZero) {
-            context.fillStyle = 'rgb(16, 56, 0)'
-        } else {
-            context.fillStyle = 'rgb(100, 100, 100)'
-        }
-        context.fillRect(
-            0,
-            this.totalHeight() - windowPeak,
-            this.canvas.width,
-            2,
-        )
+        this._context.fillStyle = this.windowPeak < this.meterZero ? 
+            COLORS.WINDOW_PEAK_LOW : 
+            COLORS.WINDOW_PEAK_HIGH
+        this._context.fillRect(0, this.totalHeight - windowPeak, this.canvas.width, 2)
 
-        // absolute peak
-        if (this.totalPeak < this.meterZero) {
-            context.fillStyle = 'rgb(64, 64, 64)'
-        } else {
-            context.fillStyle = 'rgb(255, 0, 0)'
-        }
-        context.fillRect(
-            0,
-            this.totalHeight() - this.getTotalPeak(),
-            this.canvas.width,
-            2,
-        )
+        // Draw total peak
+        this._context.fillStyle = this.totalPeak < this.meterZero ? 
+            COLORS.TOTAL_PEAK_LOW : 
+            COLORS.TOTAL_PEAK_HIGH
+        this._context.fillRect(0, this.totalHeight - this.getTotalPeak(), this.canvas.width, 2)
+
 
         window.requestAnimationFrame(this.paintVuMeter)
     }
@@ -191,16 +190,17 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
                 <canvas
                     className="vumeter-canvas"
                     style={{
-                        height: this.totalHeight(),
+                        height: this.totalHeight,
                         top: '10px',
                     }}
-                    height={this.totalHeight()}
+                    height={this.totalHeight}
                     width={10}
                     ref={this.setRef}
                 ></canvas>
             </div>
         )
     }
+    
 }
 
 const mapStateToProps = (state: any, props: any): VuMeterInjectedProps => {
