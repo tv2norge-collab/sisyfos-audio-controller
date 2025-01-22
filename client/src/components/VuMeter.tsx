@@ -13,8 +13,8 @@ export interface VuMeterInjectedProps {
     channel: number
 }
 
-interface VuMeterProps {
-    faderIndex: number
+interface VuMeterState {
+    isVisible: boolean
 }
 
 // Define colors as constants to avoid object creation in render loop
@@ -29,10 +29,11 @@ const COLORS = {
 }
 
 
-export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
+export class VuMeter extends React.PureComponent<VuMeterInjectedProps, VuMeterState> {
     private canvas: HTMLCanvasElement | undefined
     private _context: CanvasRenderingContext2D | undefined
     private animationFrame: number | undefined
+    private intersectionObserver: IntersectionObserver | null = null
     
     private totalHeight: number = 400
     private totalPeak: number = 0
@@ -52,6 +53,10 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
 
     constructor(props: any) {
         super(props)
+        this.state = {
+            isVisible: false
+        }
+
         this.meterMax = window.mixerProtocol.meter?.max || 1
         this.meterMin = window.mixerProtocol.meter?.min || 0
         this.range = this.meterMax - this.meterMin
@@ -61,6 +66,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
     }
 
     componentDidMount() {
+        this.initIntersectionObserver()
         this.initializeCanvas()
         this.paintVuMeter()
     }
@@ -68,6 +74,12 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
     componentWillUnmount() {
         if (this.animationFrame) {
             cancelAnimationFrame(this.animationFrame)
+        }
+
+        // Clean up intersection observer
+        if (this.intersectionObserver && this.canvas) {
+            this.intersectionObserver.unobserve(this.canvas)
+            this.intersectionObserver.disconnect()
         }
     }
 
@@ -91,6 +103,22 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
         }) as CanvasRenderingContext2D
 
         this.totalHeight = (this.canvas.height ?? 400) / (this.meterMax - this.meterMin)
+    }
+
+    private initIntersectionObserver() {
+        this.intersectionObserver = new IntersectionObserver(
+            (entries) => {
+                const [entry] = entries
+                this.setState({ isVisible: entry.isIntersecting })
+            },
+            {
+                threshold: 0.1 // Trigger when at least 10% of the component is visible
+            }
+        )
+
+        if (this.canvas) {
+            this.intersectionObserver.observe(this.canvas)
+        }
     }
 
     getTotalPeak = () => {
