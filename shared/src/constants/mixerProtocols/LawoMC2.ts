@@ -118,7 +118,8 @@ export const LawoMC2: MixerProtocol = {
                 ],
                 CHANNEL_VU: [
                     {
-                        mixerMessage: 'Channels.Inputs.${channel}.Metering.Main Level',
+                        //mixerMessage: 'Channels.Inputs.${channel}.Metering.Main Level',
+                        mixerMessage: 'Signals.INP.INP:000.${channel}._1.Metering.Main Level',
                         value: true,
                         type: 'boolean',
                         min: -128,
