@@ -667,11 +667,15 @@ export class LawoMC2Connection implements MixerConnection {
         channelTypeIndex: number,
     ) {
         const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
-        const mixerMessage = 
-                this._insertChannelName(
-                    this.mixerProtocol.channelTypes[typeIndex].fromMixer.CHANNEL_VU[0].mixerMessage, String(channelTypeIndex + 1)
-                )
-        
+        // const mixerMessage = 
+        //         this._insertChannelName(
+        //             this.mixerProtocol.channelTypes[typeIndex].fromMixer.CHANNEL_VU[0].mixerMessage, String(channelTypeIndex + 1)
+        //         )
+                                // /_3/_80/_0/_3a00/_3b [353370.626451.626452.688397.688398]
+                        // /_3/_80/_0/_${channel-1 in hex}00/1{channel in hex}. [353370.626451.626452.688397.688398]
+        const mixerMessage = `Signals.INP.INP:000.INP:000:${channelTypeIndex.toString().padStart(3, '0')}:000._${(
+				channelTypeIndex + 1
+			).toString(16)}.Metering.Main Level`  
         try {
             const node = await this.emberConnection.getElementByPath(mixerMessage)
             
