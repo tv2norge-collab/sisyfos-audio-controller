@@ -284,7 +284,7 @@ export class LawoMC2Connection implements MixerConnection {
             await subsription.response
             cb(node)
         } catch (e) {
-            logger.data(e).error('Error when subscribing to node: ' + mixerMessage)
+            logger.data(e).error('Error when subscribing to node: ' + channelName)
         }
     }
 
