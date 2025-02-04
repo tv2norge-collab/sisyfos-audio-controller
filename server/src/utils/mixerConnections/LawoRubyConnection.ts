@@ -17,7 +17,8 @@ import { EmberElement, NumberedTreeNode } from 'emberplus-connection/dist/model'
 import { MixerConnection } from '.'
 
 // TODO - should these be util functions?
-export function floatToDB(f: number): number {
+export function floatToDB(f: number, min = -90): number {
+    const scale = (-min - 60) / .0625 // scale for the bottom of the fader
     if (f >= 0.5) {
         return f * 40 - 30 // max dB value: +10.
     } else if (f >= 0.25) {
@@ -25,16 +26,18 @@ export function floatToDB(f: number): number {
     } else if (f >= 0.0625) {
         return f * 160 - 70
     } else if (f > 0.0) {
-        return f * 480 - 90 // min dB value: -90 or -oo
+        return f * scale + min // min dB value: -90 or -oo
     } else {
         return -191
     }
 }
 
-export function dbToFloat(d: number): number {
+export function dbToFloat(d: number, min = -90): number {
     let f: number
+    const scale = (-min - 60) / .0625 // scale for the bottom of the fader
+
     if (d < -60) {
-        f = (d + 90) / 480
+        f = (d + -min) / scale
     } else if (d < -30) {
         f = (d + 70) / 160
     } else if (d < -10) {
@@ -278,18 +281,30 @@ export class LawoRubyMixerConnection implements MixerConnection {
                     logger.trace(
                         `Receiving Level from Ch ${ch}: ${levelInDecibel}`
                     )
+                    const minDeciBel = this.mixerProtocol.channelTypes[typeIndex].fromMixer
+                        .CHANNEL_OUT_GAIN[0].min
                     if (
                         !state.channels[0].chMixerConnection[this.mixerIndex]
                             .channel[ch - 1].fadeActive &&
-                        levelInDecibel >=
-                            this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                                .CHANNEL_OUT_GAIN[0].min
+                        levelInDecibel >= minDeciBel
                     ) {
-                        // update the fader
-                        const level = dbToFloat(levelInDecibel)
+                        const level = dbToFloat(levelInDecibel, minDeciBel)
+                        const isPgm = levelInDecibel > this.mixerProtocol.channelTypes[typeIndex]
+                            .fromMixer.CHANNEL_OUT_GAIN[0].min
+                        
+                        if (isPgm) {
+                            // update the fader, but only if that means it's on-air
+                            store.dispatch  ({
+                                type: FaderActionTypes.SET_FADER_LEVEL,
+                                faderIndex: ch - 1,
+                                level: level,
+                            })
+                        }
+                        // update the output level anyway
                         store.dispatch  ({
-                            type: FaderActionTypes.SET_FADER_LEVEL,
-                            faderIndex: ch - 1,
+                            type: ChannelActionTypes.SET_OUTPUT_LEVEL,
+                            mixerIndex: this.mixerIndex,
+                            channel: ch - 1,
                             level: level,
                         })
 
@@ -298,7 +313,7 @@ export class LawoRubyMixerConnection implements MixerConnection {
                         store.dispatch({
                             type: FaderActionTypes.SET_PGM,
                             faderIndex: ch - 1,
-                            pgmOn: level > 0,
+                            pgmOn: isPgm,
                         })
 
                         global.mainThreadHandler.updatePartialStore(ch - 1)
@@ -495,15 +510,15 @@ export class LawoRubyMixerConnection implements MixerConnection {
         this.emberConnection
             .getElementByPath(message)
             .then((element: any) => {
+                const v = typeof value === 'string' ? parseFloat(value) : value
+                if (element.contents.value === v) return { response: undefined, sentOk: false } // contents is already the same - a bit risky but yolo
+
                 logger.trace(`Sending out message: ${message}`)
-                return this.emberConnection.setValue(
-                    element,
-                    typeof value === 'string' ? parseFloat(value) : value
-                )
+                return this.emberConnection.setValue(element, v)
             })
             .then((req) => req.response)
             .catch((error: any) => {
-                logger.data(error).error('Ember Error ')
+                logger.data(error).error('Ember Error for ' + message + ' -> ' + value)
             })
     }
 
@@ -533,7 +548,11 @@ export class LawoRubyMixerConnection implements MixerConnection {
             this.mixerProtocol.channelTypes[channelType].toMixer
                 .CHANNEL_OUT_GAIN[0]
 
-        const level = floatToDB(outputLevel)
+        const level = floatToDB(
+            outputLevel, 
+            this.mixerProtocol.channelTypes[channelType].toMixer
+                .CHANNEL_OUT_GAIN[0].min
+        )
 
         this.sendOutLevelMessage(channelTypeIndex + 1, level)
     }
@@ -574,7 +593,7 @@ export class LawoRubyMixerConnection implements MixerConnection {
             )
             await response
         } catch (e) {
-            logger.data(e).error('Ember Error ')
+            logger.data(e).error('Ember Error while updating PFL State')
         }
     }
 
