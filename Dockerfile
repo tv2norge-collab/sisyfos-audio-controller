@@ -15,6 +15,9 @@ RUN yarn cache clean
 
 # DEPLOY IMAGE
 FROM node:18.16-alpine
+# Install corepack and use yarn 4.1.0
+RUN corepack enable
+RUN corepack prepare yarn@4.1.0 --activate
 WORKDIR /opt/sisyfos-audio-controller
 COPY --from=0 /opt/sisyfos-audio-controller .
 EXPOSE 1176/tcp
