@@ -55,32 +55,20 @@ export const socketClientHandlers = () => {
         .on(SOCKET_SET_FULL_STORE, (payload: any) => {
             // console.log('STATE RECEIVED :', payload)
             if (window.mixerProtocol) {
-                let numberOfChannels: NumberOfChannels[] = []
-                payload.channels[0].chMixerConnection.forEach(
-                    (
-                        chMixerConnection: ChMixerConnection,
-                        mixerIndex: number
-                    ) => {
-                        numberOfChannels.push({ numberOfTypeInCh: [] })
-                        numberOfChannels[mixerIndex].numberOfTypeInCh = [
-                            chMixerConnection.channel.length,
-                        ]
-                    }
-                )
 
                 window.storeRedux.dispatch({
                     type: ChannelActionTypes.SET_COMPLETE_CH_STATE,
-                    numberOfTypeChannels: numberOfChannels,
-                    allState: payload.channels[0],
+                    numberOfTypeChannels: payload.numberOfChannels,
+                    allState: payload.state.channels[0],
                 })
 
                 window.storeRedux.dispatch({
                     type: FaderActionTypes.SET_COMPLETE_FADER_STATE,
-                    allState: payload.faders[0],
-                    numberOfFaders: payload.settings[0].numberOfFaders,
+                    allState: payload.state.faders[0],
+                    numberOfFaders: payload.state.settings[0].numberOfFaders,
                 })
 
-                payload.settings[0].mixers.forEach(
+                payload.state.settings[0].mixers.forEach(
                     (mixer: MixerSettings, i: number) => {
                         window.storeRedux.dispatch({
                             type: SettingsActionTypes.SET_MIXER_ONLINE,

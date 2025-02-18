@@ -31,7 +31,7 @@ import { logger } from './utils/logger'
 import { CustomPages } from '../../shared/src/reducers/settingsReducer'
 import { FxParam } from '../../shared/src/constants/MixerProtocolInterface'
 import path from 'path'
-import { Channel } from '../../shared/src/reducers/channelsReducer'
+import { Channel, NumberOfChannels } from '../../shared/src/reducers/channelsReducer'
 import { ChannelReference } from '../../shared/src/reducers/fadersReducer'
 import { Dispatch } from 'redux'
 
@@ -53,7 +53,25 @@ export class MainThreadHandlers {
     }
 
     updateFullClientStore() {
-        socketServer.emit(IO.SOCKET_SET_FULL_STORE, state)
+        let numberOfChannels: NumberOfChannels[] = []
+        // Count total number of channels:
+        for (
+            let mixerIndex = 0;
+            mixerIndex < state.settings[0].numberOfMixers;
+            mixerIndex++
+        ) {
+            numberOfChannels.push({ numberOfTypeInCh: [] })
+            mixerProtocolPresets[
+                state.settings[0].mixers[mixerIndex].mixerProtocol
+            ].channelTypes.forEach((item: any, index: number) => {
+                numberOfChannels[mixerIndex].numberOfTypeInCh.push(
+                    state.settings[0].mixers[mixerIndex].numberOfChannelsInType[
+                        index
+                    ]
+                )
+            })
+        }
+        socketServer.emit(IO.SOCKET_SET_FULL_STORE, { state, numberOfChannels } )
     }
 
     updatePartialStore(faderIndex: number) {
