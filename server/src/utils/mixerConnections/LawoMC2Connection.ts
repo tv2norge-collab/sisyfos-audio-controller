@@ -777,7 +777,8 @@ export class LawoMC2Connection implements MixerConnection {
                 channelIndex
             ].channelTypeIndex
 
-        if (state.faders[0].fader[channelIndex].pflOn === true) {
+        const faderIndex = this.getAssignedFaderIndex(channelIndex)
+        if (state.faders[0].fader[faderIndex].pflOn === true) {
             this.sendOutMessage(
                 this.mixerProtocol.channelTypes[channelType].toMixer.PFL_ON[0]
                     .mixerMessage,
