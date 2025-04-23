@@ -31,7 +31,7 @@ import { logger } from './utils/logger'
 import { CustomPages } from '../../shared/src/reducers/settingsReducer'
 import { FxParam } from '../../shared/src/constants/MixerProtocolInterface'
 import path from 'path'
-import { Channel } from '../../shared/src/reducers/channelsReducer'
+import { Channel, NumberOfChannels } from '../../shared/src/reducers/channelsReducer'
 import { ChannelReference } from '../../shared/src/reducers/fadersReducer'
 import { Dispatch } from 'redux'
 
@@ -53,7 +53,25 @@ export class MainThreadHandlers {
     }
 
     updateFullClientStore() {
-        socketServer.emit(IO.SOCKET_SET_FULL_STORE, state)
+        let numberOfChannels: NumberOfChannels[] = []
+        // Count total number of channels:
+        for (
+            let mixerIndex = 0;
+            mixerIndex < state.settings[0].numberOfMixers;
+            mixerIndex++
+        ) {
+            numberOfChannels.push({ numberOfTypeInCh: [] })
+            mixerProtocolPresets[
+                state.settings[0].mixers[mixerIndex].mixerProtocol
+            ].channelTypes.forEach((item: any, index: number) => {
+                numberOfChannels[mixerIndex].numberOfTypeInCh.push(
+                    state.settings[0].mixers[mixerIndex].numberOfChannelsInType[
+                        index
+                    ]
+                )
+            })
+        }
+        socketServer.emit(IO.SOCKET_SET_FULL_STORE, { state, numberOfChannels } )
     }
 
     updatePartialStore(faderIndex: number) {
@@ -102,14 +120,42 @@ export class MainThreadHandlers {
     }
 
     cleanUpAssignedChannelsOnFaders() {
+        logger.debug('Validating assigned channels on faders')
         state.faders[0].fader.forEach((fader, faderIndex) => {
             fader.assignedChannels?.forEach((channel: ChannelReference) => {
                 if (state.settings[0].numberOfMixers < channel.mixerIndex + 1) {
+                    logger.debug('Assigned mixer not found mixerIndex : ' + channel.mixerIndex)
+                    store.dispatch({
+                        type: FaderActionTypes.SET_ASSIGNED_CHANNEL,
+                        faderIndex: faderIndex,
+                        mixerIndex: channel.mixerIndex,
+                        channelIndex: channel.channelIndex,
+                        assigned: false,
+                    })
                     store.dispatch({
                         type: ChannelActionTypes.SET_ASSIGNED_FADER,
                         mixerIndex: channel.mixerIndex,
                         channel: channel.channelIndex,
                         faderNumber: -1,
+                    })
+                } else if (
+                    channel.channelIndex >=
+                    state.channels[0].chMixerConnection[channel.mixerIndex]
+                        .channel.length
+                ) {
+                    logger.debug(
+                        'Faderindex : ' +
+                        faderIndex +
+                        'Assigned channelIndex : ' +
+                        channel.channelIndex +
+                        ' not found - removing assignment'
+                    )
+                    store.dispatch({
+                        type: FaderActionTypes.SET_ASSIGNED_CHANNEL,
+                        faderIndex: faderIndex,
+                        mixerIndex: channel.mixerIndex,
+                        channelIndex: channel.channelIndex,
+                        assigned: false,
                     })
                 }
             })

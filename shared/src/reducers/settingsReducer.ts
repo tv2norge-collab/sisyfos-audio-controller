@@ -265,6 +265,7 @@ export const settings = (
             // ignore UI state:
             nextState[0].showSettings = state[0].showSettings || false
             nextState[0].showOptions = state[0].showOptions || false
+            nextState[0].showPagesSetup = state[0].showPagesSetup || false
             nextState[0].showMonitorOptions = state[0].showMonitorOptions || -1
             nextState[0].showStorage = state[0].showStorage || false
             nextState[0].showChanStrip = state[0].showChanStrip || -1

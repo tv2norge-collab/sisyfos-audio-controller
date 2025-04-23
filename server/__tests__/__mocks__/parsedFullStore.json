@@ -764,6 +764,7 @@
     "settings": [
         {
             "showSettings": false,
+            "showPagesSetup": false,
             "showChanStrip": -1,
             "showOptions": false,
             "showMonitorOptions": -1,
