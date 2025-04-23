@@ -1,3 +1,11 @@
+## [4.22.0](https://github.com/olzzon/sisyfos-audio-controller/compare/v4.21.0...v4.22.0) (2025-04-23)
+
+
+### Features
+
+* update README.md ([33e2fcc](https://github.com/olzzon/sisyfos-audio-controller/commit/33e2fcc2bb30fca93db0d2ff18fb19930d7a7105))
+
+
 ## [4.21.0](https://github.com/olzzon/sisyfos-audio-controller/compare/v4.20.0...v4.21.0) (2025-04-23)
 
 
