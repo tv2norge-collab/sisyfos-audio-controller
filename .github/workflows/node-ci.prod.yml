@@ -300,7 +300,7 @@ jobs:
       - name: Access repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.bump-version.outputs.commit_sha }}
+          ref: ${{ needs.bump-version.outputs.commit_sha || github.ref }}
           
       - name: Setup Node.js
         uses: actions/setup-node@v4
