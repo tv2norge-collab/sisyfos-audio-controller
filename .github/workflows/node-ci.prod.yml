@@ -18,6 +18,12 @@
 #######################################################################################################################
 name: Prod Node CI
 
+### Ensure that permissions are set to bump the version and push the tag
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
 env:
   node-version: 18
   yarn-version: 4.1.0
@@ -230,7 +236,7 @@ jobs:
       - name: Access repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.bump-version.outputs.commit_sha }}
+          ref: ${{ github.ref }}
           
       - name: Setup Node.js
         uses: actions/setup-node@v4
