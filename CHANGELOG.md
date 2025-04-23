@@ -1,3 +1,11 @@
+### [4.22.1](https://github.com/olzzon/sisyfos-audio-controller/compare/v4.22.0...v4.22.1) (2025-04-23)
+
+
+### Bug Fixes
+
+* CI desktop not always having a _sha ([4ad312c](https://github.com/olzzon/sisyfos-audio-controller/commit/4ad312c45670f1fc70ad612d38aec0165ce4d3c7))
+
+
 ## [4.22.0](https://github.com/olzzon/sisyfos-audio-controller/compare/v4.21.0...v4.22.0) (2025-04-23)
 
 
