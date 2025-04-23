@@ -448,8 +448,23 @@ jobs:
         run: yarn publish --access=public --tag latest --new-version "${{ needs.bump-version.outputs.version }}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  ## Check if AWS credentials are set
+  check-aws-credentials:
+    runs-on: ubuntu-latest
+    outputs:
+      has_aws_config: ${{ steps.check_aws.outputs.has_aws_config }}
+    steps:
+      - id: check_aws
+        name: Check if AWS credentials exist
+        run: |
+          if [ -n "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            echo "has_aws_config=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_aws_config=false" >> $GITHUB_OUTPUT
+          fi
+  ## Publish to AWS CodeArtifact:
   publish-ecr-package:
-    if: needs.check-npm-token.outputs.defined == 'false'
+    if: needs.check-npm-token.outputs.defined == 'false' && needs.check-aws-credentials.outputs.has_aws_config == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -554,8 +569,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           
+  ## Publish to AWS ECR:
   publish-ecr-docker-image:
-    if: needs.check-docker-credentials.outputs.defined == 'false'
+    if: needs.check-docker-credentials.outputs.defined == 'false' && needs.check-aws-credentials.outputs.has_aws_config == 'true'
     runs-on: ubuntu-latest
     needs:
         - check-docker-credentials
