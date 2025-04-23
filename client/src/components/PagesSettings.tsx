@@ -41,28 +41,28 @@ interface PagesSettingsInjectProps {
 class PagesSettings extends React.PureComponent<
     PagesSettingsInjectProps & Store
 > {
-    pageList: { label: string; value: number }[]
-    state = { pageIndex: 0, label: '' }
+    pageList: { id: string, label: string; value: number }[]
+    state = { id: '', pageIndex: 0, label: '' }
 
     constructor(props: any) {
         super(props)
 
         this.pageList = this.props.customPages.map(
             (page: CustomPages, index: number) => {
-                return { label: page.label, value: index }
+                return { id: page.id, label: page.label, value: index }
             }
         )
     }
 
     componentDidMount() {
-        this.setState({ label: this.props.customPages[0].label })
+        const { id, label } = this.props.customPages[0]
+        this.setState({ id, label })
     }
 
     handleSelectPage(event: any) {
         this.setState({ pageIndex: event.value })
-        this.setState({
-            label: this.props.customPages[event.value].label,
-        })
+        const { id, label } = this.props.customPages[event.value]
+        this.setState({ id, label })
         console.log('PAGE SELECTED', this.state.pageIndex)
     }
 
@@ -84,7 +84,7 @@ class PagesSettings extends React.PureComponent<
                     ),
                     1
                 )
-                window.storeRedux.dispatch({ type: SettingsActionTypes.TOGGLE_SHOW_PAGES_SETUP})
+                window.storeRedux.dispatch({ type: SettingsActionTypes.SET_PAGES_LIST, customPages: nextPages})
                 window.socketIoClient.emit(SOCKET_SET_PAGES_LIST, nextPages)
             }
         } else {
@@ -109,11 +109,11 @@ class PagesSettings extends React.PureComponent<
         }
     }
 
-    handleLabel = (event: ChangeEvent<HTMLInputElement>) => {
-        this.setState({ label: event.target.value })
-        this.pageList[this.state.pageIndex].label = event.target.value
+    handleProperty = (property: 'id' | 'label', event: ChangeEvent<HTMLInputElement>) => {
+        this.setState({ [property]: event.target.value })
+        this.pageList[this.state.pageIndex][property] = event.target.value
         let nextPages: CustomPages[] = [...this.props.customPages]
-        nextPages[this.state.pageIndex].label = event.target.value
+        nextPages[this.state.pageIndex][property] = event.target.value
 
         window.storeRedux.dispatch({ type: SettingsActionTypes.SET_PAGES_LIST, customPages: nextPages})
         window.socketIoClient.emit(SOCKET_SET_PAGES_LIST, nextPages)
@@ -186,12 +186,22 @@ class PagesSettings extends React.PureComponent<
                     options={this.pageList}
                 />
                 <label className="inputfield">
+                    ID :
+                    <input
+                        name="label"
+                        type="text"
+                        value={this.state.id}
+                        onChange={(event) => this.handleProperty('id', event)}
+                    />
+                </label>
+                <br />
+                <label className="inputfield">
                     LABEL :
                     <input
                         name="label"
                         type="text"
                         value={this.state.label}
-                        onChange={(event) => this.handleLabel(event)}
+                        onChange={(event) => this.handleProperty('label', event)}
                     />
                 </label>
                 <br />

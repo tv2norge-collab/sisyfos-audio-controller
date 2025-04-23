@@ -1,5 +1,7 @@
-import { FaderActionTypes, FaderActions } from '../actions/faderActions'
+import { FaderActionTypes } from '../actions/faderActions'
 import { NumberOfChannels } from './channelsReducer'
+import { RootAction, RootState } from './indexReducer'
+import { PgmOnFollowMixerBehaviour } from './settingsReducer'
 export interface Faders {
     fader: Array<Fader>
     vuMeters: Array<VuMeters>
@@ -8,6 +10,8 @@ export interface Faders {
 export interface ChannelReference {
     mixerIndex: number
     channelIndex: number
+    /** When linking faders, it tracks the index of a fader this channel originated from */
+    borrowedFromFaderIndex?: number
 }
 
 export interface Fader {
@@ -31,6 +35,7 @@ export interface Fader {
     ignoreAutomation: boolean
     disabled: boolean
     assignedChannels?: ChannelReference[]
+    isLinked?: boolean
 
     /**
      * Assuming that the protocol has a "feature", can it be enabled on this fader?
@@ -39,6 +44,8 @@ export interface Fader {
     capabilities?: {
         hasAMix?: boolean
         hasInputSelector?: boolean
+        isLinkablePrimary?: boolean
+        isLinkableSecondary?: boolean
     }
 }
 
@@ -67,8 +74,6 @@ export const defaultFadersReducerState = (
             }
         }
     })
-
-    console.log(channels)
 
     for (let index = 0; index < numberOfFaders; index++) {
         defaultObj[0].fader[index] = {
@@ -99,10 +104,15 @@ export const defaultFadersReducerState = (
     return defaultObj
 }
 
+
 export const faders = (
     state = defaultFadersReducerState(0),
-    action: FaderActions
+    action: RootAction,
+    fullState?: RootState
 ): Array<Faders> => {
+    if (!(action.type in FaderActionTypes)) {
+        return state;
+    }
     let nextState = [
         {
             vuMeters: [...state[0].vuMeters],
@@ -141,8 +151,22 @@ export const faders = (
             nextState[0].fader[action.faderIndex] = action.state
             return nextState
         case FaderActionTypes.SET_FADER_LEVEL:
+            if (
+                fullState.settings[0].pgmOnFollowsMixer === 
+                PgmOnFollowMixerBehaviour.Auto && !nextState[0].fader[action.faderIndex].ignoreAutomation
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (action.level >= 0.01)
+            } else if (
+                fullState.settings[0].pgmOnFollowsMixer === 
+                PgmOnFollowMixerBehaviour.Manual && nextState[0].fader[action.faderIndex].ignoreAutomation
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (action.level >= 0.01)
+            } else if (fullState.settings[0].pgmOnFollowsMixer ===
+                PgmOnFollowMixerBehaviour.Global
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (action.level >= 0.01)
+            } 
             nextState[0].fader[action.faderIndex].faderLevel = action.level
-
             return nextState
         case FaderActionTypes.SET_INPUT_GAIN:
             nextState[0].fader[action.faderIndex].inputGain = action.level
@@ -167,12 +191,58 @@ export const faders = (
             nextState[0].fader[action.faderIndex].label = action.label
             return nextState
         case FaderActionTypes.TOGGLE_PGM:
-            nextState[0].fader[action.faderIndex].pgmOn =
-                !nextState[0].fader[action.faderIndex].pgmOn
+            if (
+                fullState.settings[0].pgmOnFollowsMixer === 
+                PgmOnFollowMixerBehaviour.Auto && !nextState[0].fader[action.faderIndex].ignoreAutomation
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (nextState[0].fader[action.faderIndex].faderLevel >= 0.01)
+            } else if (
+                fullState.settings[0].pgmOnFollowsMixer === 
+                PgmOnFollowMixerBehaviour.Manual && nextState[0].fader[action.faderIndex].ignoreAutomation
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (nextState[0].fader[action.faderIndex].faderLevel >= 0.01)
+            } else if (fullState.settings[0].pgmOnFollowsMixer ===
+                PgmOnFollowMixerBehaviour.Global
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (nextState[0].fader[action.faderIndex].faderLevel >= 0.01)
+            } else {
+                nextState[0].fader[action.faderIndex].pgmOn =
+                !nextState[0].fader[action.faderIndex].pgmOn  
+            }
+            nextState[0].fader[action.faderIndex].voOn = false
+            return nextState
+        case FaderActionTypes.TOGGLE_PGM_UI:
+                 if (
+                    fullState.settings[0].pgmOnFollowsMixer === 
+                    PgmOnFollowMixerBehaviour.Auto && !nextState[0].fader[action.faderIndex].ignoreAutomation
+                ) {
+                    nextState[0].fader[action.faderIndex].pgmOn = false
+                    nextState[0].fader[action.faderIndex].faderLevel = 0
+                } else if (
+                    fullState.settings[0].pgmOnFollowsMixer === 
+                    PgmOnFollowMixerBehaviour.Manual && !nextState[0].fader[action.faderIndex].ignoreAutomation
+                ) {
+                    nextState[0].fader[action.faderIndex].pgmOn = false
+                    nextState[0].fader[action.faderIndex].faderLevel = 0
+                } else if (fullState.settings[0].pgmOnFollowsMixer ===
+                    PgmOnFollowMixerBehaviour.Global
+                ) {
+                    nextState[0].fader[action.faderIndex].pgmOn = false
+                    nextState[0].fader[action.faderIndex].faderLevel = 0
+                } else {
+                    nextState[0].fader[action.faderIndex].pgmOn =
+                    !nextState[0].fader[action.faderIndex].pgmOn
+                }
             nextState[0].fader[action.faderIndex].voOn = false
             return nextState
         case FaderActionTypes.SET_PGM:
-            nextState[0].fader[action.faderIndex].pgmOn = !!action.pgmOn
+            if (isPgmOnFollowsMixer(action.faderIndex, fullState)) {
+                console.log('Setting PGM following mixer')
+                nextState[0].fader[action.faderIndex].pgmOn = (nextState[0].fader[action.faderIndex].faderLevel >= 0.01)
+            } else {
+                console.log('Setting PGM manually to', !!action.pgmOn)
+                nextState[0].fader[action.faderIndex].pgmOn = !!action.pgmOn
+            }
             nextState[0].fader[action.faderIndex].voOn = false
             return nextState
         case FaderActionTypes.TOGGLE_VO:
@@ -232,8 +302,13 @@ export const faders = (
                 !!action.showInMiniMonitor
             return nextState
         case FaderActionTypes.IGNORE_AUTOMATION: //channel // ignoreAutomation
-            nextState[0].fader[action.faderIndex].ignoreAutomation =
-                !nextState[0].fader[action.faderIndex].ignoreAutomation
+            if (action.state === undefined) {
+                nextState[0].fader[action.faderIndex].ignoreAutomation =
+                    !nextState[0].fader[action.faderIndex].ignoreAutomation
+            } else {
+                nextState[0].fader[action.faderIndex].ignoreAutomation =
+                    !!action.state
+            }
             return nextState
         case FaderActionTypes.X_MIX: //none
             nextState[0].fader.forEach((item, index) => {
@@ -280,50 +355,97 @@ export const faders = (
         case FaderActionTypes.SET_AMIX: //channel
             nextState[0].fader[action.faderIndex].amixOn = action.state
             return nextState
+        case FaderActionTypes.SET_LINK: {
+            const wasLinked = nextState[0].fader[action.faderIndex].isLinked
+            const currentFader = nextState[0].fader[action.faderIndex]
+            if (!currentFader?.capabilities?.isLinkablePrimary) {
+                currentFader.isLinked = false
+                return nextState
+            }
+            const nextFaderIndex = action.faderIndex + 1
+            const nextFader = nextState[0].fader[nextFaderIndex]
+            if (wasLinked) {
+                if (!action.linkOn) {
+                    const channelsToUnlink =
+                        currentFader.assignedChannels?.filter(
+                            (channelReference) =>
+                                channelReference.borrowedFromFaderIndex != null,
+                        )
+                    if (channelsToUnlink?.length) {
+                        channelsToUnlink.forEach((channelReference) => {
+                            if (channelReference.borrowedFromFaderIndex == null)
+                                return
+                            const targetFader =
+                                nextState[0].fader[
+                                    channelReference.borrowedFromFaderIndex
+                                ]
+                            if (targetFader) {
+                                currentFader.assignedChannels =
+                                    currentFader.assignedChannels?.filter(
+                                        (ref) => ref !== channelReference,
+                                    )
+                                delete channelReference.borrowedFromFaderIndex
+                                targetFader.assignedChannels =
+                                    targetFader.assignedChannels ?? []
+                                targetFader.assignedChannels.push(
+                                    channelReference,
+                                )
+                                targetFader.faderLevel = currentFader.faderLevel
+                                targetFader.inputGain = currentFader.inputGain
+                            }
+                        })
+                    }
+                }
+            } else {
+                if (action.linkOn) {
+                    const channelsToReassign: ChannelReference[] | undefined = nextFader?.assignedChannels?.map(
+                        (channel) => ({
+                            ...channel,
+                            borrowedFromFaderIndex: nextFaderIndex,
+                        }),
+                    )
+                    if (
+                        channelsToReassign?.length &&
+                        nextFader.capabilities?.isLinkableSecondary
+                    ) {
+                        nextFader.assignedChannels = []
+                        currentFader.assignedChannels =
+                            currentFader.assignedChannels ?? []
+                        currentFader.assignedChannels.push(
+                            ...channelsToReassign,
+                        )
+                    }
+                }
+            }
+            currentFader.isLinked = action.linkOn
+            if (nextFader?.capabilities?.isLinkableSecondary) {
+                nextFader.isLinked = action.linkOn
+            }
+            return nextState
+        }
         case FaderActionTypes.REMOVE_ALL_ASSIGNED_CHANNELS: //channel
             nextState[0].fader.forEach((fader) => {
                 fader.assignedChannels = []
             })
             return nextState
-        case FaderActionTypes.SET_ASSIGNED_CHANNEL:
-            let newAssignments: ChannelReference[] =
-                nextState[0].fader[action.faderIndex].assignedChannels || []
-
-            if (action.assigned) {
-                if (
-                    !newAssignments.some((channel) => {
-                        return (
-                            channel.mixerIndex === action.mixerIndex &&
-                            channel.channelIndex === action.channelIndex
-                        )
-                    })
-                ) {
-                    newAssignments.push({
-                        mixerIndex: action.mixerIndex,
-                        channelIndex: action.channelIndex,
-                    })
-                    newAssignments.sort(
-                        (n1: ChannelReference, n2: ChannelReference) =>
-                            n1.channelIndex - n2.channelIndex
-                    )
-                    newAssignments.sort(
-                        (n1: ChannelReference, n2: ChannelReference) =>
-                            n1.mixerIndex - n2.mixerIndex
-                    )
+        case FaderActionTypes.ASSIGN_ONE_TO_ONE:
+            nextState[0].fader.forEach((fader, index) => {
+                setAssignedChannel(nextState, {
+                    mixerIndex: 0,
+                    assigned: true,
+                    channelIndex: index,
+                    faderIndex: index,
+                })
+                fader.capabilities = {
+                    ...fader.capabilities,
+                    isLinkablePrimary: false,
+                    isLinkableSecondary: false,
                 }
-            } else {
-                newAssignments = newAssignments.filter(
-                    (channel: ChannelReference) => {
-                        return !(
-                            channel.channelIndex === action.channelIndex &&
-                            channel.mixerIndex === action.mixerIndex
-                        )
-                    }
-                )
-            }
-
-            nextState[0].fader[action.faderIndex].assignedChannels =
-                newAssignments
+                fader.isLinked = false
+            })
+            return nextState
+        case FaderActionTypes.SET_ASSIGNED_CHANNEL:
+            setAssignedChannel(nextState, action)
             return nextState
         case FaderActionTypes.SET_CAPABILITY:
             nextState[0].fader[action.faderIndex].capabilities = {
@@ -370,4 +492,74 @@ export const faders = (
         default:
             return nextState
     }
+}
+
+function setAssignedChannel(
+    nextState: { fader: Fader[] }[],
+    action: {
+        faderIndex: number
+        mixerIndex: number
+        channelIndex: number
+        assigned: boolean
+    }
+) {
+    let newAssignments: ChannelReference[] =
+        nextState[0].fader[action.faderIndex].assignedChannels || []
+
+    if (action.assigned) {
+        if (
+            !newAssignments.some((channel) => {
+                return (
+                    channel.mixerIndex === action.mixerIndex &&
+                    channel.channelIndex === action.channelIndex
+                )
+            })
+        ) {
+            newAssignments.push({
+                mixerIndex: action.mixerIndex,
+                channelIndex: action.channelIndex,
+            })
+            newAssignments.sort(
+                (n1: ChannelReference, n2: ChannelReference) =>
+                    n1.channelIndex - n2.channelIndex
+            )
+            newAssignments.sort(
+                (n1: ChannelReference, n2: ChannelReference) =>
+                    n1.mixerIndex - n2.mixerIndex
+            )
+        }
+    } else {
+        newAssignments = newAssignments.filter((channel: ChannelReference) => {
+            return !(
+                channel.channelIndex === action.channelIndex &&
+                channel.mixerIndex === action.mixerIndex
+            )
+        })
+    }
+
+    nextState[0].fader[action.faderIndex].assignedChannels = newAssignments
+}
+
+function isPgmOnFollowsMixer(
+    faderIndex: number,
+    fullState: RootState
+): boolean {
+    const fader = fullState.faders[0].fader[faderIndex]
+    const settings = fullState.settings[0]
+
+    if (settings.pgmOnFollowsMixer === PgmOnFollowMixerBehaviour.Global) {
+        return true
+    }
+
+    if (settings.pgmOnFollowsMixer === PgmOnFollowMixerBehaviour.Auto 
+        && !fader.ignoreAutomation) {
+        return true
+    }
+
+    if (settings.pgmOnFollowsMixer === PgmOnFollowMixerBehaviour.Manual 
+        && fader.ignoreAutomation) {
+        return true
+    }
+
+    return false
 }

@@ -9,6 +9,7 @@ export enum SettingsActionTypes {
     TOGGLE_SHOW_OPTION = 'TOGGLE_SHOW_OPTION',
     TOGGLE_SHOW_MONITOR_OPTIONS = 'TOGGLE_SHOW_MONITOR_OPTIONS',
     TOGGLE_SHOW_STORAGE = 'TOGGLE_SHOW_STORAGE',
+    TOGGLE_SHOW_CHAN_LAYOUT_SETTINGS = 'TOGGLE_SHOW_CHAN_LAYOUT_SETTINGS',
     UPDATE_SETTINGS = 'UPDATE_SETTINGS',
     SET_MIXER_ONLINE = 'SET_MIXER_ONLINE',
     SET_SERVER_ONLINE = 'SET_SERVER_ONLINE',
@@ -24,6 +25,7 @@ export type SettingsActions = {type: SettingsActionTypes.TOGGLE_SHOW_SETTINGS} |
     {type: SettingsActionTypes.TOGGLE_SHOW_OPTION, channel: number} |
     {type: SettingsActionTypes.TOGGLE_SHOW_MONITOR_OPTIONS, channel: number} |
     {type: SettingsActionTypes.TOGGLE_SHOW_STORAGE} |
+    {type: SettingsActionTypes.TOGGLE_SHOW_CHAN_LAYOUT_SETTINGS, channel: number} |
     {type: SettingsActionTypes.UPDATE_SETTINGS, settings: any} |
     {type: SettingsActionTypes.SET_MIXER_ONLINE, mixerIndex: number, mixerOnline: boolean} |
     {type: SettingsActionTypes.SET_SERVER_ONLINE, serverOnline: boolean} |

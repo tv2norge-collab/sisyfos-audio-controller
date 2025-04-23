@@ -5,7 +5,7 @@ import { mixerGenericConnection, remoteConnections } from '../../mainClasses'
 
 //Utils:
 import {
-    fxParamsList,
+    FxParam,
     MixerProtocol,
 } from '../../../../shared/src/constants/MixerProtocolInterface'
 import {
@@ -22,8 +22,9 @@ import {
     ChannelReference,
     Fader,
 } from '../../../../shared/src/reducers/fadersReducer'
+import { MixerConnection } from '.'
 
-export class SSLMixerConnection {
+export class SSLMixerConnection implements MixerConnection {
     mixerProtocol: MixerProtocol
     mixerIndex: number
     cmdChannelIndex: number
@@ -58,7 +59,7 @@ export class SSLMixerConnection {
         this.setupMixerConnection()
     }
 
-    formatHexWithSpaces(str: string, item: string, every: number) {
+    private formatHexWithSpaces(str: string, item: string, every: number) {
         for (let i = 0; i < str.length; i++) {
             if (!(i % (every + 1))) {
                 str = str.substring(0, i) + item + str.substring(i)
@@ -78,7 +79,7 @@ export class SSLMixerConnection {
         )
     }
 
-    handleReceivedFaderLevelCommand = (buffer: any) => {
+    private handleReceivedFaderLevelCommand = (buffer: any) => {
         try {
             let channelIndex = buffer[6]
             let value = buffer.readUInt16BE(7) / 1024
@@ -162,7 +163,7 @@ export class SSLMixerConnection {
         }
     }
 
-    handleReceivedMuteCommand = (buffer: any) => {
+    private handleReceivedMuteCommand = (buffer: any) => {
         // MUTE ON/OFF COMMAND
         let commandHex = buffer.toString('hex')
         let channelIndex = buffer[6]
@@ -206,7 +207,7 @@ export class SSLMixerConnection {
         global.mainThreadHandler.updatePartialStore(assignedFaderIndex)
     }
 
-    setupMixerConnection() {
+    private setupMixerConnection() {
         // Return command was an acknowledge:
         let lastWasAck = false
 
@@ -294,7 +295,7 @@ export class SSLMixerConnection {
         }, this.mixerProtocol.pingTime)
     }
 
-    pingMixerCommand() {
+    private pingMixerCommand() {
         //Ping OSC mixer if mixerProtocol needs it.
         this.mixerProtocol.pingCommand.forEach((command) => {
             this.sendOutPingRequest()
@@ -308,13 +309,7 @@ export class SSLMixerConnection {
         }, this.mixerProtocol.pingTime)
     }
 
-    checkSSLCommand(message: string, command: string) {
-        if (!message) return false
-        if (message.slice(0, command.length) === command) return true
-        return false
-    }
-
-    calculate_checksum8(hexValues: string) {
+    private calculate_checksum8(hexValues: string) {
         // convert input value to upper case
         hexValues = hexValues.toUpperCase()
 
@@ -344,7 +339,7 @@ export class SSLMixerConnection {
         )
     }
 
-    sendOutLevelMessage(
+    private sendOutLevelMessage(
         sslMessage: string,
         channelIndex: number,
         value: string | number
@@ -392,7 +387,7 @@ export class SSLMixerConnection {
         this.SSLConnection.write(buf)
     }
 
-    sendOutRequest(sslMessage: string, channelIndex: number) {
+    private sendOutRequest(sslMessage: string, channelIndex: number) {
         //let sslMessage = 'f1 06 00 80 00 00 {channel} {level}'
         let channelByte = new Uint8Array([
             (channelIndex & 0x0000ff00) >> 8,
@@ -417,7 +412,7 @@ export class SSLMixerConnection {
         this.SSLConnection.write(buf)
     }
 
-    sendOutPingRequest() {
+    private sendOutPingRequest() {
         let sslMessage = 'f1 02 00 07 00'
         sslMessage =
             sslMessage + ' ' + this.calculate_checksum8(sslMessage.slice(9))
@@ -432,7 +427,7 @@ export class SSLMixerConnection {
         this.SSLConnection.write(buf)
     }
 
-    updateOutLevel(channelIndex: number) {
+    private updateOutLevel(channelIndex: number) {
         let channelType =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[
                 channelIndex
@@ -541,7 +536,7 @@ export class SSLMixerConnection {
     updateInputSelector(channelIndex: number, inputSelected: number) {
         return true
     }
-    updateFx(fxParam: fxParamsList, channelIndex: number, level: number) {
+    updateFx(channelIndex: number, fxParam: FxParam, level: number) {
         return true
     }
     updateAuxLevel(channelIndex: number, auxSendIndex: number, level: number) {
@@ -554,9 +549,7 @@ export class SSLMixerConnection {
 
     loadMixerPreset(presetName: string) {}
 
-    injectCommand(command: string[]) {
-        return true
-    }
+    injectCommand(command: string[]) {}
 
     updateAMixState(channelIndex: number, amixOn: boolean) {}
 

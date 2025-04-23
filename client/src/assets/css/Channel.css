@@ -25,7 +25,12 @@
 .channel-body > .channel-control {
     flex-grow: 0;
 }
+.channel-body > .channel-props > .channel-layout {
+    display: flex;
+    flex-direction: row;
+}
 .channel-body > .fader {
+    position: relative;
     flex-grow: 1;
     display: flex;
     flex-direction: row;
@@ -63,13 +68,6 @@
     );
 }
 
-.channel-gain-label {
-    color: #777777;
-    font-size: 0.8em;
-    margin-top: 10px;
-    text-align: center;
-}
-
 .channel-pgm-button {
     outline: none;
     -moz-outline: none;
@@ -99,9 +97,9 @@
     -moz-outline: none;
     margin-left: 3px;
     margin-right: 3px;
-    margin-top: 3px;
+    margin-top: 10px;
     color: white;
-    height: 90px;
+    height: 50px;
     width: 80px;
     font-size: 105%;
     background-color: rgb(66, 54, 27);
@@ -143,7 +141,9 @@
 }
 
 .channel-mute-button,
-.channel-amix-button {
+.channel-amix-button,
+.channel-layout-settings-button,
+.channel-stereo-link-button {
     outline: none;
     -moz-outline: none;
     margin-left: 3px;
@@ -169,6 +169,35 @@
 }
 .channel-amix-button.disabled {
     visibility: hidden;
+}
+
+.channel-layout-settings-button {
+    width: 40px;
+    height: 40px;
+    color: rgb(255, 255, 255);
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.channel-stereo-link-button {
+    width: 34px;
+    height: 40px;
+    color: rgb(255, 255, 255);
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    background-color: transparent;
+}
+.channel-layout-settings-button > svg, .channel-stereo-link-button > svg {
+    width: 24px;
+    height: 24px;
+}
+
+.channel-layout-settings-button.active {
+    background-color: rgb(47, 71, 91);
 }
 
 .channel-ignore-button {
@@ -220,9 +249,6 @@
     border-radius: 7px;
     border-color: rgba(99, 99, 99, 0.301);
 }
-.channel-strip-button.active {
-    background-color: #2f475b;
-}
 
 .channel-volume-fader {
     width: 10px;
@@ -232,40 +258,20 @@
     border-color: rgba(0, 0, 0);
 }
 
-/* .channel-volume-fader::before,
-.channel-volume-fader::after {
-    content: '__';
-    position: absolute;
-    color: rgb(134, 134, 134);
-    top: 92px;
-}
-.channel-volume-fader::before {
-    left: 9px;
-}
-.channel-volume-fader::after {
-    right: 9px;
-} */
-
 :focus {
     outline: 0;
 }
 
-.channel-zero-indicator {
-    color: rgb(134, 134, 134);
-    position: absolute;
-    top: 206px;
-    left: 37px;
-}
-
 .channel-zero-button {
     background-color: rgba(134, 134, 134, 0.048);
-    color: #20202000;
-    border-color: #20202000;
+    color: transparent;
+    border-color: transparent;
     position: absolute;
-    top: 222px;
-    right: 5px;
+    top: 24%;
+    right: 0px;
     height: 40px;
-    width: 80%;
+    width: 100%;
+    min-width: 65px;
 }
 
 .not-found::after {
@@ -277,4 +283,45 @@
     height: 950px;
     opacity: 0.65;
     top: 0;
+}
+
+.channel-body .input-buttons {
+    width: auto;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-left: 3px;
+    margin-right: 3px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+}
+
+.channel-body .input-buttons.disabled {
+    opacity: 0.2;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.channel-body .input-buttons > .input-select {
+    outline: none;
+    -moz-outline: none;
+    color: white;
+    border-color: rgb(71, 71, 71);
+    background-color: rgb(53, 53, 53);
+    margin: 0;
+    border-radius: 7px;
+    width: auto;
+    height: 24px;
+}
+
+.channel-body .input-buttons > .input-select.active {
+    background-color: #2f475b;
+}
+
+.channel-body .input-buttons > .input-select:first-child {
+    grid-column: 1 / -1;
+}
+
+.channel-body .input-buttons > .input-select:nth-child(4) {
+    grid-column: 1 / -1;
 }

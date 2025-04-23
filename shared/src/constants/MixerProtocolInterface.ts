@@ -5,6 +5,7 @@ export enum MixerConnectionTypes {
     'YamahaQlCl' = 'YamahaQlCl',
     'GenericMidi' = 'GenericMidi',
     'LawoRuby' = 'LawoRuby',
+    'LawoMC2' = 'LawoMC2',
     'CasparCG' = 'CasparCG',
     'SSLSystemT' = 'SSLSystemT',
     'Studer' = 'Studer',
@@ -13,7 +14,7 @@ export enum MixerConnectionTypes {
     'Atem' = 'Atem',
 }
 
-export enum fxParamsList {
+export enum FxParam {
     EqGain01,
     EqGain02,
     EqGain03,
@@ -126,7 +127,7 @@ interface MixerMessageProtocol {
 }
 
 export interface FxProtocol {
-    key: fxParamsList
+    key: FxParam
     params: Array<MixerMessageProtocol>
 }
 
