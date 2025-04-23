@@ -5792,9 +5792,9 @@ asn1@evs-broadcast/node-asn1:
   languageName: node
   linkType: hard
 
-"emberplus-connection@SuperFlyTV/sofie-emberplus-connection#dist-branch/subscription-of-meters":
-  version: 0.2.2
-  resolution: "emberplus-connection@https://github.com/SuperFlyTV/sofie-emberplus-connection.git#commit=10227455e7b49309c4d66ff09083a52e97be3ceb"
+"emberplus-connection@npm:^0.3.0":
+  version: 0.3.0
+  resolution: "emberplus-connection@npm:0.3.0"
   dependencies:
     asn1: evs-broadcast/node-asn1
     debug: "npm:^4.3.4"
@@ -5802,7 +5802,7 @@ asn1@evs-broadcast/node-asn1:
     long: "npm:^3.2.0"
     smart-buffer: "npm:^3.0.3"
     tslib: "npm:^2.6.2"
-  checksum: 10c0/9307150963fc12175d7abbb0f151ed2e8f564c72ea7b146ef5932a1f66ee2779c5c6ee99d3be8a179df1bbea0157b32f3519a2ffbd960f777aff8a57522b38d0
+  checksum: 10c0/643f19c30511c4f5a4397cb3470c91e2402ae6454c01898da6f72bcc4a16e16ca9e9c121cd223a7e0e6478a68ffd1b66fd7f49b8122b9458a36b07df93f65673
   languageName: node
   linkType: hard
 
@@ -11567,7 +11567,7 @@ asn1@evs-broadcast/node-asn1:
     "@types/webmidi": "npm:^2.0.10"
     atem-connection: "npm:^3.4.0"
     casparcg-connection: "npm:^5.1.0"
-    emberplus-connection: "SuperFlyTV/sofie-emberplus-connection#dist-branch/subscription-of-meters"
+    emberplus-connection: "npm:^0.3.0"
     express: "npm:^4.18.2"
     jest: "npm:^29.7.0"
     node-emberplus: "npm:^3.0.8"
@@ -11625,10 +11625,10 @@ asn1@evs-broadcast/node-asn1:
 
 "shared@file:../shared::locator=server%40workspace%3Aserver":
   version: 0.0.0
-  resolution: "shared@file:../shared#../shared::hash=619bd5&locator=server%40workspace%3Aserver"
+  resolution: "shared@file:../shared#../shared::hash=8d9975&locator=server%40workspace%3Aserver"
   dependencies:
     redux: "npm:^5.0.1"
-  checksum: 10c0/b9f4ee05783760153d8e832279a74d807edebb9baa2e4047cce7cdeb556a5acf5a4f14f67076e0580c6e391be0344f1629b2d6a5f53870e77cfd0e0f348959a9
+  checksum: 10c0/7b7cd7efba75ecbcff8be7b56f68a9d05a726a8afba340146a498721b1c09c075bc58a6851b97e3f4d1d732f1551d4d8c1a2b9a0e797286ab8022e9ac7e9e714
   languageName: node
   linkType: hard
 
