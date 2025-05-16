@@ -26,6 +26,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.node-version }}
+      - name: Enable Corepack
+        run: corepack enable
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
