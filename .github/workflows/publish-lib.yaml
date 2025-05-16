@@ -71,10 +71,33 @@ jobs:
           yarn version "$CURRENT_VERSION-$PRERELEASE_TAG-$COMMIT_DATE-$GIT_HASH"
         env:
           CI: true
+
+      - name: Retrieve CodeArtifact endpoint
+        id: codeartifact
+        run: |
+            cd component-lib
+
+            echo "Fetching CodeArtifact repository endpoint..."
+            REPOSITORY_ENDPOINT=$(aws codeartifact get-repository-endpoint \
+                --domain selma \
+                --domain-owner ${{ secrets.AWS_ACCOUNT_ID }} \
+                --repository selma-store \
+                --format npm \
+                --region ${{ secrets.AWS_REGION }} \
+                --query repositoryEndpoint \
+                --output text)
+
+            echo "REPOSITORY_ENDPOINT=$REPOSITORY_ENDPOINT" >> $GITHUB_ENV
+
+      - name: Configure Yarn for AWS CodeArtifact
+        run: |
+            yarn config set npmRegistryServer "$REPOSITORY_ENDPOINT"
+            yarn config set "npmRegistries[\"$REPOSITORY_ENDPOINT\"].npmAuthToken" "$CODEARTIFACT_AUTH_TOKEN"
+            yarn config set "npmRegistries[\"$REPOSITORY_ENDPOINT\"].npmAlwaysAuth" true
+
       - name: Publish to Code Artifatct
         if: ${{ steps.do-publish.outputs.publish }}
         run: |
-          aws codeartifact login --tool npm --repository selma-store --domain selma --domain-owner ${{ secrets.AWS_ACCOUNT_ID }} --region ${{ secrets.AWS_REGION }}
           NEW_VERSION=$(node -p "require('./component-lib/package.json').version")
 
           cd component-lib
