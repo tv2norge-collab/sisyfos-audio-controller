@@ -36,7 +36,7 @@ jobs:
       - name: Configure CodeArtifact Token
         run: |
           CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token \
-            --domain ${{ secrets.AWS_DOMAIN_NAME }} \
+            --domain ${{ secrets.AWS_CODE_ARTIFACT_DOMAIN }} \
             --domain-owner ${{ secrets.AWS_ACCOUNT_ID }} \
             --region ${{ secrets.AWS_REGION }} \
             --query authorizationToken \
@@ -85,7 +85,7 @@ jobs:
 
             echo "Fetching CodeArtifact repository endpoint..."
             REPOSITORY_ENDPOINT=$(aws codeartifact get-repository-endpoint \
-                --domain ${{ secrets.AWS_DOMAIN_NAME }} \
+                --domain ${{ secrets.AWS_CODE_ARTIFACT_DOMAIN }} \
                 --domain-owner ${{ secrets.AWS_ACCOUNT_ID }} \
                 --repository ${{ secrets.AWS_CODE_ARTIFACT_REPOSITORY }} \
                 --format npm \
