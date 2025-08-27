@@ -228,8 +228,9 @@ export class VMixMixerConnection implements MixerConnection {
             d.volumeF2 !== undefined
                 ? Math.pow(parseFloat(d.volumeF2 || '0'), 0.25)
                 : undefined
-        d.meterF1 = (9.555 * Math.log(d.meterF1 || 0)) / Math.log(3)
-        d.meterF2 = (9.555 * Math.log(d.meterF2 || 0)) / Math.log(3)
+        // Use -Infinity for silence to ensure VU meters completely drop to baseline when no audio present
+        d.meterF1 = d.meterF1 > 0 ? (9.555 * Math.log(d.meterF1)) / Math.log(3) : -Infinity
+        d.meterF2 = d.meterF2 > 0 ? (9.555 * Math.log(d.meterF2)) / Math.log(3) : -Infinity
         d.muted = d.muted ? d.muted === 'True' : true
         d.solo = d.solo === 'True'
         d.gainDb = parseFloat(d.gainDb || '0') / 24
@@ -449,15 +450,15 @@ export class VMixMixerConnection implements MixerConnection {
                 assignedFaderIndex,
                 VuType.Channel,
                 vuIndex,
-                dbToFloat(input.meterF1 + 12),
-            ) // add +15 to convert from dBFS
+                input.meterF1 === -Infinity ? 0 : dbToFloat(input.meterF1 + 12),
+            ) // send 0 directly for silence, otherwise convert
         } else {
             sendVuLevel(
                 assignedFaderIndex,
                 VuType.Channel,
                 0,
                 dbToFloat(input.meterF1 + 12),
-            ) // add +15 to convert from dBFS
+            ) // add +12 to convert from dBFS
             if (!input.linkable) {
                 sendVuLevel(
                     assignedFaderIndex,
