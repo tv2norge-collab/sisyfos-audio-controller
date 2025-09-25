@@ -183,6 +183,14 @@ As NEXT has been implemented, and PFL usually only work on on channel at a time,
 -   Studer OnAir 3000 (untested)
     -   channel 1 to 24 fader level from Sisyfos TO mixer
     -   No 2 way support for now
+-   VMix
+    -   TCP API based Protocol
+    -   2-way Fader, Mute, PFL, Gain & Channel Matrix control
+    -   **Channel Matrix Configuration**:
+        -   **Channel Matrix Prefix**: Prefix to identify return feed inputs When configured, faders with labels matching this prefix + number (like "EXT 1", "RTN 2") use mix-minus presets to prevent feedback loops
+        -   **Channel Matrix Preset**: Preset name for mono/stereo mapping (e.g., "SeparateMono")
+        -   **Behavior**: When both fields are empty, falls back to standard presets (`1L`, `2L`, `SeparateMono`). When configured, uses mix-minus presets (`{PREFIX}{N}_{X}L`, `{PREFIX}{N}_{PRESET}`) for matching inputs
+        -   **Requirements**: Mix-minus presets must be pre-configured in VMix for each return feed input
 
 ## Skaarhoj panels:
 
