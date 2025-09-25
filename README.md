@@ -186,11 +186,33 @@ As NEXT has been implemented, and PFL usually only work on on channel at a time,
 -   VMix
     -   TCP API based Protocol
     -   2-way Fader, Mute, PFL, Gain & Channel Matrix control
-    -   **Channel Matrix Configuration**:
-        -   **Channel Matrix Prefix**: Prefix to identify return feed inputs When configured, faders with labels matching this prefix + number (like "EXT 1", "RTN 2") use mix-minus presets to prevent feedback loops
-        -   **Channel Matrix Preset**: Preset name for mono/stereo mapping (e.g., "SeparateMono")
-        -   **Behavior**: When both fields are empty, falls back to standard presets (`1L`, `2L`, `SeparateMono`). When configured, uses mix-minus presets (`{PREFIX}{N}_{X}L`, `{PREFIX}{N}_{PRESET}`) for matching inputs
-        -   **Requirements**: Mix-minus presets must be pre-configured in VMix for each return feed input
+    -   **Advanced Channel Input Selection**:
+        -   Channels 1-8 of an input can be remapped to output channels L+R (1|2). By default, the channels are treated as a stereo pair.
+
+        <img src="Docs/pix/Vmix/Stereo-Pair.png">
+
+        -   In order to make it possible for input channels to be treated as mono, SeparateMono needs to be selected in Audio Settings of a vMix input.
+
+        <img src="Docs/pix/Vmix/Vmix-SeparateMono.png">
+
+        -   This unlocks the 1|2 option, which splits selected input channels to separate faders.
+
+        <img src="Docs/pix/Vmix/SeparateMono.png">
+
+        -   For this functionality to work, certain Channel Matrix Presets need to be defined in vMix:
+            -   **Standard Presets ("1L" … "8L")**:
+                -   The number indicates which input channel is sent to the Left (L) bus.
+                -   All other channels are sent to the Right (R) bus.
+                -   Example: "1L" → channel 1 → L, channels 2–8 → R. "3L" → channel 3 → L, all others → R.
+            -   **LR Preset**:
+                -   Every input channel is sent to both L and R.
+                -   This preset is hardcoded as "LR".
+            -   **Custom per-input Presets**:
+                -   To use customized presets, use the Channel Matrix Prefix option. It can be useful to exclude specific channels of an input from certain buses in order to avoid feedback loops (mix-minus).
+                -   When setting Channel Matrix Prefix, faders with labels matching `<prefix> <number>` will use dedicated presets.
+                -   Example: If Channel Matrix Prefix is set to "EXT", and channels labeled "EXT 1" and "EXT 2" exist, the preset names will be as follows:
+                    -   For EXT 1: "EXT1_1L", "EXT1_2L", …, "EXT1_8L", and "EXT1_LR".
+                    -   For EXT 2: "EXT2_1L", "EXT2_2L", …, "EXT2_8L", and "EXT2_LR".
 
 ## Skaarhoj panels:
 
