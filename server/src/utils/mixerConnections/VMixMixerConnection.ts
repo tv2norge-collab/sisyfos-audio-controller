@@ -503,12 +503,12 @@ export class VMixMixerConnection implements MixerConnection {
 
     updatePflState(channelIndex: number) {
         const { inputNumber, channelType } = this.getInputLocation(channelIndex)
-        let { outputLevel } =
+        let { outputLevel, assignedFader } =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[
                 channelIndex
             ]
 
-        if (state.faders[0].fader[channelIndex].pflOn === true) {
+        if (state.faders[0].fader[assignedFader].pflOn === true) {
             if (outputLevel === 0) {
                 // this.sendOutMessage('AudioOff', channelTypeIndex + 1,  1, '')
                 // this.sendOutMessage('SetVolume', channelTypeIndex + 1,  75, '')
