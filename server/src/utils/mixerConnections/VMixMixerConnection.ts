@@ -33,6 +33,17 @@ import {
 import { LinkableMode, MixerConnection } from '.'
 import { STORAGE_FOLDER } from '../SettingsStorage'
 import { Preset } from './productSpecific/vMixPreset'
+import { VMixPoller } from './productSpecific/VMixPoller'
+import { VMixConnectionWatchdog } from './productSpecific/VMixConnectionWatchdog'
+
+/** If no XML received within 2 seconds, we reconnect the feedback connection */
+const CONNECTION_WATCHDOG_TIMEOUT_MS = 2000
+/** We usually poll 80 milliseconds after last XML requested(!) - this is so frequent in order to maintain fairly smooth vu-meters, as well as keep the state up to date */
+const DEFAULT_POLL_INTERVAL_MS = 80
+/** We try to limit polling to at least 20 milliseconds since last XML received(!) in order not to flood vMix too much */
+const DEFAULT_MIN_POLL_INTERVAL_MS = 20
+/** We fallback to doing an additional poll in 500 milliseconds if no XML response is received */
+const FALLBACK_POLL_INTERVAL_MS = 500
 
 enum PrivateDataTag {
     INPUT_NUMBER = 'inputNumber',
@@ -72,7 +83,9 @@ export class VMixMixerConnection implements MixerConnection {
     vMixCommandConnection: ConnectionTCP
     /** We use a separate connection for updates to prevent blocking any commands */
     vMixFeedbackConnection: ConnectionTCP
-    vMixXmlPollingInterval: NodeJS.Timeout
+
+    private poller: VMixPoller
+    private watchdog: VMixConnectionWatchdog
 
     audioOn: Record<string, boolean> = {}
     lastLevel: Record<string, number> = {}
@@ -94,6 +107,32 @@ export class VMixMixerConnection implements MixerConnection {
 
         this.mixerProtocol = mixerProtocol
         this.mixerIndex = mixerIndex
+
+        this.watchdog = new VMixConnectionWatchdog(
+            () => {
+                logger.warn(
+                    `VMix XML not received in time, closing feedback connection`
+                )
+                this.vMixFeedbackConnection['_socket'].destroy() // this will trigger reconnect
+            },
+            CONNECTION_WATCHDOG_TIMEOUT_MS // If no XML received within this amount, reconnect the feedback connection
+        )
+
+        this.poller = new VMixPoller(
+            () => {
+                this.vMixFeedbackConnection.send('XML')
+            },
+            () => this.vMixFeedbackConnection.connected(),
+            () => {
+                logger.warn(
+                    `VMix XML not received in time, using fallback poll`
+                )
+            },
+            DEFAULT_POLL_INTERVAL_MS,
+            DEFAULT_MIN_POLL_INTERVAL_MS,
+            FALLBACK_POLL_INTERVAL_MS
+        )
+
         //If default store has been recreated multiple mixers are not created
         if (!state.channels[0].chMixerConnection[this.mixerIndex]) {
             state.channels[0].chMixerConnection[this.mixerIndex] = {
@@ -150,6 +189,7 @@ export class VMixMixerConnection implements MixerConnection {
 
     private setupMixerConnection() {
         this.vMixCommandConnection.on('connect', () => {
+            logger.info('VMix command connection established')
             logger.info('Receiving state of desk')
             this.sendInitialCommands()
             this.awaitingFirstXml = true
@@ -159,9 +199,9 @@ export class VMixMixerConnection implements MixerConnection {
             global.mainThreadHandler.updateFullClientStore()
             logger.error(error)
         })
-        this.vMixCommandConnection['_socket'].on('disconnect', () => {
+        this.vMixCommandConnection.on('close', () => {
             this.setMixerOnlineState(false)
-            logger.info('Lost VMix connection')
+            logger.warn('VMix command connection lost')
         })
 
         logger.info(
@@ -174,16 +214,31 @@ export class VMixMixerConnection implements MixerConnection {
             if (this.awaitingFirstXml) {
                 this.onReceivedFirstState()
             }
-            this.handleXml(xml)
+            try {
+                this.handleXml(xml)
+            } catch (e) {
+                logger.error(e)
+            }
+            // Restart watchdog and schedule next poll
+            this.watchdog.start()
+            this.poller.onResponseReceived()
         })
 
         this.vMixFeedbackConnection.on('connect', () => {
-            this.vMixXmlPollingInterval = setInterval(() => {
-                this.vMixFeedbackConnection.send('XML')
-            }, 80)
+            logger.info('VMix feedback connection established')
+            // deferring it so that the connection is fully ready (it processes events itself AFTER it emits them to subscribers)
+            setImmediate(() => {
+                this.poller.start()
+                this.watchdog.start()
+            })
         })
-        this.vMixFeedbackConnection['_socket'].on('disconnect', () => {
-            clearInterval(this.vMixXmlPollingInterval)
+        this.vMixFeedbackConnection.on('error', (error: any) => {
+            logger.error(error)
+        })
+        this.vMixFeedbackConnection.on('close', () => {
+            this.poller.stop()
+            this.watchdog.stop()
+            logger.warn('VMix feedback connection lost')
         })
     }
 
@@ -231,15 +286,8 @@ export class VMixMixerConnection implements MixerConnection {
             d.volumeF2 !== undefined
                 ? Math.pow(parseFloat(d.volumeF2 || '0'), 0.25)
                 : undefined
-        // Use -Infinity for silence to ensure VU meters completely drop to baseline when no audio present
-        d.meterF1 =
-            d.meterF1 > 0
-                ? (9.555 * Math.log(d.meterF1)) / Math.log(3)
-                : -Infinity
-        d.meterF2 =
-            d.meterF2 > 0
-                ? (9.555 * Math.log(d.meterF2)) / Math.log(3)
-                : -Infinity
+        d.meterF1 = (9.555 * Math.log(d.meterF1 || 0)) / Math.log(3)
+        d.meterF2 = (9.555 * Math.log(d.meterF2 || 0)) / Math.log(3)
         d.muted = d.muted ? d.muted === 'True' : true
         d.solo = d.solo === 'True'
         d.gainDb = parseFloat(d.gainDb || '0') / 24
@@ -460,7 +508,7 @@ export class VMixMixerConnection implements MixerConnection {
                 assignedFaderIndex,
                 VuType.Channel,
                 vuIndex,
-                input.meterF1 === -Infinity ? 0 : dbToFloat(input.meterF1 + 12)
+                dbToFloat(input.meterF1 + 12)
             ) // send 0 directly for silence, otherwise convert
         } else {
             sendVuLevel(
@@ -631,8 +679,9 @@ export class VMixMixerConnection implements MixerConnection {
         const returnFeedNumber = this.getReturnFeedNumber(inputNumber)
         let preset: ChannelMatrixPreset
 
-        const prefix = state.settings[0].mixers[this.mixerIndex].channelMatrixPrefix ||
-                      this.mixerProtocol.channelMatrixPrefix
+        const prefix =
+            state.settings[0].mixers[this.mixerIndex].channelMatrixPrefix ||
+            this.mixerProtocol.channelMatrixPrefix
         const lrPresetName = this.mixerProtocol.lrPreset
 
         if (returnFeedNumber > 0 && prefix && lrPresetName) {
@@ -673,8 +722,9 @@ export class VMixMixerConnection implements MixerConnection {
      * Returns the number after the prefix (e.g., "EXT 1" returns 1, "RTN 3" returns 3), or 0 if no match.
      */
     private getReturnFeedNumber(inputNumber: number): number {
-        const prefix = state.settings[0].mixers[this.mixerIndex].channelMatrixPrefix ||
-                      this.mixerProtocol.channelMatrixPrefix
+        const prefix =
+            state.settings[0].mixers[this.mixerIndex].channelMatrixPrefix ||
+            this.mixerProtocol.channelMatrixPrefix
 
         // If no prefix configured, use standard presets
         if (!prefix) return 0
