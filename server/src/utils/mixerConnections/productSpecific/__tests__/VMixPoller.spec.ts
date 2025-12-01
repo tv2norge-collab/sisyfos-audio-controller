@@ -8,6 +8,10 @@ describe('VMixPoller', () => {
     let onFallbackMock: jest.Mock
     let poller: VMixPoller
 
+    const DEFAULT_POLL_INTERVAL_MS = 80
+    const DEFAULT_MIN_POLL_INTERVAL_MS = 20
+    const FALLBACK_POLL_INTERVAL_MS = 500
+
     beforeEach(() => {
         sendRequestMock = jest.fn()
         isConnectedMock = jest.fn(() => true)
@@ -15,7 +19,10 @@ describe('VMixPoller', () => {
         poller = new VMixPoller(
             sendRequestMock,
             isConnectedMock,
-            onFallbackMock
+            onFallbackMock,
+            DEFAULT_POLL_INTERVAL_MS,
+            DEFAULT_MIN_POLL_INTERVAL_MS,
+            FALLBACK_POLL_INTERVAL_MS
         )
         jest.clearAllTimers()
     })

@@ -1,10 +1,3 @@
-/** We usually poll 80 milliseconds after last XML requested */
-const DEFAULT_POLL_INTERVAL_MS = 80
-/** We try to limit polling to at least 20 milliseconds since last XML received */
-const DEFAULT_MIN_POLL_INTERVAL_MS = 20
-/** We fallback to polling aditionally in 500 milliseconds if no XML received */
-const FALLBACK_POLL_INTERVAL_MS = 500
-
 export class VMixPoller {
     private pollingTimeout: NodeJS.Timeout | null = null
     private lastRequestTime: number = 0
@@ -12,7 +5,10 @@ export class VMixPoller {
     constructor(
         private readonly sendRequest: () => void,
         private readonly isConnected: () => boolean,
-        private readonly onFallbackTriggered: () => void
+        private readonly onFallbackTriggered: () => void,
+        private readonly defaultPollIntervalMs: number,
+        private readonly defaultMinPollIntervalMs: number,
+        private readonly fallbackPollIntervalMs: number
     ) {}
 
     start() {
@@ -45,8 +41,8 @@ export class VMixPoller {
             ? performance.now() - this.lastRequestTime
             : 0
         const delay = Math.max(
-            DEFAULT_MIN_POLL_INTERVAL_MS,
-            DEFAULT_POLL_INTERVAL_MS - elapsed
+            this.defaultMinPollIntervalMs,
+            this.defaultPollIntervalMs - elapsed
         )
 
         this.pollingTimeout = setTimeout(() => {
@@ -64,7 +60,7 @@ export class VMixPoller {
         this.pollingTimeout = setTimeout(() => {
             this.onFallbackTriggered()
             this.sendRequestAndScheduleFallback()
-        }, FALLBACK_POLL_INTERVAL_MS)
+        }, this.fallbackPollIntervalMs)
     }
 
     private sendRequestAndScheduleFallback() {

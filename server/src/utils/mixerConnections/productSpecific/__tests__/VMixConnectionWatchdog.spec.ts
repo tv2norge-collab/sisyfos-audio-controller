@@ -5,10 +5,11 @@ jest.useFakeTimers()
 describe('VMixConnectionWatchdog', () => {
     let onTimeoutMock: jest.Mock
     let watchdog: VMixConnectionWatchdog
+    const TIMEOUT_MS = 2000
 
     beforeEach(() => {
         onTimeoutMock = jest.fn()
-        watchdog = new VMixConnectionWatchdog(onTimeoutMock)
+        watchdog = new VMixConnectionWatchdog(onTimeoutMock, TIMEOUT_MS)
         jest.clearAllTimers()
     })
 
@@ -190,7 +191,10 @@ describe('VMixConnectionWatchdog', () => {
 
         it('should not interfere with multiple instances', () => {
             const onTimeout2Mock = jest.fn()
-            const watchdog2 = new VMixConnectionWatchdog(onTimeout2Mock)
+            const watchdog2 = new VMixConnectionWatchdog(
+                onTimeout2Mock,
+                TIMEOUT_MS
+            )
 
             watchdog.start()
             watchdog2.start()

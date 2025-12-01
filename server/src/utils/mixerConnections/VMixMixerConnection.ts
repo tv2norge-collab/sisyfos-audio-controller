@@ -36,6 +36,15 @@ import { Preset } from './productSpecific/vMixPreset'
 import { VMixPoller } from './productSpecific/VMixPoller'
 import { VMixConnectionWatchdog } from './productSpecific/VMixConnectionWatchdog'
 
+/** If no XML received within 2 seconds, we reconnect the feedback connection */
+const CONNECTION_WATCHDOG_TIMEOUT_MS = 2000
+/** We usually poll 80 milliseconds after last XML requested(!) - this is so frequent in order to maintain fairly smooth vu-meters, as well as keep the state up to date */
+const DEFAULT_POLL_INTERVAL_MS = 80
+/** We try to limit polling to at least 20 milliseconds since last XML received(!) in order not to flood vMix too much */
+const DEFAULT_MIN_POLL_INTERVAL_MS = 20
+/** We fallback to doing an additional poll in 500 milliseconds if no XML response is received */
+const FALLBACK_POLL_INTERVAL_MS = 500
+
 enum PrivateDataTag {
     INPUT_NUMBER = 'inputNumber',
     LINKABLE = 'linkable',
@@ -99,12 +108,15 @@ export class VMixMixerConnection implements MixerConnection {
         this.mixerProtocol = mixerProtocol
         this.mixerIndex = mixerIndex
 
-        this.watchdog = new VMixConnectionWatchdog(() => {
-            logger.warn(
-                `VMix XML not received in time, closing feedback connection`
-            )
-            this.vMixFeedbackConnection['_socket'].destroy() // this will trigger reconnect
-        })
+        this.watchdog = new VMixConnectionWatchdog(
+            () => {
+                logger.warn(
+                    `VMix XML not received in time, closing feedback connection`
+                )
+                this.vMixFeedbackConnection['_socket'].destroy() // this will trigger reconnect
+            },
+            CONNECTION_WATCHDOG_TIMEOUT_MS // If no XML received within this amount, reconnect the feedback connection
+        )
 
         this.poller = new VMixPoller(
             () => {
@@ -116,7 +128,10 @@ export class VMixMixerConnection implements MixerConnection {
                 logger.warn(
                     `VMix XML not received in time, using fallback poll`
                 )
-            }
+            },
+            DEFAULT_POLL_INTERVAL_MS,
+            DEFAULT_MIN_POLL_INTERVAL_MS,
+            FALLBACK_POLL_INTERVAL_MS
         )
 
         //If default store has been recreated multiple mixers are not created
@@ -187,7 +202,7 @@ export class VMixMixerConnection implements MixerConnection {
         })
         this.vMixCommandConnection.on('close', () => {
             this.setMixerOnlineState(false)
-            logger.warn('Lost VMix command connection')
+            logger.warn('VMix command connection lost')
         })
 
         logger.info(
@@ -223,7 +238,7 @@ export class VMixMixerConnection implements MixerConnection {
         this.vMixFeedbackConnection.on('close', () => {
             this.poller.stop()
             this.watchdog.stop()
-            logger.warn('Lost VMix feedback connection')
+            logger.warn('VMix feedback connection lost')
         })
     }
 
