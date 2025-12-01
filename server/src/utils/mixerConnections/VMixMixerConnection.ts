@@ -121,7 +121,6 @@ export class VMixMixerConnection implements MixerConnection {
         this.poller = new VMixPoller(
             () => {
                 this.vMixFeedbackConnection.send('XML')
-                this.watchdog.start()
             },
             () => this.vMixFeedbackConnection.connected(),
             () => {
@@ -220,8 +219,8 @@ export class VMixMixerConnection implements MixerConnection {
             } catch (e) {
                 logger.error(e)
             }
-            // Clear watchdog and schedule next poll
-            this.watchdog.stop()
+            // Restart watchdog and schedule next poll
+            this.watchdog.start()
             this.poller.onResponseReceived()
         })
 
@@ -230,6 +229,7 @@ export class VMixMixerConnection implements MixerConnection {
             // deferring it so that the connection is fully ready (it processes events itself AFTER it emits them to subscribers)
             setImmediate(() => {
                 this.poller.start()
+                this.watchdog.start()
             })
         })
         this.vMixFeedbackConnection.on('error', (error: any) => {
