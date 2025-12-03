@@ -26,7 +26,7 @@
         "emberplus-connection": "^0.3.0",
         "express": "^4.18.2",
         "node-emberplus": "^3.0.8",
-        "node-vmix": "^1.7.1",
+        "node-vmix": "github:tv2norge-collab/node-vmix#dist",
         "osc": "^2.4.5",
         "performance-now": "^2.1.0",
         "redux": "^5.0.1",
