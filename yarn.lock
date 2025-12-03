@@ -9325,13 +9325,13 @@ asn1@evs-broadcast/node-asn1:
   languageName: node
   linkType: hard
 
-"node-vmix@npm:^1.7.1":
+"node-vmix@github:tv2norge-collab/node-vmix#dist":
   version: 1.7.1
-  resolution: "node-vmix@npm:1.7.1"
+  resolution: "node-vmix@https://github.com/tv2norge-collab/node-vmix.git#commit=777c0eb25427fab4b09218d736e78e416e8b4fec"
   dependencies:
     axios: "npm:^1.7.3"
     querystring: "npm:^0.2.1"
-  checksum: 10c0/81d2e331a2288a15dab5a4b3fbe8aec45782470147a3620a80ee6a170a1ce1164aebe6eda41ed2053b0f8b5774e15ec2bb64459edf273f5ce87c5c3bca6480f5
+  checksum: 10c0/9f4f0d8b22260eb66518bb420baf46157121bc994221d5deb59d5ffb50a62b1ad21c64032fc3c50eb6908e39b0ebf99bffc46cf77acb0adb18f819062b6c2c52
   languageName: node
   linkType: hard
 
@@ -11571,7 +11571,7 @@ asn1@evs-broadcast/node-asn1:
     express: "npm:^4.18.2"
     jest: "npm:^29.7.0"
     node-emberplus: "npm:^3.0.8"
-    node-vmix: "npm:^1.7.1"
+    node-vmix: "github:tv2norge-collab/node-vmix#dist"
     osc: "npm:^2.4.5"
     performance-now: "npm:^2.1.0"
     redux: "npm:^5.0.1"
