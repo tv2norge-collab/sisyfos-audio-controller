@@ -30,7 +30,7 @@ import {
     ChannelReference,
     Fader,
 } from '../../../../shared/src/reducers/fadersReducer'
-import { LinkableMode, MixerConnection } from '.'
+import { MixerConnection } from '.'
 import { STORAGE_FOLDER } from '../SettingsStorage'
 import { Preset } from './productSpecific/vMixPreset'
 import { VMixPoller } from './productSpecific/VMixPoller'
@@ -47,7 +47,6 @@ const FALLBACK_POLL_INTERVAL_MS = 500
 
 enum PrivateDataTag {
     INPUT_NUMBER = 'inputNumber',
-    LINKABLE = 'linkable',
 }
 
 interface VMixInput {
@@ -59,14 +58,11 @@ interface VMixInput {
     number: number
     gainDb: number
     solo: boolean
-    linkable?: LinkableMode
 }
 
 interface VMixInputLocation {
     // input number in vMix
     inputNumber: number
-    // if the input is in fact a subchannel (L/R) within an input
-    subchannelNumber?: number
     channelType: number
 }
 
@@ -262,8 +258,6 @@ export class VMixMixerConnection implements MixerConnection {
 
         const attrs = [
             'volume',
-            'volumeF1',
-            'volumeF2',
             'muted',
             'meterF1',
             'meterF2',
@@ -278,14 +272,6 @@ export class VMixMixerConnection implements MixerConnection {
             })
 
         d.volume = Math.pow(parseFloat(d.volume || '0') / 100, 0.25)
-        d.volumeF1 =
-            d.volumeF1 !== undefined
-                ? Math.pow(parseFloat(d.volumeF1 || '0'), 0.25)
-                : undefined
-        d.volumeF2 =
-            d.volumeF2 !== undefined
-                ? Math.pow(parseFloat(d.volumeF2 || '0'), 0.25)
-                : undefined
         d.meterF1 = (9.555 * Math.log(d.meterF1 || 0)) / Math.log(3)
         d.meterF2 = (9.555 * Math.log(d.meterF2 || 0)) / Math.log(3)
         d.muted = d.muted ? d.muted === 'True' : true
@@ -293,24 +279,7 @@ export class VMixMixerConnection implements MixerConnection {
         d.gainDb = parseFloat(d.gainDb || '0') / 24
         d.number = Number(d.number)
 
-        if (d.volumeF1 === undefined) {
-            return d
-        } else {
-            return [
-                {
-                    ...d,
-                    volume: d.volumeF1,
-                    meterF2: d.meterF1,
-                    linkable: LinkableMode.PRIMARY,
-                },
-                {
-                    ...d,
-                    volume: d.volumeF2,
-                    meterF1: d.meterF2,
-                    linkable: LinkableMode.SECONDARY,
-                },
-            ]
-        }
+        return d
     }
 
     private updateInputState(input: VMixInput, channelIndex: number) {
@@ -340,15 +309,8 @@ export class VMixMixerConnection implements MixerConnection {
             state.channels[0].chMixerConnection[this.mixerIndex].channel[
                 channelIndex
             ]
-        const {
-            inputGain,
-            muteOn,
-            pflOn,
-            pgmOn,
-            voOn,
-            capabilities,
-            isLinked,
-        } = state.faders[0].fader[assignedFaderIndex]
+        const { inputGain, muteOn, pflOn, pgmOn, voOn } =
+            state.faders[0].fader[assignedFaderIndex]
         let sendUpdate = false
 
         const dispatchAndSetUpdateState = (
@@ -424,8 +386,7 @@ export class VMixMixerConnection implements MixerConnection {
 
             if (
                 input.gainDb !== lastInputState?.gainDb &&
-                inputGain !== input.gainDb &&
-                input.linkable !== LinkableMode.SECONDARY
+                inputGain !== input.gainDb
             ) {
                 dispatchAndSetUpdateState({
                     type: FaderActionTypes.SET_INPUT_GAIN,
@@ -438,36 +399,6 @@ export class VMixMixerConnection implements MixerConnection {
                     type: FaderActionTypes.SET_PFL,
                     faderIndex: assignedFaderIndex,
                     pflOn: input.solo,
-                })
-            }
-            if (
-                (input.linkable !== lastInputState?.linkable &&
-                    privateData?.[PrivateDataTag.LINKABLE] !==
-                        input.linkable) ||
-                (!isLinked &&
-                    (capabilities?.isLinkablePrimary !==
-                        (input.linkable === LinkableMode.PRIMARY) ||
-                        capabilities?.isLinkableSecondary !==
-                            (input.linkable === LinkableMode.SECONDARY)))
-            ) {
-                dispatchAndSetUpdateState({
-                    type: FaderActionTypes.SET_CAPABILITY,
-                    faderIndex: assignedFaderIndex,
-                    capability: 'isLinkablePrimary',
-                    enabled: input.linkable === LinkableMode.PRIMARY,
-                })
-                dispatchAndSetUpdateState({
-                    type: FaderActionTypes.SET_CAPABILITY,
-                    faderIndex: assignedFaderIndex,
-                    capability: 'isLinkableSecondary',
-                    enabled: input.linkable === LinkableMode.SECONDARY,
-                })
-                dispatchAndSetUpdateState({
-                    type: ChannelActionTypes.SET_PRIVATE,
-                    channel: channelIndex,
-                    mixerIndex: this.mixerIndex,
-                    tag: PrivateDataTag.LINKABLE,
-                    value: input.linkable,
                 })
             }
             if (
@@ -517,14 +448,12 @@ export class VMixMixerConnection implements MixerConnection {
                 0,
                 dbToFloat(input.meterF1 + 12)
             ) // add +12 to convert from dBFS
-            if (!input.linkable) {
-                sendVuLevel(
-                    assignedFaderIndex,
-                    VuType.Channel,
-                    1,
-                    dbToFloat(input.meterF2 + 12)
-                )
-            }
+            sendVuLevel(
+                assignedFaderIndex,
+                VuType.Channel,
+                1,
+                dbToFloat(input.meterF2 + 12)
+            )
         }
     }
 
@@ -614,8 +543,7 @@ export class VMixMixerConnection implements MixerConnection {
     }
 
     updateInputGain(channelIndex: number, level: number) {
-        const { inputNumber, subchannelNumber, channelType } =
-            this.getInputLocation(channelIndex)
+        const { inputNumber, channelType } = this.getInputLocation(channelIndex)
 
         const mixerMessage =
             this.mixerProtocol.channelTypes[channelType].toMixer
@@ -625,10 +553,7 @@ export class VMixMixerConnection implements MixerConnection {
                 mixerMessage.min + (mixerMessage.max - mixerMessage.min) * level
         }
         this.sendOutMessage(
-            this.appendSubchannelSuffix(
-                mixerMessage.mixerMessage,
-                subchannelNumber
-            ),
+            mixerMessage.mixerMessage,
             inputNumber,
             Math.round(level)
         )
@@ -772,8 +697,7 @@ export class VMixMixerConnection implements MixerConnection {
     }
 
     updateFadeIOLevel(channelIndex: number, outputLevel: number) {
-        const { inputNumber, subchannelNumber } =
-            this.getInputLocation(channelIndex)
+        const { inputNumber } = this.getInputLocation(channelIndex)
         let { muteOn } = state.faders[0].fader[channelIndex]
         outputLevel = Math.round(100 * outputLevel)
 
@@ -781,11 +705,7 @@ export class VMixMixerConnection implements MixerConnection {
             return
         }
 
-        this.sendOutMessage(
-            this.appendSubchannelSuffix('SetVolume', subchannelNumber),
-            inputNumber,
-            String(outputLevel)
-        )
+        this.sendOutMessage('SetVolume', inputNumber, String(outputLevel))
         this.lastLevel[channelIndex] = outputLevel
 
         if (!muteOn && outputLevel > 0 && !this.audioOn[channelIndex]) {
@@ -816,23 +736,7 @@ export class VMixMixerConnection implements MixerConnection {
             inputNumber,
             channelType,
         }
-        if (privateData?.[PrivateDataTag.LINKABLE] === LinkableMode.PRIMARY) {
-            result.subchannelNumber = 1
-        } else if (
-            privateData?.[PrivateDataTag.LINKABLE] === LinkableMode.SECONDARY
-        ) {
-            result.subchannelNumber = 2
-        }
         return result
-    }
-
-    private appendSubchannelSuffix(
-        command: string,
-        subchannelNumber: number | undefined
-    ): string {
-        const suffix =
-            subchannelNumber !== undefined ? `Channel${subchannelNumber}` : ''
-        return command + suffix
     }
 
     updateChannelName(channelIndex: number) {
@@ -873,6 +777,48 @@ export class VMixMixerConnection implements MixerConnection {
                             assignedFaderIndex,
                             true
                         )
+                    }
+                    if (inputsPreset.linkableChannels !== undefined) {
+                        const hasPrimary =
+                            inputsPreset.linkableChannels.length > 0
+                        // Mark this input as PRIMARY (or clear if empty array)
+                        store.dispatch({
+                            type: FaderActionTypes.SET_CAPABILITY,
+                            faderIndex: assignedFaderIndex,
+                            capability: 'isLinkablePrimary',
+                            enabled: hasPrimary,
+                        })
+                        store.dispatch({
+                            type: FaderActionTypes.SET_CAPABILITY,
+                            faderIndex: assignedFaderIndex,
+                            capability: 'isLinkableSecondary',
+                            enabled: false,
+                        })
+                        // Mark each listed input as SECONDARY
+                        for (const secondaryInputNumber of inputsPreset.linkableChannels) {
+                            const secondaryChannelIndex =
+                                this.getChannelIndexForInput(
+                                    secondaryInputNumber
+                                )
+                            if (secondaryChannelIndex === -1) continue
+                            const secondaryFaderIndex =
+                                this.getAssignedFaderIndex(
+                                    secondaryChannelIndex
+                                )
+                            if (secondaryFaderIndex === -1) continue
+                            store.dispatch({
+                                type: FaderActionTypes.SET_CAPABILITY,
+                                faderIndex: secondaryFaderIndex,
+                                capability: 'isLinkablePrimary',
+                                enabled: false,
+                            })
+                            store.dispatch({
+                                type: FaderActionTypes.SET_CAPABILITY,
+                                faderIndex: secondaryFaderIndex,
+                                capability: 'isLinkableSecondary',
+                                enabled: hasPrimary,
+                            })
+                        }
                     }
                     for (const command of inputsPreset.commands) {
                         this.sendOutMessage(

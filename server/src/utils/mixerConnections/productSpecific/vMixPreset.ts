@@ -1,6 +1,5 @@
-
 export interface Command {
-    name: string,
+    name: string
     value?: string
 }
 export interface InputsPreset {
@@ -13,5 +12,11 @@ export interface InputsPreset {
     resetGain?: boolean
     /** whether "LR" channels of an input should be linked in Sisyfos */
     linkSeparateMono?: boolean
+    /**
+     * VMix input numbers that should be linked to this input and follow its fader.
+     * For example, if this input is the left channel of a stereo pair, list the right channel here.
+     * Pass an empty array to unlink any previously linked channels.
+     */
+    linkableChannels?: number[]
 }
 export type Preset = InputsPreset[]

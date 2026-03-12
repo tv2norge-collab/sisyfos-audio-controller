@@ -533,10 +533,12 @@ class Channel extends React.Component<
             return null
         return (
             <div className="channel-layout">
-                <ChannelLayoutSettingsButton
-                    fader={this.props.fader}
-                    faderIndex={this.props.faderIndex}
-                />
+                {!this.props.fader.capabilities?.isLinkableSecondary && (
+                    <ChannelLayoutSettingsButton
+                        fader={this.props.fader}
+                        faderIndex={this.props.faderIndex}
+                    />
+                )}
 
                 <div className="channel-stereo-link-button">
                     {this.props.fader.capabilities?.isLinkablePrimary &&
