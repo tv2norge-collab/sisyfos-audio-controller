@@ -19,6 +19,7 @@ import {
     getCcgSettingsList,
     setCcgDefault,
     getMixerPresetList,
+    deleteMixerPreset,
     getCustomPages,
     saveCustomPages,
     STORAGE_FOLDER,
@@ -31,7 +32,10 @@ import { logger } from './utils/logger'
 import { CustomPages } from '../../shared/src/reducers/settingsReducer'
 import { FxParam } from '../../shared/src/constants/MixerProtocolInterface'
 import path from 'path'
-import { Channel, NumberOfChannels } from '../../shared/src/reducers/channelsReducer'
+import {
+    Channel,
+    NumberOfChannels,
+} from '../../shared/src/reducers/channelsReducer'
 import { ChannelReference } from '../../shared/src/reducers/fadersReducer'
 import { Dispatch } from 'redux'
 
@@ -71,7 +75,7 @@ export class MainThreadHandlers {
                 )
             })
         }
-        socketServer.emit(IO.SOCKET_SET_FULL_STORE, { state, numberOfChannels } )
+        socketServer.emit(IO.SOCKET_SET_FULL_STORE, { state, numberOfChannels })
     }
 
     updatePartialStore(faderIndex: number) {
@@ -124,7 +128,10 @@ export class MainThreadHandlers {
         state.faders[0].fader.forEach((fader, faderIndex) => {
             fader.assignedChannels?.forEach((channel: ChannelReference) => {
                 if (state.settings[0].numberOfMixers < channel.mixerIndex + 1) {
-                    logger.debug('Assigned mixer not found mixerIndex : ' + channel.mixerIndex)
+                    logger.debug(
+                        'Assigned mixer not found mixerIndex : ' +
+                            channel.mixerIndex
+                    )
                     store.dispatch({
                         type: FaderActionTypes.SET_ASSIGNED_CHANNEL,
                         faderIndex: faderIndex,
@@ -145,10 +152,10 @@ export class MainThreadHandlers {
                 ) {
                     logger.debug(
                         'Faderindex : ' +
-                        faderIndex +
-                        'Assigned channelIndex : ' +
-                        channel.channelIndex +
-                        ' not found - removing assignment'
+                            faderIndex +
+                            'Assigned channelIndex : ' +
+                            channel.channelIndex +
+                            ' not found - removing assignment'
                     )
                     store.dispatch({
                         type: FaderActionTypes.SET_ASSIGNED_CHANNEL,
@@ -254,7 +261,19 @@ export class MainThreadHandlers {
                 this.reIndexAssignedChannelsRelation()
                 this.updateFullClientStore()
             })
-            .on(IO.SOCKET_LOAD_MIXER_PRESET, (payload: any) => this.loadMixerPreset(payload))
+            .on(IO.SOCKET_LOAD_MIXER_PRESET, (payload: any) =>
+                this.loadMixerPreset(payload)
+            )
+            .on(IO.SOCKET_DELETE_MIXER_PRESET, (payload: string) => {
+                logger.info(`Delete mixer preset: ${payload}`)
+                deleteMixerPreset(payload)
+                socketServer.emit(
+                    IO.SOCKET_RETURN_MIXER_PRESET_LIST,
+                    getMixerPresetList(
+                        mixerGenericConnection.getPresetFileExtention()
+                    )
+                )
+            })
             .on(IO.SOCKET_GET_PAGES_LIST, () => {
                 logger.info('Get custom pages list')
                 let customPages: CustomPages[] = getCustomPages()
@@ -489,7 +508,9 @@ export class MainThreadHandlers {
                             const newLabel = oldLabel.startsWith(
                                 state.settings[0].labelIgnorePrefix
                             )
-                                ? oldLabel.slice(state.settings[0].labelIgnorePrefix.length)
+                                ? oldLabel.slice(
+                                      state.settings[0].labelIgnorePrefix.length
+                                  )
                                 : oldLabel
                             store.dispatch({
                                 type: ChannelActionTypes.SET_CHANNEL_LABEL,
