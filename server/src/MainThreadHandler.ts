@@ -268,6 +268,18 @@ export class MainThreadHandlers {
             .on(IO.SOCKET_LOAD_MIXER_PRESET, (payload: any) =>
                 this.loadMixerPreset(payload)
             )
+            .on(IO.SOCKET_SET_CAPABILITY, (payload: any) => {
+                logger.trace(
+                    `Set capability fader ${payload.faderIndex}: ${payload.capability}=${payload.enabled}`
+                )
+                store.dispatch({
+                    type: FaderActionTypes.SET_CAPABILITY,
+                    faderIndex: payload.faderIndex,
+                    capability: payload.capability,
+                    enabled: payload.enabled,
+                })
+                this.updateFullClientStore()
+            })
             .on(IO.SOCKET_DELETE_MIXER_PRESET, (payload: string) => {
                 logger.info(`Delete mixer preset: ${payload}`)
                 deleteMixerPreset(payload)

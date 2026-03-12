@@ -760,11 +760,7 @@ export class VMixMixerConnection implements MixerConnection {
         })
         const linkPass: number[] = []
         for (const entry of data) {
-            const inputNumbers =
-                'inputNumbers' in entry
-                    ? entry.inputNumbers
-                    : [entry.inputNumber]
-            for (const inputNumber of inputNumbers) {
+            for (const inputNumber of entry.inputNumbers) {
                 this.lastState.forEach((input, channelIndex) => {
                     if (input.number !== inputNumber) return
                     const assignedFaderIndex =
@@ -789,58 +785,39 @@ export class VMixMixerConnection implements MixerConnection {
                             level: 0,
                         })
                     }
-                    if (entry.linkSeparateMono) {
+                    if (entry.isLinked) {
                         linkPass.push(assignedFaderIndex)
                     }
-                    const linkableChannels =
-                        'linkableChannels' in entry
-                            ? entry.linkableChannels
-                            : undefined
-                    if (linkableChannels !== undefined) {
-                        const isPrimary = linkableChannels.length > 0
+                    if (entry.isLinkablePrimary) {
+                        // Mark this fader as primary. Secondary is always faderIndex+1,
+                        // consistent with the assumption made by setLink.
                         store.dispatch({
                             type: FaderActionTypes.SET_CAPABILITY,
                             faderIndex: assignedFaderIndex,
                             capability: 'isLinkablePrimary',
-                            enabled: isPrimary,
+                            enabled: true,
                         })
-                        if (isPrimary) {
-                            // Only a primary explicitly clears its own secondary status.
-                            // An empty linkableChannels only means "not a primary" but
-                            // does not override a secondary status granted by another entry.
+                        store.dispatch({
+                            type: FaderActionTypes.SET_CAPABILITY,
+                            faderIndex: assignedFaderIndex,
+                            capability: 'isLinkableSecondary',
+                            enabled: false,
+                        })
+                        const secondaryFaderIndex = assignedFaderIndex + 1
+                        const totalFaders = state.settings[0].numberOfFaders
+                        if (secondaryFaderIndex < totalFaders) {
                             store.dispatch({
                                 type: FaderActionTypes.SET_CAPABILITY,
-                                faderIndex: assignedFaderIndex,
-                                capability: 'isLinkableSecondary',
+                                faderIndex: secondaryFaderIndex,
+                                capability: 'isLinkablePrimary',
                                 enabled: false,
                             })
-                            // Mark each listed input as SECONDARY.
-                            // isLinkableSecondary is true by definition — they are listed
-                            // here, so there is always a primary for them.
-                            for (const secondaryInputNumber of linkableChannels) {
-                                const secondaryChannelIndex =
-                                    this.getChannelIndexForInput(
-                                        secondaryInputNumber
-                                    )
-                                if (secondaryChannelIndex === -1) continue
-                                const secondaryFaderIndex =
-                                    this.getAssignedFaderIndex(
-                                        secondaryChannelIndex
-                                    )
-                                if (secondaryFaderIndex === -1) continue
-                                store.dispatch({
-                                    type: FaderActionTypes.SET_CAPABILITY,
-                                    faderIndex: secondaryFaderIndex,
-                                    capability: 'isLinkablePrimary',
-                                    enabled: false,
-                                })
-                                store.dispatch({
-                                    type: FaderActionTypes.SET_CAPABILITY,
-                                    faderIndex: secondaryFaderIndex,
-                                    capability: 'isLinkableSecondary',
-                                    enabled: true,
-                                })
-                            }
+                            store.dispatch({
+                                type: FaderActionTypes.SET_CAPABILITY,
+                                faderIndex: secondaryFaderIndex,
+                                capability: 'isLinkableSecondary',
+                                enabled: true,
+                            })
                         }
                     }
                     for (const command of entry?.commands ?? []) {

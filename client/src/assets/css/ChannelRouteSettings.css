@@ -28,7 +28,7 @@
 
 .channel-route-selector {
     width: 80%;
-    line-height: 50px;;
+    line-height: 50px;
     background-color: rgb(33, 33, 33);
     font-size: 1.5em;
     font-weight: bold;
@@ -91,6 +91,22 @@
 .channel-route-text.checked {
     font-weight: bold;
     color: white;
+}
+
+.channel-route-linkability {
+    padding-bottom: 8px;
+}
+
+.channel-route-linkability .channel-route-text {
+    display: block;
+    line-height: 28px;
+    color: white;
+    cursor: pointer;
+}
+
+.channel-route-linkability .channel-route-text input[type='checkbox'] {
+    margin-right: 6px;
+    cursor: pointer;
 }
 
 .channel-route-body > .close {
