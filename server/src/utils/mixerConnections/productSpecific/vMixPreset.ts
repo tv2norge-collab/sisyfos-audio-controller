@@ -5,7 +5,18 @@ export interface Command {
 export interface InputsPreset {
     inputNumbers: number[]
     /** vMix commands to execute for each input */
-    commands: Command[]
+    commands?: Command[]
+    /** whether channel matrix (and channel mixer) should be reset */
+    resetChannelMatrix?: boolean
+    /** whether channel gain should be set to 0 */
+    resetGain?: boolean
+    /** whether "LR" channels of an input should be linked in Sisyfos */
+    linkSeparateMono?: boolean
+}
+export interface InputPreset {
+    inputNumber: number
+    /** vMix commands to execute for this input */
+    commands?: Command[]
     /** whether channel matrix (and channel mixer) should be reset */
     resetChannelMatrix?: boolean
     /** whether channel gain should be set to 0 */
@@ -19,4 +30,4 @@ export interface InputsPreset {
      */
     linkableChannels?: number[]
 }
-export type Preset = InputsPreset[]
+export type Preset = Array<InputsPreset | InputPreset>

@@ -747,13 +747,30 @@ export class VMixMixerConnection implements MixerConnection {
         let data: Preset = JSON.parse(
             fs.readFileSync(path.resolve(STORAGE_FOLDER, presetName), 'utf8')
         )
-        for (const inputsPreset of data) {
-            for (const inputNumber of inputsPreset.inputNumbers) {
+
+        // Zeroth pass: unlink all currently linked faders so that borrowed channels
+        // are returned to their original faders before we re-read assignments.
+        // Without this, getAssignedFaderIndex() for a secondary input returns the
+        // primary fader index (because linking moves the channels there), causing
+        // the secondary loop to corrupt the primary's capabilities on every reload.
+        state.faders[0].fader.forEach((fader, faderIndex) => {
+            if (fader.isLinked && fader.capabilities?.isLinkablePrimary) {
+                global.mainThreadHandler.setLink(faderIndex, false)
+            }
+        })
+        const linkPass: number[] = []
+        for (const entry of data) {
+            const inputNumbers =
+                'inputNumbers' in entry
+                    ? entry.inputNumbers
+                    : [entry.inputNumber]
+            for (const inputNumber of inputNumbers) {
                 this.lastState.forEach((input, channelIndex) => {
                     if (input.number !== inputNumber) return
                     const assignedFaderIndex =
                         this.getAssignedFaderIndex(channelIndex)
-                    if (inputsPreset.resetChannelMatrix) {
+                    if (assignedFaderIndex === -1) return
+                    if (entry.resetChannelMatrix) {
                         const inputSelected = (2 << 16) | (1 << 8)
                         this.hack_rearrangeAudioChannels(
                             inputSelected,
@@ -765,62 +782,68 @@ export class VMixMixerConnection implements MixerConnection {
                             selected: inputSelected,
                         })
                     }
-                    if (inputsPreset.resetGain) {
+                    if (entry.resetGain) {
                         store.dispatch({
                             type: FaderActionTypes.SET_INPUT_GAIN,
                             faderIndex: assignedFaderIndex,
                             level: 0,
                         })
                     }
-                    if (inputsPreset.linkSeparateMono) {
-                        global.mainThreadHandler.setLink(
-                            assignedFaderIndex,
-                            true
-                        )
+                    if (entry.linkSeparateMono) {
+                        linkPass.push(assignedFaderIndex)
                     }
-                    if (inputsPreset.linkableChannels !== undefined) {
-                        const hasPrimary =
-                            inputsPreset.linkableChannels.length > 0
-                        // Mark this input as PRIMARY (or clear if empty array)
+                    const linkableChannels =
+                        'linkableChannels' in entry
+                            ? entry.linkableChannels
+                            : undefined
+                    if (linkableChannels !== undefined) {
+                        const isPrimary = linkableChannels.length > 0
                         store.dispatch({
                             type: FaderActionTypes.SET_CAPABILITY,
                             faderIndex: assignedFaderIndex,
                             capability: 'isLinkablePrimary',
-                            enabled: hasPrimary,
+                            enabled: isPrimary,
                         })
-                        store.dispatch({
-                            type: FaderActionTypes.SET_CAPABILITY,
-                            faderIndex: assignedFaderIndex,
-                            capability: 'isLinkableSecondary',
-                            enabled: false,
-                        })
-                        // Mark each listed input as SECONDARY
-                        for (const secondaryInputNumber of inputsPreset.linkableChannels) {
-                            const secondaryChannelIndex =
-                                this.getChannelIndexForInput(
-                                    secondaryInputNumber
-                                )
-                            if (secondaryChannelIndex === -1) continue
-                            const secondaryFaderIndex =
-                                this.getAssignedFaderIndex(
-                                    secondaryChannelIndex
-                                )
-                            if (secondaryFaderIndex === -1) continue
+                        if (isPrimary) {
+                            // Only a primary explicitly clears its own secondary status.
+                            // An empty linkableChannels only means "not a primary" but
+                            // does not override a secondary status granted by another entry.
                             store.dispatch({
                                 type: FaderActionTypes.SET_CAPABILITY,
-                                faderIndex: secondaryFaderIndex,
-                                capability: 'isLinkablePrimary',
+                                faderIndex: assignedFaderIndex,
+                                capability: 'isLinkableSecondary',
                                 enabled: false,
                             })
-                            store.dispatch({
-                                type: FaderActionTypes.SET_CAPABILITY,
-                                faderIndex: secondaryFaderIndex,
-                                capability: 'isLinkableSecondary',
-                                enabled: hasPrimary,
-                            })
+                            // Mark each listed input as SECONDARY.
+                            // isLinkableSecondary is true by definition — they are listed
+                            // here, so there is always a primary for them.
+                            for (const secondaryInputNumber of linkableChannels) {
+                                const secondaryChannelIndex =
+                                    this.getChannelIndexForInput(
+                                        secondaryInputNumber
+                                    )
+                                if (secondaryChannelIndex === -1) continue
+                                const secondaryFaderIndex =
+                                    this.getAssignedFaderIndex(
+                                        secondaryChannelIndex
+                                    )
+                                if (secondaryFaderIndex === -1) continue
+                                store.dispatch({
+                                    type: FaderActionTypes.SET_CAPABILITY,
+                                    faderIndex: secondaryFaderIndex,
+                                    capability: 'isLinkablePrimary',
+                                    enabled: false,
+                                })
+                                store.dispatch({
+                                    type: FaderActionTypes.SET_CAPABILITY,
+                                    faderIndex: secondaryFaderIndex,
+                                    capability: 'isLinkableSecondary',
+                                    enabled: true,
+                                })
+                            }
                         }
                     }
-                    for (const command of inputsPreset.commands) {
+                    for (const command of entry?.commands ?? []) {
                         this.sendOutMessage(
                             command.name,
                             inputNumber,
@@ -828,6 +851,18 @@ export class VMixMixerConnection implements MixerConnection {
                         )
                     }
                 })
+            }
+        }
+        // Second pass: setLink after all fader state has been fully applied.
+        // Only call setLink on primaries — the reducer sets both primary and
+        // secondary isLinked when called on the primary. Calling it on a
+        // secondary (no isLinkablePrimary capability) would just set isLinked=false.
+        for (const faderIndex of linkPass) {
+            if (
+                state.faders[0].fader[faderIndex]?.capabilities
+                    ?.isLinkablePrimary
+            ) {
+                global.mainThreadHandler.setLink(faderIndex, true)
             }
         }
         global.mainThreadHandler.updateFullClientStore()

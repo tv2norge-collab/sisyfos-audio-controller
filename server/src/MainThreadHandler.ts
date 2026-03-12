@@ -170,15 +170,19 @@ export class MainThreadHandlers {
     }
 
     setLink(faderIndex: number, linkOn: boolean) {
+        const totalFaders = state.settings[0].numberOfFaders
+        if (faderIndex < 0 || faderIndex >= totalFaders) return
         store.dispatch({
             type: FaderActionTypes.SET_LINK,
             faderIndex,
             linkOn,
         })
         mixerGenericConnection.updateOutLevel(faderIndex, -1)
-        mixerGenericConnection.updateOutLevel(faderIndex + 1, -1)
+        if (faderIndex + 1 < totalFaders) {
+            mixerGenericConnection.updateOutLevel(faderIndex + 1, -1)
+            mixerGenericConnection.updateInputGain(faderIndex + 1)
+        }
         mixerGenericConnection.updateInputGain(faderIndex)
-        mixerGenericConnection.updateInputGain(faderIndex + 1)
         this.reIndexAssignedChannelsRelation()
         this.updateFullClientStore()
     }
