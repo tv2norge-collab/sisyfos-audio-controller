@@ -125,7 +125,9 @@
     display: inline-block;
     cursor: pointer;
     outline: none;
-    border: 1px solid rgb(99, 99, 99);
+    border-color: rgb(99, 99, 99);
+    border-style: outset;
+    border-width: 2px;
     background-color: rgb(27, 27, 27);
     border-radius: 7px;
     color: #fff;
@@ -174,7 +176,6 @@
 
 .preset-action-button {
     outline: none;
-    border: 1px solid rgb(99, 99, 99);
     background-color: rgb(27, 27, 27);
     border-radius: 5px;
     color: #fff;
