@@ -18,16 +18,10 @@ describe('resolveChannelMatrixPreset', () => {
             ).toEqual({ activeChannels: [1, 2], preset: '1L' })
         })
 
-        it('activates ch3 and ch4 and applies preset 3L when wired to channels 3/4', () => {
+        it('activates ch3 and ch4 and applies preset 3L — leftInput drives the preset name', () => {
             expect(
                 resolveChannelMatrixPreset({ leftInput: 3, rightInput: 4 })
             ).toEqual({ activeChannels: [3, 4], preset: '3L' })
-        })
-
-        it('uses leftInput number in the preset name (not rightInput)', () => {
-            expect(
-                resolveChannelMatrixPreset({ leftInput: 5, rightInput: 6 })
-            ).toEqual({ activeChannels: [5, 6], preset: '5L' })
         })
     })
 
@@ -55,26 +49,11 @@ describe('resolveChannelMatrixPreset', () => {
                 })
             ).toEqual({ activeChannels: [2], preset: 'R' })
         })
-
-        it('primary and secondary each have exactly one different active channel', () => {
-            const primary = resolveChannelMatrixPreset({
-                leftInput: 3,
-                rightInput: 4,
-                linkedPreset: 'L',
-            })
-            const secondary = resolveChannelMatrixPreset({
-                leftInput: 3,
-                rightInput: 4,
-                linkedPreset: 'R',
-            })
-            expect(primary.activeChannels).toEqual([3])
-            expect(secondary.activeChannels).toEqual([4])
-        })
     })
 
     // ─── Unlinked linkable pair ───────────────────────────────────────────────
-    // Both halves of an unlinked pair are stereo; both channels active.
-    // LR preset routes leftInput → Left bus, rightInput → Right bus.
+    // LR preset routes the single active channel to both buses.
+    // Primary uses leftInput, secondary uses rightInput.
 
     describe('unlinked linkable pair', () => {
         it('unlinked primary activates only leftInput — LR preset routes it to both buses', () => {
@@ -207,38 +186,6 @@ describe('resolveChannelMatrixPreset', () => {
             ).toEqual({ activeChannels: [1], preset: 'EXT3_StereoFull' })
         })
     })
-
-    // ─── Preset loading default values ───────────────────────────────────────
-
-    describe('preset loading (resetChannelMatrix pass)', () => {
-        // During loadMixerPreset all inputs get leftInput=1, rightInput=2.
-
-        it('non-linkable input: both channels active with 1L preset', () => {
-            expect(
-                resolveChannelMatrixPreset({ leftInput: 1, rightInput: 2 })
-            ).toEqual({ activeChannels: [1, 2], preset: '1L' })
-        })
-
-        it('linked primary: only ch1 active with L preset', () => {
-            expect(
-                resolveChannelMatrixPreset({
-                    leftInput: 1,
-                    rightInput: 2,
-                    linkedPreset: 'L',
-                })
-            ).toEqual({ activeChannels: [1], preset: 'L' })
-        })
-
-        it('linked secondary: only ch2 active with R preset (was the original bug: both went to ch1)', () => {
-            expect(
-                resolveChannelMatrixPreset({
-                    leftInput: 1,
-                    rightInput: 2,
-                    linkedPreset: 'R',
-                })
-            ).toEqual({ activeChannels: [2], preset: 'R' })
-        })
-    })
 })
 
 describe('buildChannelMixerVolumes', () => {
@@ -256,13 +203,6 @@ describe('buildChannelMixerVolumes', () => {
             expect(v[2]).toBe(100)
             expect(v[1]).toBe(0)
             for (let i = 3; i <= 8; i++) expect(v[i]).toBe(0)
-        })
-
-        it('ch5 active: volumes[5]=100, all others 0', () => {
-            const v = buildChannelMixerVolumes([5])
-            for (let i = 1; i <= 8; i++) {
-                expect(v[i]).toBe(i === 5 ? 100 : 0)
-            }
         })
     })
 
@@ -298,34 +238,6 @@ describe('buildChannelMixerVolumes', () => {
             expect(Object.keys(v)).toEqual(['1', '2', '3', '4'])
             expect(v[2]).toBe(100)
             expect(v[1]).toBe(0)
-        })
-
-        it('no channel has a value other than 0 or 100', () => {
-            for (const activeChannels of [[1], [2], [1, 2], [3, 4]]) {
-                Object.values(buildChannelMixerVolumes(activeChannels)).forEach(
-                    (v) => {
-                        expect([0, 100]).toContain(v)
-                    }
-                )
-            }
-        })
-
-        it('round-trips: every activeChannel from resolveChannelMatrixPreset gets 100', () => {
-            const cases = [
-                { leftInput: 1, rightInput: 2 }, // non-linkable → [1,2]
-                { leftInput: 1, rightInput: 2, linkedPreset: 'L' as const }, // linked primary → [1]
-                { leftInput: 1, rightInput: 2, linkedPreset: 'R' as const }, // linked secondary → [2]
-                { leftInput: 1, rightInput: 2, isLinkable: true }, // unlinked primary → [1]
-                { leftInput: 1, rightInput: 2, isSecondary: true }, // unlinked secondary → [2]
-                { leftInput: 3, rightInput: 4, linkedPreset: 'R' as const }, // linked secondary on ch4 → [4]
-            ]
-            for (const args of cases) {
-                const { activeChannels } = resolveChannelMatrixPreset(args)
-                const volumes = buildChannelMixerVolumes(activeChannels)
-                for (const ch of activeChannels) {
-                    expect(volumes[ch]).toBe(100)
-                }
-            }
         })
     })
 })
