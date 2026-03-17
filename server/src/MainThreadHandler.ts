@@ -184,6 +184,19 @@ export class MainThreadHandlers {
         }
         mixerGenericConnection.updateInputGain(faderIndex)
         this.reIndexAssignedChannelsRelation()
+        // Re-apply channel matrix after link state change so the mixer
+        // reflects the new routing (linked = paired, unlinked = independent).
+        mixerGenericConnection.updateInputSelector(faderIndex)
+        if (!linkOn && faderIndex + 1 < totalFaders) {
+            // The secondary fader's inputSelector was not updated while linked.
+            // Copy the primary's value so the mixer can decode the correct channel.
+            store.dispatch({
+                type: FaderActionTypes.SET_INPUT_SELECTOR,
+                faderIndex: faderIndex + 1,
+                selected: state.faders[0].fader[faderIndex].inputSelector,
+            })
+            mixerGenericConnection.updateInputSelector(faderIndex + 1)
+        }
         this.updateFullClientStore()
     }
 
@@ -582,12 +595,29 @@ export class MainThreadHandlers {
                     }\n  Selected: ${payload.selected}`
                 )
                 logger.debug(payload)
+                const selectedValue = parseFloat(payload.selected)
                 store.dispatch({
                     type: FaderActionTypes.SET_INPUT_SELECTOR,
                     faderIndex: payload.faderIndex,
-                    selected: parseFloat(payload.selected),
+                    selected: selectedValue,
                 })
                 mixerGenericConnection.updateInputSelector(payload.faderIndex)
+                // If this is a linkable primary, keep the secondary in sync so it
+                // always has the same inputSelected to decode rightInput from.
+                const primaryFader = state.faders[0].fader[payload.faderIndex]
+                if (primaryFader?.capabilities?.isLinkablePrimary) {
+                    const secondaryIndex = payload.faderIndex + 1
+                    if (secondaryIndex < state.faders[0].fader.length) {
+                        store.dispatch({
+                            type: FaderActionTypes.SET_INPUT_SELECTOR,
+                            faderIndex: secondaryIndex,
+                            selected: selectedValue,
+                        })
+                        mixerGenericConnection.updateInputSelector(
+                            secondaryIndex
+                        )
+                    }
+                }
                 this.updatePartialStore(payload.faderIndex)
             })
             .on(IO.SOCKET_TOGGLE_ALL_MANUAL, () => {

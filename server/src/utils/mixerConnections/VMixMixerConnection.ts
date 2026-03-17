@@ -45,10 +45,6 @@ const DEFAULT_MIN_POLL_INTERVAL_MS = 20
 /** We fallback to doing an additional poll in 500 milliseconds if no XML response is received */
 const FALLBACK_POLL_INTERVAL_MS = 500
 
-enum PrivateDataTag {
-    INPUT_NUMBER = 'inputNumber',
-}
-
 interface VMixInput {
     name: string
     volume: number
@@ -66,11 +62,14 @@ interface VMixInputLocation {
     channelType: number
 }
 
-type ChannelMatrixPreset =
-    | `${number}L` // Standard presets: 1L, 2L, 3L, etc.
-    | string // Custom preset names like "LR"
-    | `${string}${number}_${number}L` // Mix-minus presets: EXT1_1L, RTN2_3L, etc.
-    | `${string}${number}_${string}` // Mix-minus custom: EXT1_LR, RTN2_CustomPreset, etc.
+import {
+    resolveChannelMatrixPreset,
+    buildChannelMixerVolumes,
+} from './vmixChannelMatrix'
+export {
+    resolveChannelMatrixPreset,
+    buildChannelMixerVolumes,
+} from './vmixChannelMatrix'
 
 export class VMixMixerConnection implements MixerConnection {
     mixerProtocol: VMixMixerProtocol
@@ -305,7 +304,7 @@ export class VMixMixerConnection implements MixerConnection {
             return
         }
 
-        const { outputLevel, fadeActive, privateData } =
+        const { outputLevel, fadeActive } =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[
                 channelIndex
             ]
@@ -401,18 +400,6 @@ export class VMixMixerConnection implements MixerConnection {
                     pflOn: input.solo,
                 })
             }
-            if (
-                privateData?.[PrivateDataTag.INPUT_NUMBER] !==
-                String(input.number)
-            ) {
-                dispatchAndSetUpdateState({
-                    type: ChannelActionTypes.SET_PRIVATE,
-                    channel: channelIndex,
-                    mixerIndex: this.mixerIndex,
-                    tag: PrivateDataTag.INPUT_NUMBER,
-                    value: String(input.number),
-                })
-            }
         }
 
         if (sendUpdate) {
@@ -435,12 +422,12 @@ export class VMixMixerConnection implements MixerConnection {
                 )
             })
 
-            sendVuLevel(
-                assignedFaderIndex,
-                VuType.Channel,
-                vuIndex,
-                dbToFloat(input.meterF1 + 12)
-            ) // send 0 directly for silence, otherwise convert
+            // Primary (vuIndex 0) uses meterF1, secondary (vuIndex 1) uses meterF2.
+            const level =
+                vuIndex === 0
+                    ? dbToFloat(input.meterF1 + 12)
+                    : dbToFloat(input.meterF2 + 12)
+            sendVuLevel(assignedFaderIndex, VuType.Channel, vuIndex, level)
         } else {
             sendVuLevel(
                 assignedFaderIndex,
@@ -568,79 +555,96 @@ export class VMixMixerConnection implements MixerConnection {
             const { mixerMessage, value } = selector
             this.sendOutMessage(mixerMessage, inputNumber, value)
         } else {
-            this.hack_rearrangeAudioChannels(inputSelected, inputNumber)
+            const assignedFaderIndex = this.getAssignedFaderIndex(channelIndex)
+            const fader = state.faders[0].fader[assignedFaderIndex]
+            if (
+                fader?.isLinked &&
+                fader.assignedChannels &&
+                fader.assignedChannels.length > 1
+            ) {
+                // Linked pair: same inputSelected on both inputs. Primary gets 'L' preset,
+                // secondary gets 'R' preset. SetVolumeChannelMixer follows inputSelected.
+                const LINKED_PRESETS: Array<'L' | 'R'> = ['L', 'R']
+                const ownChannels = fader.assignedChannels.filter(
+                    (a) => a.mixerIndex === this.mixerIndex
+                )
+                ownChannels.forEach((assigned, i) => {
+                    const inp = assigned.channelIndex + 1
+                    this.hack_rearrangeAudioChannels(
+                        inputSelected,
+                        inp,
+                        LINKED_PRESETS[i]
+                    )
+                })
+            } else {
+                // Unlinked secondary must activate rightInput (it carries the right channel
+                // of the pair); unlinked primary activates leftInput.
+                const isSecondary =
+                    fader?.capabilities?.isLinkableSecondary === true
+                const isLinkable =
+                    fader?.capabilities?.isLinkablePrimary === true ||
+                    fader?.capabilities?.isLinkableSecondary === true
+                this.hack_rearrangeAudioChannels(
+                    inputSelected,
+                    inputNumber,
+                    undefined,
+                    isSecondary,
+                    isLinkable
+                )
+            }
         }
     }
 
     /**
-     * This assumes existence of Channel Matrix Presets called "1L"..."8L",
-     * where the number indicates which input channel is assigned to the L bus channels,
-     * whereas every other channel is assigned to the R channel, e.g.:
-     * 1L means channel 1 is assigned to L, and channels 2...8 are assigned to R.
-     * It also requires a "LR" preset, where each input channel is assigned to both L and R outs.
+     * Applies an AudioChannelMatrixPreset and configures SetVolumeChannelMixer levels
+     * for a given vMix input.
      *
-     * For mix-minus functionality, it also requires special presets for each EXT input:
-     * "EXT1_1L", "EXT1_2L", ..., "EXT1_8L" and "EXT1_LR" for EXT 1
-     * "EXT2_1L", "EXT2_2L", ..., "EXT2_8L" and "EXT2_LR" for EXT 2
-     * ...and so on for each EXT input.
-     * These presets work like the standard ones but exclude the specific EXT input
-     * from the matrix to prevent feedback loops.
+     * inputSelected encodes the pair: leftInput = bits 8-15, rightInput = bits 16-23.
+     * - Linked primary ('L'):   ch leftInput active, 'L' preset applied (mono to Left bus).
+     * - Linked secondary ('R'): ch rightInput active, 'R' preset applied (mono to Right bus).
+     * - Unlinked linkable:      ch leftInput (primary) or rightInput (secondary) active, 'LR' preset
+     *                           routes that one channel to both buses.
+     * - Non-linkable:           both leftInput and rightInput active, '{N}L' preset routes each
+     *                           to its own bus (stereo — two channels simultaneously).
      *
-     * Combined with SetVolumeChannelMixer[n] command, it allows for 64 channel combinations.
+     * Mix-minus prefix variants (e.g. 'EXT1_L', 'EXT1_LR') are used for return feed inputs.
      */
     private hack_rearrangeAudioChannels(
         inputSelected: number,
-        inputNumber: number
+        inputNumber: number,
+        linkedPreset?: 'L' | 'R',
+        isSecondary?: boolean,
+        isLinkable?: boolean
     ) {
         const leftInput = (inputSelected >> 8) & 0xff
         const rightInput = (inputSelected >> 16) & 0xff
-        for (let i = 1; i <= 8; ++i) {
-            if (i !== leftInput && i !== rightInput) {
-                this.sendOutMessage(`SetVolumeChannelMixer${i}`, inputNumber, 0)
-            }
-        }
 
-        // Check if this input should use mix-minus presets
         const returnFeedNumber = this.getReturnFeedNumber(inputNumber)
-        let preset: ChannelMatrixPreset
-
         const prefix =
             state.settings[0].mixers[this.mixerIndex].channelMatrixPrefix ||
             this.mixerProtocol.channelMatrixPrefix
         const lrPresetName = this.mixerProtocol.lrPreset
 
-        if (returnFeedNumber > 0 && prefix && lrPresetName) {
-            // Use mix-minus presets for return feeds to prevent feedback loops
-            // Only when both prefix and preset name are configured
-            preset =
-                rightInput === leftInput
-                    ? `${prefix}${returnFeedNumber}_${lrPresetName}`
-                    : `${prefix}${returnFeedNumber}_${leftInput}L`
-        } else {
-            // Use standard presets for regular inputs or when prefix detection is disabled
-            preset =
-                rightInput === leftInput && lrPresetName
-                    ? lrPresetName
-                    : `${leftInput}L`
-        }
+        const { activeChannels, preset } = resolveChannelMatrixPreset({
+            leftInput,
+            rightInput,
+            linkedPreset,
+            isSecondary,
+            isLinkable,
+            lrPresetName,
+            prefix,
+            returnFeedNumber,
+        })
 
+        const volumes = buildChannelMixerVolumes(activeChannels)
+        for (const [ch, vol] of Object.entries(volumes)) {
+            this.sendOutMessage(`SetVolumeChannelMixer${ch}`, inputNumber, vol)
+        }
         this.sendOutMessage(
             `AudioChannelMatrixApplyPreset`,
             inputNumber,
             preset
         )
-        this.sendOutMessage(
-            `SetVolumeChannelMixer${leftInput}`,
-            inputNumber,
-            100
-        )
-        if (rightInput !== leftInput) {
-            this.sendOutMessage(
-                `SetVolumeChannelMixer${rightInput}`,
-                inputNumber,
-                100
-            )
-        }
     }
     /**
      * Checks if the input should use mix-minus presets by looking for the configured prefix in fader labels.
@@ -725,18 +729,14 @@ export class VMixMixerConnection implements MixerConnection {
     }
 
     private getInputLocation(channelIndex: number): VMixInputLocation {
-        const { privateData, channelType } =
+        const { channelType } =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[
                 channelIndex
             ]
-        const inputNumber = Number(
-            privateData?.[PrivateDataTag.INPUT_NUMBER] ?? '0'
-        )
-        const result: VMixInputLocation = {
-            inputNumber,
+        return {
+            inputNumber: channelIndex + 1,
             channelType,
         }
-        return result
     }
 
     updateChannelName(channelIndex: number) {
@@ -767,10 +767,26 @@ export class VMixMixerConnection implements MixerConnection {
                         this.getAssignedFaderIndex(channelIndex)
                     if (assignedFaderIndex === -1) return
                     if (entry.resetChannelMatrix) {
-                        const inputSelected = (2 << 16) | (1 << 8)
+                        // inputSelected encodes leftInput=ch1, rightInput=ch2.
+                        // Linked primary ('L'):   ch1 active.
+                        // Linked secondary ('R'): ch2 active.
+                        // Unlinked linkable:      ch1 (primary) or ch2 (secondary) active, LR preset.
+                        // Non-linkable:           ch1 + ch2 active, {N}L preset.
+                        const inputSelected = (2 << 16) | (1 << 8) // leftInput=1, rightInput=2
+                        const positionInEntry =
+                            entry.inputNumbers.indexOf(inputNumber)
+                        const linkedPreset: 'L' | 'R' | undefined =
+                            entry.isLinked
+                                ? positionInEntry === 0
+                                    ? 'L'
+                                    : 'R'
+                                : undefined
                         this.hack_rearrangeAudioChannels(
                             inputSelected,
-                            inputNumber
+                            inputNumber,
+                            linkedPreset,
+                            false,
+                            entry.isLinkablePrimary === true
                         )
                         store.dispatch({
                             type: FaderActionTypes.SET_INPUT_SELECTOR,
