@@ -6,7 +6,15 @@
     "build": "rollup -c",
     "copy-deps": "node ./scripts/copy-dependencies.cjs"
   },
+  "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/component-lib/src/index.d.ts",
+      "import": "./dist/index.mjs"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
   "files": [
     "dist"
   ],

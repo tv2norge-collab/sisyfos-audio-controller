@@ -29,7 +29,7 @@ const COLORS = {
 }
 
 
-export class VuMeter extends React.PureComponent<VuMeterInjectedProps, VuMeterState> {
+export class VuMeter extends React.Component<VuMeterInjectedProps, VuMeterState> {
     private canvas: HTMLCanvasElement | undefined
     private _context: CanvasRenderingContext2D | undefined
     private animationFrame: number | undefined
