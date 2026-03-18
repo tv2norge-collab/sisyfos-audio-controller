@@ -2,6 +2,7 @@ import { Provider as LegacyReduxProvider } from 'react-redux'
 import { useSocketConnection } from '../../client/src/hooks/useSocketConnection'
 import ContextProvider from '../../client/src/components/ContextProvider'
 import Channels from '../../client/src/components/Channels'
+import SisyfosVuMeter from '../../client/src/components/SisyfosVuMeter'
 import upstreamI18n from '../../client/src/utils/i18n'
 import { vuMeters } from '../../client/src/utils/SocketClientHandlers'
 import legacyStore from '../../shared/src/reducers/store'
@@ -16,6 +17,7 @@ export {
     ContextProvider,
     LegacyReduxProvider,
     legacyStore,
+    SisyfosVuMeter,
     upstreamI18n,
     useSocketConnection,
     vuMeters,
@@ -27,3 +29,4 @@ export type { Faders as LegacyFaders } from '../../shared/src/reducers/fadersRed
 export type {
     CustomPages as LegacyCustomPages,
 } from '../../shared/src/reducers/settingsReducer'
+export type { SisyfosMeterConfig } from '../../client/src/components/SisyfosVuMeter'
