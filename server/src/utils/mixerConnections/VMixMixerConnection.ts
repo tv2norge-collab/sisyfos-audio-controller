@@ -35,6 +35,7 @@ import { STORAGE_FOLDER } from '../SettingsStorage'
 import { Preset } from './productSpecific/vMixPreset'
 import { VMixPoller } from './productSpecific/VMixPoller'
 import { VMixConnectionWatchdog } from './productSpecific/VMixConnectionWatchdog'
+import { MasterAudioBus } from 'vmix-js-utils/dist/types/audio-bus'
 
 /** If no XML received within 2 seconds, we reconnect the feedback connection */
 const CONNECTION_WATCHDOG_TIMEOUT_MS = 2000
@@ -86,6 +87,7 @@ export class VMixMixerConnection implements MixerConnection {
     lastLevel: Record<string, number> = {}
 
     lastState: VMixInput[] | undefined
+    private lastMasterState: { volume: number; muted: boolean } | undefined
 
     awaitingFirstXml = true
 
@@ -237,6 +239,32 @@ export class VMixMixerConnection implements MixerConnection {
         })
     }
 
+    private get masterChannelTypeIndex(): number {
+        return this.mixerProtocol.channelTypes.findIndex(
+            (ct) => ct.channelTypeName === 'MASTER'
+        )
+    }
+
+    private isMasterChannel(channelIndex: number): boolean {
+        const masterIndex = this.masterChannelTypeIndex
+        if (masterIndex === -1) return false
+        return (
+            state.channels[0].chMixerConnection[this.mixerIndex].channel[
+                channelIndex
+            ]?.channelType === masterIndex
+        )
+    }
+
+    private sendMasterMessage(vMixMessage: string, value?: string | number) {
+        if (state.settings[0].mixers[this.mixerIndex].mixerOnline) {
+            logger.trace(`send master ${vMixMessage} Value=${value}`)
+            this.vMixCommandConnection.send({
+                Function: vMixMessage,
+                Value: value,
+            })
+        }
+    }
+
     private handleXml(xml: string) {
         const doc = XmlApi.DataParser.parse(xml)
         const inputs = XmlApi.Inputs.extractInputsFromXML(doc)
@@ -248,6 +276,102 @@ export class VMixMixerConnection implements MixerConnection {
         mappedInputs.forEach(this.updateInputState)
 
         this.lastState = mappedInputs
+
+        try {
+            const master = XmlApi.AudioBusses.master(doc)
+            this.handleMasterState(master)
+        } catch (_e) {
+            // master bus not present in this XML - ignore
+        }
+    }
+
+    private handleMasterState(master: MasterAudioBus) {
+        if (!master) return
+
+        const volume = Math.pow(master.volume / 100, 0.25)
+        const muted = master.muted
+        const meterF1 =
+            (9.555 * Math.log(master.audioMeter.left || 0)) / Math.log(3)
+        const meterF2 =
+            (9.555 * Math.log(master.audioMeter.right || 0)) / Math.log(3)
+
+        const channels =
+            state.channels[0].chMixerConnection[this.mixerIndex].channel
+        for (
+            let channelIndex = 0;
+            channelIndex < channels.length;
+            channelIndex++
+        ) {
+            if (
+                !channels[channelIndex] ||
+                channels[channelIndex].channelType !==
+                    this.masterChannelTypeIndex
+            )
+                continue
+
+            const assignedFaderIndex = this.getAssignedFaderIndex(channelIndex)
+            if (
+                assignedFaderIndex === -1 ||
+                !state.faders[0].fader[assignedFaderIndex]
+            )
+                continue
+
+            const { outputLevel, fadeActive } = channels[channelIndex]
+            const { muteOn } = state.faders[0].fader[assignedFaderIndex]
+            let sendUpdate = false
+
+            // Send VU levels
+            sendVuLevel(
+                assignedFaderIndex,
+                VuType.Channel,
+                0,
+                dbToFloat(meterF1 + 12)
+            )
+            sendVuLevel(
+                assignedFaderIndex,
+                VuType.Channel,
+                1,
+                dbToFloat(meterF2 + 12)
+            )
+
+            // Volume feedback from vMix
+            if (
+                !muted &&
+                !fadeActive &&
+                outputLevel > 0 &&
+                volume !== this.lastMasterState?.volume &&
+                Math.abs(outputLevel - volume) > 0.01
+            ) {
+                store.dispatch({
+                    type: FaderActionTypes.SET_FADER_LEVEL,
+                    faderIndex: assignedFaderIndex,
+                    level: volume,
+                })
+                store.dispatch({
+                    type: ChannelActionTypes.SET_OUTPUT_LEVEL,
+                    channel: assignedFaderIndex,
+                    mixerIndex: this.mixerIndex,
+                    level: volume,
+                })
+                sendUpdate = true
+            }
+
+            // Mute feedback from vMix
+            if (muted !== this.lastMasterState?.muted && muteOn !== muted) {
+                store.dispatch({
+                    type: FaderActionTypes.SET_MUTE,
+                    faderIndex: assignedFaderIndex,
+                    muteOn: muted,
+                })
+                sendUpdate = true
+            }
+
+            if (sendUpdate) {
+                global.mainThreadHandler.updatePartialStore(channelIndex)
+            }
+        }
+
+        this.lastMasterState = { volume, muted }
     }
 
     private xmlElementToInput(input: Element) {
@@ -466,6 +590,9 @@ export class VMixMixerConnection implements MixerConnection {
     }
 
     updatePflState(channelIndex: number) {
+        // Master output has no PFL/solo
+        if (this.isMasterChannel(channelIndex)) return
+
         const { inputNumber, channelType } = this.getInputLocation(channelIndex)
         let { outputLevel } =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[
@@ -500,6 +627,15 @@ export class VMixMixerConnection implements MixerConnection {
     }
 
     updateMuteState(channelIndex: number, muteOn: boolean) {
+        if (this.isMasterChannel(channelIndex)) {
+            if (muteOn) {
+                this.sendMasterMessage('MasterAudioOff')
+            } else {
+                this.sendMasterMessage('MasterAudioOn')
+            }
+            return
+        }
+
         const { inputNumber, channelType } = this.getInputLocation(channelIndex)
         const { outputLevel } =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[
@@ -530,6 +666,9 @@ export class VMixMixerConnection implements MixerConnection {
     }
 
     updateInputGain(channelIndex: number, level: number) {
+        // Master output has no input gain trim
+        if (this.isMasterChannel(channelIndex)) return
+
         const { inputNumber, channelType } = this.getInputLocation(channelIndex)
 
         const mixerMessage =
@@ -547,6 +686,9 @@ export class VMixMixerConnection implements MixerConnection {
     }
 
     updateInputSelector(channelIndex: number, inputSelected: number) {
+        // Master output has no channel matrix routing
+        if (this.isMasterChannel(channelIndex)) return
+
         const { inputNumber, channelType } = this.getInputLocation(channelIndex)
         const selector =
             this.mixerProtocol.channelTypes[channelType].toMixer
@@ -701,6 +843,14 @@ export class VMixMixerConnection implements MixerConnection {
     }
 
     updateFadeIOLevel(channelIndex: number, outputLevel: number) {
+        if (this.isMasterChannel(channelIndex)) {
+            const scaledVolume = Math.round(100 * outputLevel)
+            if (this.lastLevel[channelIndex] === scaledVolume) return
+            this.sendMasterMessage('SetMasterVolume', String(scaledVolume))
+            this.lastLevel[channelIndex] = scaledVolume
+            return
+        }
+
         const { inputNumber } = this.getInputLocation(channelIndex)
         let { muteOn } = state.faders[0].fader[channelIndex]
         outputLevel = Math.round(100 * outputLevel)
