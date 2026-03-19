@@ -16,9 +16,7 @@ export const VMix: VMixMixerProtocol = {
     // we support custom presets defined in json, with a *.vmix.json extension, used
     // in order not to confuse them with *.vmix files, which are vMix presets that we definitely don't want to restore
     presetFileExtension: 'vmix.json',
-    loadPresetCommand: [
-        emptyMixerMessage(),
-    ],
+    loadPresetCommand: [emptyMixerMessage()],
     MAX_UPDATES_PER_SECOND: 10,
     leadingZeros: true,
     pingCommand: [],
@@ -41,10 +39,7 @@ export const VMix: VMixMixerProtocol = {
                         mixerMessage: 'SetVolume',
                     },
                 ],
-                CHANNEL_VU: [
-                    emptyMixerMessage(),
-                    emptyMixerMessage(),
-                ],
+                CHANNEL_VU: [emptyMixerMessage(), emptyMixerMessage()],
                 CHANNEL_INPUT_GAIN: [
                     {
                         mixerMessage: 'SetGain',
@@ -54,12 +49,8 @@ export const VMix: VMixMixerProtocol = {
                         valueLabel: ' dB',
                     },
                 ],
-                AUX_LEVEL: [
-                    emptyMixerMessage(),
-                ],
-                CHANNEL_MUTE_ON: [
-                    emptyMixerMessage(),
-                ],
+                AUX_LEVEL: [emptyMixerMessage()],
+                CHANNEL_MUTE_ON: [emptyMixerMessage()],
             },
             toMixer: {
                 CHANNEL_OUT_GAIN: [
@@ -116,7 +107,7 @@ export const VMix: VMixMixerProtocol = {
                 ],
                 PFL_OFF: [
                     {
-                        mixerMessage: 'SoloOff'
+                        mixerMessage: 'SoloOff',
                     },
                 ],
                 PFL_ON: [
@@ -124,8 +115,36 @@ export const VMix: VMixMixerProtocol = {
                         mixerMessage: 'SoloOn',
                     },
                 ],
-                AUX_LEVEL: [
-                    emptyMixerMessage(),
+                AUX_LEVEL: [emptyMixerMessage()],
+            },
+        },
+        {
+            channelTypeName: 'MASTER',
+            channelTypeColor: '#1f2f1f',
+            fromMixer: {
+                CHANNEL_OUT_GAIN: [emptyMixerMessage()],
+                CHANNEL_VU: [emptyMixerMessage(), emptyMixerMessage()],
+                CHANNEL_MUTE_ON: [emptyMixerMessage()],
+            },
+            toMixer: {
+                CHANNEL_OUT_GAIN: [
+                    {
+                        mixerMessage: 'SetMasterVolume',
+                    },
+                ],
+                CHANNEL_MUTE_ON: [
+                    {
+                        mixerMessage: 'MasterAudioOff',
+                        value: 0,
+                        type: 'f',
+                    },
+                ],
+                CHANNEL_MUTE_OFF: [
+                    {
+                        mixerMessage: 'MasterAudioOn',
+                        value: 1,
+                        type: 'f',
+                    },
                 ],
             },
         },
