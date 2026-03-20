@@ -7,12 +7,18 @@ import {
     SOCKET_GET_MIXER_PRESET_LIST,
     SOCKET_GET_PAGES_LIST,
 } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
-import storeRedux from '../../../shared/src/reducers/store'
+import defaultStoreRedux from '../../../shared/src/reducers/store'
+import type { Store } from 'redux'
 
-export function useSocketConnection(customUri?: string, customPath?: string, query?: Record<string, string>) {
-    const [initialized, setInitialized] = useState(false);
+export function useSocketConnection(
+    customUri?: string,
+    customPath?: string,
+    query?: Record<string, string>,
+    store?: Store
+) {
+    const [initialized, setInitialized] = useState(false)
     useEffect(() => {
-        window.storeRedux = storeRedux
+        window.storeRedux = store ?? defaultStoreRedux
 
         //Subscribe to redux store:
         window.reduxState = window.storeRedux.getState()
@@ -21,7 +27,8 @@ export function useSocketConnection(customUri?: string, customPath?: string, que
         })
 
         const { pathname, host } = window.location
-        const socketServerPath = customPath ??
+        const socketServerPath =
+            customPath ??
             pathname + (pathname.endsWith('/') ? '' : '/') + 'socket.io/'
         const uri = customUri ?? host
 
@@ -36,12 +43,15 @@ export function useSocketConnection(customUri?: string, customPath?: string, que
         window.socketIoClient.emit(SOCKET_GET_MIXER_PRESET_LIST)
 
         console.log('Setting up SocketIO connection ' + socketServerPath)
-        window.socketIoClient.emit('get-mixerprotocol', 'get selected mixerprotocol')
+        window.socketIoClient.emit(
+            'get-mixerprotocol',
+            'get selected mixerprotocol'
+        )
         window.socketIoClient.emit('get-store', 'update local store')
         window.socketIoClient.emit('get-settings', 'update local settings')
         window.socketIoClient.emit(SOCKET_GET_PAGES_LIST)
 
-        setInitialized(true);
+        setInitialized(true)
 
         return () => {
             if (window.socketIoClient) {

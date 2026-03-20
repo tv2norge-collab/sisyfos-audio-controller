@@ -10746,7 +10746,7 @@ asn1@evs-broadcast/node-asn1:
   languageName: node
   linkType: hard
 
-"react-redux@npm:^9.1.0, react-redux@npm:^9.1.2":
+"react-redux@npm:^9.1.2":
   version: 9.2.0
   resolution: "react-redux@npm:9.2.0"
   dependencies:
@@ -11625,10 +11625,10 @@ asn1@evs-broadcast/node-asn1:
 
 "shared@file:../shared::locator=server%40workspace%3Aserver":
   version: 0.0.0
-  resolution: "shared@file:../shared#../shared::hash=6290eb&locator=server%40workspace%3Aserver"
+  resolution: "shared@file:../shared#../shared::hash=eb44e0&locator=server%40workspace%3Aserver"
   dependencies:
     redux: "npm:^5.0.1"
-  checksum: 10c0/b9faf2fbf7c85c083b89761738db1f93eae7458bafc5f21b0e5b59dc760589c2867da8107f7b45fc6f72481a87325bb295990eeec8260fcb789c47e6fb23c18d
+  checksum: 10c0/a21e6a3aed9a3607d43366e5ba70ed3c4f376117436577c4a8024403470b306445ff5d356d1bd4682401a7624280b42c591436b304e366a77e0330e05804e42e
   languageName: node
   linkType: hard
 
@@ -11769,18 +11769,19 @@ asn1@evs-broadcast/node-asn1:
     lodash: "npm:^4.17.21"
     nouislider: "npm:^15.7.1"
     nouislider-react: "npm:^3.4.2"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
     react-draggable: "npm:^4.4.6"
     react-i18next: "npm:^12.2.2"
-    react-redux: "npm:^9.1.0"
     react-select: "npm:^5.8.0"
     react-slider: "npm:^2.0.6"
-    redux: "npm:^5.0.1"
     rollup: "npm:^4.18.1"
     rollup-plugin-postcss: "npm:^4.0.2"
     socket.io-client: "npm:^4.7.4"
     webmidi: "npm:^2.5.1"
+  peerDependencies:
+    react: ^19.0.0
+    react-dom: ^19.0.0
+    react-redux: ^9.1.0
+    redux: ^5.0.1
   languageName: unknown
   linkType: soft
 
