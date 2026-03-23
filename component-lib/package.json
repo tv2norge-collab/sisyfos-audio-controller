@@ -29,16 +29,16 @@
     "nouislider-react": "^3.4.2",
     "react-draggable": "^4.4.6",
     "react-i18next": "^12.2.2",
-    "react-redux": "^9.1.0",
     "react-select": "^5.8.0",
     "react-slider": "^2.0.6",
-    "redux": "^5.0.1",
     "socket.io-client": "^4.7.4",
     "webmidi": "^2.5.1"
   },
   "peerDependencies": {
     "react": "^18.2.0 || ^19.0.0",
-    "react-dom": "^18.2.0 || ^19.0.0"
+    "react-dom": "^18.2.0 || ^19.0.0",
+    "react-redux": "^9.1.0",
+    "redux": "^5.0.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.24.7",
