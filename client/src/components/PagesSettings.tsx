@@ -38,6 +38,7 @@ class PagesSettings extends React.PureComponent<
 > {
     pageList: { id: string; label: string; value: number }[]
     private scrollContainerRef = React.createRef<HTMLDivElement>()
+    private fileInputRef = React.createRef<HTMLInputElement>()
     state = { id: '', pageIndex: 0, label: '' }
 
     constructor(props: any) {
@@ -109,6 +110,49 @@ class PagesSettings extends React.PureComponent<
         this.dispatch(nextPages)
     }
 
+    handleDownload = () => {
+        const json = JSON.stringify(this.props.customPages, null, 2)
+        const blob = new Blob([json], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'pages.json'
+        a.click()
+        URL.revokeObjectURL(url)
+    }
+
+    handleUploadClick = () => {
+        this.fileInputRef.current?.click()
+    }
+
+    handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        e.target.value = ''
+        const reader = new FileReader()
+        reader.onload = (evt) => {
+            try {
+                const parsed = JSON.parse(evt.target?.result as string)
+                if (
+                    !Array.isArray(parsed) ||
+                    !parsed.every(
+                        (p) =>
+                            typeof p.id === 'string' &&
+                            typeof p.label === 'string' &&
+                            Array.isArray(p.faders)
+                    )
+                ) {
+                    window.alert('Invalid pages JSON')
+                    return
+                }
+                this.dispatch(parsed as CustomPages[])
+            } catch {
+                window.alert('Could not parse JSON file')
+            }
+        }
+        reader.readAsText(file)
+    }
+
     handleClose = () => {
         window.socketIoClient.emit(SOCKET_GET_PAGES_LIST)
         window.storeRedux.dispatch({
@@ -146,6 +190,27 @@ class PagesSettings extends React.PureComponent<
                 <button className="close" onClick={this.handleClose}>
                     X
                 </button>
+                <div className="pages-settings-action-row">
+                    <button
+                        className="pages-settings-sort-btn"
+                        onClick={this.handleDownload}
+                    >
+                        EXPORT ALL PAGES
+                    </button>
+                    <button
+                        className="pages-settings-sort-btn"
+                        onClick={this.handleUploadClick}
+                    >
+                        IMPORT ALL PAGES
+                    </button>
+                </div>
+                <input
+                    ref={this.fileInputRef}
+                    type="file"
+                    accept=".json,application/json"
+                    style={{ display: 'none' }}
+                    onChange={this.handleFileChange}
+                />
 
                 <Select
                     styles={selectorColorStyles}
