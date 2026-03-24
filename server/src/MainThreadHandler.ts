@@ -19,7 +19,6 @@ import {
     getCcgSettingsList,
     setCcgDefault,
     getMixerPresetList,
-    deleteMixerPreset,
     getCustomPages,
     saveCustomPages,
     STORAGE_FOLDER,
@@ -292,16 +291,6 @@ export class MainThreadHandlers {
                     enabled: payload.enabled,
                 })
                 this.updateFullClientStore()
-            })
-            .on(IO.SOCKET_DELETE_MIXER_PRESET, (payload: string) => {
-                logger.info(`Delete mixer preset: ${payload}`)
-                deleteMixerPreset(payload)
-                socketServer.emit(
-                    IO.SOCKET_RETURN_MIXER_PRESET_LIST,
-                    getMixerPresetList(
-                        mixerGenericConnection.getPresetFileExtention()
-                    )
-                )
             })
             .on(IO.SOCKET_GET_PAGES_LIST, () => {
                 logger.info('Get custom pages list')

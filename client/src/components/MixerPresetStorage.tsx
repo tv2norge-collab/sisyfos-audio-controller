@@ -3,7 +3,6 @@ import {
     SOCKET_GET_MIXER_PRESET_LIST,
     SOCKET_RETURN_MIXER_PRESET_LIST,
     SOCKET_LOAD_MIXER_PRESET,
-    SOCKET_DELETE_MIXER_PRESET,
 } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 
 const MixerPresetStorage: React.FC = () => {
@@ -42,14 +41,11 @@ const MixerPresetStorage: React.FC = () => {
         const fileName = file.name
         if (window.confirm(`Upload preset "${fileName}" to server?`)) {
             file.arrayBuffer().then((buffer) => {
-                fetch(
-                    `/api/mixer-preset?filename=${encodeURIComponent(fileName)}`,
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/octet-stream' },
-                        body: buffer,
-                    }
-                )
+                fetch(`/api/mixer-preset/${encodeURIComponent(fileName)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/octet-stream' },
+                    body: buffer,
+                })
                     .then((res) => {
                         if (!res.ok) {
                             window.alert(`Upload failed: ${res.statusText}`)
@@ -88,7 +84,18 @@ const MixerPresetStorage: React.FC = () => {
                 `Are you sure you want to delete preset "${fileName}"?`
             )
         ) {
-            window.socketIoClient.emit(SOCKET_DELETE_MIXER_PRESET, fileName)
+            fetch(`/api/mixer-preset/${encodeURIComponent(fileName)}`, {
+                method: 'DELETE',
+            })
+                .then((res) => {
+                    if (!res.ok) {
+                        window.alert(`Delete failed: ${res.statusText}`)
+                    }
+                    refreshList()
+                })
+                .catch((err) => {
+                    window.alert(`Delete error: ${err}`)
+                })
         }
     }
 

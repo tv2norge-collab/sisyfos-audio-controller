@@ -161,25 +161,19 @@ export const getMixerPresetList = (fileExtension: string): string[] => {
     return files
 }
 
-export const deleteMixerPreset = (filename: string): void => {
+export const deleteMixerPreset = async (filename: string): Promise<void> => {
     const filePath = path.join(STORAGE_FOLDER, filename)
-    try {
-        fs.unlinkSync(filePath)
-        logger.info(`Deleted mixer preset: ${filename}`)
-    } catch (error) {
-        logger.data(error).error(`Error deleting mixer preset: ${filename}`)
-    }
+    await fs.promises.unlink(filePath)
+    logger.info(`Deleted mixer preset: ${filename}`)
 }
 
-export const saveMixerPreset = (filename: string, data: Buffer): void => {
+export const saveMixerPreset = async (
+    filename: string,
+    data: Buffer
+): Promise<void> => {
     const filePath = path.join(STORAGE_FOLDER, filename)
-    fs.writeFile(filePath, data, (error: any) => {
-        if (error) {
-            logger.data(error).error(`Error saving mixer preset: ${filename}`)
-        } else {
-            logger.info(`Mixer preset ${filename} saved to storage folder`)
-        }
-    })
+    await fs.promises.writeFile(filePath, data)
+    logger.info(`Mixer preset ${filename} saved to storage folder`)
 }
 
 export const getCcgSettingsList = () => {

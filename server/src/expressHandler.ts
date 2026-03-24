@@ -4,7 +4,11 @@ import {
     socketSubscribeOutputLevel,
     socketUnsubscribeOutputLevel,
 } from './utils/outputLevelServer'
-import { STORAGE_FOLDER, saveMixerPreset } from './utils/SettingsStorage'
+import {
+    STORAGE_FOLDER,
+    saveMixerPreset,
+    deleteMixerPreset,
+} from './utils/SettingsStorage'
 
 import express from 'express'
 import path from 'path'
@@ -45,17 +49,36 @@ app.get(
     }
 )
 
-app.post(
-    '/api/mixer-preset',
+app.put(
+    '/api/mixer-preset/:filename',
     express.raw({ type: '*/*', limit: '50mb' }),
-    (req: express.Request, res: express.Response) => {
-        const filename = path.basename((req.query.filename as string) || '')
+    async (req: express.Request, res: express.Response) => {
+        const filename = path.basename(req.params.filename)
         if (!filename) {
-            res.status(400).send('filename query parameter required')
+            res.status(400).send('filename required')
             return
         }
-        saveMixerPreset(filename, req.body as Buffer)
-        res.status(200).send('OK')
+        try {
+            await saveMixerPreset(filename, req.body as Buffer)
+            res.status(200).send('OK')
+        } catch (error: any) {
+            logger.data(error).error(`Error saving mixer preset: ${filename}`)
+            res.status(500).send('Error saving file')
+        }
+    }
+)
+
+app.delete(
+    '/api/mixer-preset/:filename',
+    async (req: express.Request, res: express.Response) => {
+        const filename = path.basename(req.params.filename)
+        try {
+            await deleteMixerPreset(filename)
+            res.status(200).send('OK')
+        } catch (error: any) {
+            logger.data(error).error(`Error deleting mixer preset: ${filename}`)
+            res.status(404).send('File not found')
+        }
     }
 )
 
