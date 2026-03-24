@@ -4,7 +4,8 @@
     left: 50%;
     transform: translate(-50%, -50%);
     width: 400px;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
     max-height: 90vh;
     background-color: rgb(31, 31, 31);
     border-color: rgb(124, 124, 124);
@@ -25,39 +26,101 @@
     text-align: center;
 }
 
-.pages-settings-mixer-name {
-    font-size: 150%;
-    border-bottom: 1px solid #999;
-    margin: 0;
-    padding: 10px 0;
-    line-height: 50px;
+.pages-settings-section-header {
+    font-size: 80%;
+    color: #aaa;
+    letter-spacing: 0.08em;
+    padding: 8px 0 4px;
+    border-top: 1px solid #444;
+    margin-top: 6px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.pages-settings-empty {
+    color: #666;
+    font-size: 90%;
+    padding: 4px 0;
     text-align: center;
 }
 
-.pages-settings-text {
-    color: dimgray;
-    margin: 0;
-    margin-left: 40px;
-    padding: 0px 0;
-    line-height: 20px;
-    text-align: right;
-    font-size: 110%;
+.pages-settings-assigned-fader,
+.pages-settings-available-fader {
+    display: flex;
+    align-items: center;
+    padding: 2px 8px;
+    gap: 6px;
+    justify-content: flex-end;
 }
 
-.pages-settings-tick {
-    color: dimgray;
-    margin: 0;
-    margin-right: 70px;
-    padding: 0px 0;
-    line-height: 20px;
-    text-align: right;
-    align-content: right;
-    font-size: 110%;
+.pages-settings-assigned-fader {
+    background-color: rgba(255, 255, 255, 0.05);
+    margin-bottom: 0;
+    cursor: grab;
+    touch-action: none;
+    border-top: 2px solid rgb(31, 31, 31);
+    box-sizing: border-box;
 }
 
-.pages-settings.checked {
-    font-weight: bold;
-    color: white;
+.pages-settings-assigned-fader.drag-over {
+    border-top-color: #6af;
+}
+
+.pages-settings-drag-handle {
+    color: #666;
+    font-size: 16px;
+    padding: 0 4px;
+    cursor: grab;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.pages-settings-fader-label {
+    flex: 1;
+    text-align: right;
+    color: #ddd;
+    font-size: 110%;
+    padding-right: 6px;
+}
+
+.pages-settings-available-fader .pages-settings-fader-label {
+    color: #888;
+}
+
+.pages-settings-remove-btn,
+.pages-settings-add-btn {
+    outline: none;
+    border: 1px solid #555;
+    background-color: #2a2a2a;
+    color: #fff;
+    border-radius: 4px;
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.pages-settings-remove-btn {
+    background-color: #5a0000;
+    border-color: #800000;
+}
+
+.pages-settings-remove-btn:hover {
+    background-color: #800000;
+}
+
+.pages-settings-add-btn {
+    background-color: #004a00;
+    border-color: #006600;
+}
+
+.pages-settings-add-btn:hover {
+    background-color: #006600;
 }
 
 .pages-settings-body > .close {
@@ -76,19 +139,55 @@
     right: 9px;
 }
 
-.pages-settings-body > .button {
+.pages-settings-drop-sentinel {
+    height: 6px;
+    border-top: 2px solid transparent;
+    background-color: transparent;
+    box-sizing: border-box;
+}
+
+.pages-settings-drop-sentinel.drag-over {
+    border-top-color: #6af;
+    background-color: rgba(100, 170, 255, 0.12);
+}
+
+.pages-settings-action-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.pages-settings-body .button,
+.pages-settings-sort-btn {
     line-height: 20px;
     outline: none;
     border-color: rgb(99, 99, 99);
-    background-color: rgb(58, 3, 3);
-    margin-top: 15px;
-    margin-bottom: 15px;
-    margin-left: 130px;
     border-radius: 7px;
     color: #fff;
-    width: 34%;
     height: 50px;
     font-size: 10px;
+    cursor: pointer;
+    flex: 1;
+    max-width: 160px;
+    margin: 0;
+}
+
+.pages-settings-body .button {
+    background-color: rgb(58, 3, 3);
+}
+
+.pages-settings-body .button:active {
+    background-color: rgb(90, 10, 10);
+}
+
+.pages-settings-sort-btn {
+    background-color: rgb(58, 58, 58);
+}
+
+.pages-settings-sort-btn:hover,
+.pages-settings-sort-btn:active {
+    background-color: rgb(80, 80, 80);
 }
 
 .pages-settings-body > .inputfield {
