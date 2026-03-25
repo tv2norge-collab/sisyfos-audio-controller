@@ -111,14 +111,12 @@ class PagesSettings extends React.PureComponent<
     }
 
     handleDownload = () => {
-        const json = JSON.stringify(this.props.customPages, null, 2)
-        const blob = new Blob([json], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
-        a.href = url
+        a.href = '/api/pages'
         a.download = 'pages.json'
+        document.body.appendChild(a)
         a.click()
-        URL.revokeObjectURL(url)
+        document.body.removeChild(a)
     }
 
     handleUploadClick = () => {
@@ -129,28 +127,39 @@ class PagesSettings extends React.PureComponent<
         const file = e.target.files?.[0]
         if (!file) return
         e.target.value = ''
-        const reader = new FileReader()
-        reader.onload = (evt) => {
+        file.text().then((text) => {
+            let parsed: any
             try {
-                const parsed = JSON.parse(evt.target?.result as string)
-                if (
-                    !Array.isArray(parsed) ||
-                    !parsed.every(
-                        (p) =>
-                            typeof p.id === 'string' &&
-                            typeof p.label === 'string' &&
-                            Array.isArray(p.faders)
-                    )
-                ) {
-                    window.alert('Invalid pages JSON')
-                    return
-                }
-                this.dispatch(parsed as CustomPages[])
+                parsed = JSON.parse(text)
             } catch {
-                window.alert('Could not parse JSON file')
+                window.alert('Could not parse file')
+                return
             }
-        }
-        reader.readAsText(file)
+            if (
+                !Array.isArray(parsed) ||
+                !parsed.every(
+                    (p: any) =>
+                        typeof p.id === 'string' &&
+                        typeof p.label === 'string' &&
+                        Array.isArray(p.faders)
+                )
+            ) {
+                window.alert('Invalid pages format')
+                return
+            }
+            fetch('/api/pages', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: text,
+            })
+                .then((res) => {
+                    if (!res.ok)
+                        window.alert(`Import failed: ${res.statusText}`)
+                })
+                .catch((err) => {
+                    window.alert(`Import error: ${err}`)
+                })
+        })
     }
 
     handleClose = () => {

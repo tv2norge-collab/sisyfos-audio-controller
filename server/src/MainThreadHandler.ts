@@ -323,7 +323,9 @@ export class MainThreadHandlers {
                 }
             })
             .on(IO.SOCKET_SET_PAGES_LIST, (payload: any) => {
-                saveCustomPages(payload)
+                saveCustomPages(payload).catch((error: any) =>
+                    logger.data(error).error('Error saving custom pages')
+                )
                 logger.info(`Save custom pages list: ${payload}`)
             })
             .on(IO.SOCKET_SAVE_SETTINGS, (payload: any) => {
