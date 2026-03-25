@@ -10,9 +10,8 @@ import {
     SOCKET_SAVE_SNAPSHOT,
     SOCKET_GET_CCG_LIST,
     SOCKET_SAVE_CCG_FILE,
-    SOCKET_GET_MIXER_PRESET_LIST,
-    SOCKET_LOAD_MIXER_PRESET,
 } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
+import MixerPresetStorage from './MixerPresetStorage'
 
 interface StorageProps {
     load: any
@@ -31,8 +30,6 @@ class Storage extends React.PureComponent<StorageProps & Store> {
         //Bindings:
         this.ListSnapshotFiles = this.ListSnapshotFiles.bind(this)
         this.ListCcgFiles = this.ListCcgFiles.bind(this)
-        this.ListPresetFiles = this.ListPresetFiles.bind(this)
-        this.loadMixerPreset = this.loadMixerPreset.bind(this)
         this.loadFile = this.loadFile.bind(this)
         this.saveFile = this.saveFile.bind(this)
     }
@@ -100,17 +97,6 @@ class Storage extends React.PureComponent<StorageProps & Store> {
         this.handleClose()
     }
 
-    loadMixerPreset(event: any) {
-        if (window.confirm('Are you sure you will load a full Mixer setup?')) {
-            console.log('Loading Mixer preset')
-            window.socketIoClient.emit(
-                SOCKET_LOAD_MIXER_PRESET,
-                event.target.textContent
-            )
-        }
-        this.handleClose()
-    }
-
     ListSnapshotFiles() {
         window.socketIoClient.emit(SOCKET_GET_SNAPSHOT_LIST)
         const listItems = window.snapshotFileList.map(
@@ -131,24 +117,6 @@ class Storage extends React.PureComponent<StorageProps & Store> {
             (file: string, index: number) => {
                 return (
                     <li key={index} onClick={this.loadCcgFile} className="item">
-                        {file}
-                    </li>
-                )
-            }
-        )
-        return <ul className="storage-list">{listItems}</ul>
-    }
-
-    ListPresetFiles() {
-        window.socketIoClient.emit(SOCKET_GET_MIXER_PRESET_LIST)
-        const listItems = window.mixerPresetList.map(
-            (file: string, index: number) => {
-                return (
-                    <li
-                        key={index}
-                        onClick={this.loadMixerPreset}
-                        className="item"
-                    >
                         {file}
                     </li>
                 )
@@ -188,14 +156,7 @@ class Storage extends React.PureComponent<StorageProps & Store> {
                         <this.ListSnapshotFiles />
                     </React.Fragment>
                 ) : null}
-                {window.mixerPresetList.length > 0 ? (
-                    <React.Fragment>
-                        <br />
-                        <hr />
-                        <h3>LOAD MIXER PRESET :</h3>
-                        <this.ListPresetFiles />
-                    </React.Fragment>
-                ) : null}
+                <MixerPresetStorage />
                 {window.ccgFileList.length > 0 ? (
                     <React.Fragment>
                         <br />

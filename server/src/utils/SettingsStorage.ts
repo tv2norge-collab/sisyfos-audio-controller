@@ -9,7 +9,7 @@ import { store } from '../reducers/store'
 import { checkVersion } from './migrations'
 
 // Redux:
-import {  ChannelActionTypes } from '../../../shared/src/actions/channelActions'
+import { ChannelActionTypes } from '../../../shared/src/actions/channelActions'
 import { FaderActionTypes } from '../../../shared/src/actions/faderActions'
 import { logger } from './logger'
 import { defaultFadersReducerState } from '../../../shared/src/reducers/fadersReducer'
@@ -33,10 +33,10 @@ export interface ShotStorage {
 
 // Linux place in "app"/storage to be backward compatible with Docker containers.
 // Windows and Mac place the storagefolder in home -> sisyfos-storage
-export const STORAGE_FOLDER = (platform === 'linux') ?
-    path.resolve(process.cwd(), 'storage') :
-    path.resolve(homeDir, 'sisyfos-storage')
-
+export const STORAGE_FOLDER =
+    platform === 'linux'
+        ? path.resolve(process.cwd(), 'storage')
+        : path.resolve(homeDir, 'sisyfos-storage')
 
 export const loadSettings = (storeRedux: any): Settings => {
     let newSettings = storeRedux.settings[0]
@@ -78,14 +78,12 @@ export const saveSettings = (settings: any) => {
 }
 
 export const loadSnapshotState = (
-
     numberOfChannels: NumberOfChannels[],
     numberOfFaders: number,
     fileName: string,
     loadAll: boolean
 ) => {
     try {
-
         const stateFromFile: ShotStorage = JSON.parse(
             fs.readFileSync(fileName, 'utf8')
         )
@@ -107,14 +105,17 @@ export const loadSnapshotState = (
             store.dispatch({
                 type: FaderActionTypes.SET_COMPLETE_FADER_STATE,
                 numberOfFaders: numberOfFaders,
-                allState: defaultFadersReducerState(numberOfFaders, numberOfChannels)[0],
+                allState: defaultFadersReducerState(
+                    numberOfFaders,
+                    numberOfChannels
+                )[0],
             })
             store.dispatch({
                 type: ChannelActionTypes.SET_COMPLETE_CH_STATE,
                 numberOfTypeChannels: numberOfChannels,
                 allState: defaultChannelsReducerState(numberOfChannels)[0],
             })
-        
+
             logger.data(error).error('Initializing empty faders/channels')
         } else {
             logger.data(error).error('Error loading Snapshot')
@@ -158,6 +159,21 @@ export const getMixerPresetList = (fileExtension: string): string[] => {
             }
         })
     return files
+}
+
+export const deleteMixerPreset = async (filename: string): Promise<void> => {
+    const filePath = path.join(STORAGE_FOLDER, filename)
+    await fs.promises.unlink(filePath)
+    logger.info(`Deleted mixer preset: ${filename}`)
+}
+
+export const saveMixerPreset = async (
+    filename: string,
+    data: Buffer
+): Promise<void> => {
+    const filePath = path.join(STORAGE_FOLDER, filename)
+    await fs.promises.writeFile(filePath, data)
+    logger.info(`Mixer preset ${filename} saved to storage folder`)
 }
 
 export const getCcgSettingsList = () => {

@@ -1,9 +1,18 @@
 import { logger } from './utils/logger'
 import { socketSubscribeVu, socketUnsubscribeVu } from './utils/vuServer'
-import { socketSubscribeOutputLevel, socketUnsubscribeOutputLevel } from './utils/outputLevelServer'
+import {
+    socketSubscribeOutputLevel,
+    socketUnsubscribeOutputLevel,
+} from './utils/outputLevelServer'
+import {
+    STORAGE_FOLDER,
+    saveMixerPreset,
+    deleteMixerPreset,
+} from './utils/SettingsStorage'
 
 import express from 'express'
 import path from 'path'
+import fs from 'fs'
 import { Server } from 'http'
 import { Server as SocketServer } from 'socket.io'
 const ROOT_PATH = process.env.ROOT_PATH ?? '/'
@@ -15,7 +24,7 @@ const socketServer = new SocketServer(server, {
     path: SOCKET_SERVER_PATH,
     cors: {
         origin: '*',
-    }
+    },
 })
 const SERVER_PORT = 1176
 const staticPath = path.join(
@@ -24,6 +33,55 @@ const staticPath = path.join(
 )
 logger.data(staticPath).debug('Express static file path:')
 app.use(ROOT_PATH, express.static(staticPath))
+
+// Mixer preset file management HTTP endpoints
+app.get(
+    '/api/mixer-preset/:filename',
+    (req: express.Request, res: express.Response) => {
+        const filename = path.basename(req.params.filename)
+        const filePath = path.join(STORAGE_FOLDER, filename)
+        res.download(filePath, filename, (err: any) => {
+            if (err && !res.headersSent) {
+                logger.error(`Error downloading preset ${filename}: ${err}`)
+                res.status(404).send('File not found')
+            }
+        })
+    }
+)
+
+app.put(
+    '/api/mixer-preset/:filename',
+    express.raw({ type: '*/*', limit: '50mb' }),
+    async (req: express.Request, res: express.Response) => {
+        const filename = path.basename(req.params.filename)
+        if (!filename) {
+            res.status(400).send('filename required')
+            return
+        }
+        try {
+            await saveMixerPreset(filename, req.body as Buffer)
+            res.status(200).send('OK')
+        } catch (error: any) {
+            logger.data(error).error(`Error saving mixer preset: ${filename}`)
+            res.status(500).send('Error saving file')
+        }
+    }
+)
+
+app.delete(
+    '/api/mixer-preset/:filename',
+    async (req: express.Request, res: express.Response) => {
+        const filename = path.basename(req.params.filename)
+        try {
+            await deleteMixerPreset(filename)
+            res.status(200).send('OK')
+        } catch (error: any) {
+            logger.data(error).error(`Error deleting mixer preset: ${filename}`)
+            res.status(404).send('File not found')
+        }
+    }
+)
+
 server.listen(SERVER_PORT)
 logger.info(`Server started at http://localhost:${SERVER_PORT}${ROOT_PATH}`)
 

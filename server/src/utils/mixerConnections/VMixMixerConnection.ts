@@ -30,7 +30,7 @@ import {
     ChannelReference,
     Fader,
 } from '../../../../shared/src/reducers/fadersReducer'
-import { LinkableMode, MixerConnection } from '.'
+import { MixerConnection } from '.'
 import { STORAGE_FOLDER } from '../SettingsStorage'
 import { Preset } from './productSpecific/vMixPreset'
 import { VMixPoller } from './productSpecific/VMixPoller'
@@ -45,11 +45,6 @@ const DEFAULT_MIN_POLL_INTERVAL_MS = 20
 /** We fallback to doing an additional poll in 500 milliseconds if no XML response is received */
 const FALLBACK_POLL_INTERVAL_MS = 500
 
-enum PrivateDataTag {
-    INPUT_NUMBER = 'inputNumber',
-    LINKABLE = 'linkable',
-}
-
 interface VMixInput {
     name: string
     volume: number
@@ -59,22 +54,22 @@ interface VMixInput {
     number: number
     gainDb: number
     solo: boolean
-    linkable?: LinkableMode
 }
 
 interface VMixInputLocation {
     // input number in vMix
     inputNumber: number
-    // if the input is in fact a subchannel (L/R) within an input
-    subchannelNumber?: number
     channelType: number
 }
 
-type ChannelMatrixPreset =
-    | `${number}L` // Standard presets: 1L, 2L, 3L, etc.
-    | string // Custom preset names like "LR"
-    | `${string}${number}_${number}L` // Mix-minus presets: EXT1_1L, RTN2_3L, etc.
-    | `${string}${number}_${string}` // Mix-minus custom: EXT1_LR, RTN2_CustomPreset, etc.
+import {
+    resolveChannelMatrixPreset,
+    buildChannelMixerVolumes,
+} from './vmixChannelMatrix'
+export {
+    resolveChannelMatrixPreset,
+    buildChannelMixerVolumes,
+} from './vmixChannelMatrix'
 
 export class VMixMixerConnection implements MixerConnection {
     mixerProtocol: VMixMixerProtocol
@@ -262,8 +257,6 @@ export class VMixMixerConnection implements MixerConnection {
 
         const attrs = [
             'volume',
-            'volumeF1',
-            'volumeF2',
             'muted',
             'meterF1',
             'meterF2',
@@ -278,14 +271,6 @@ export class VMixMixerConnection implements MixerConnection {
             })
 
         d.volume = Math.pow(parseFloat(d.volume || '0') / 100, 0.25)
-        d.volumeF1 =
-            d.volumeF1 !== undefined
-                ? Math.pow(parseFloat(d.volumeF1 || '0'), 0.25)
-                : undefined
-        d.volumeF2 =
-            d.volumeF2 !== undefined
-                ? Math.pow(parseFloat(d.volumeF2 || '0'), 0.25)
-                : undefined
         d.meterF1 = (9.555 * Math.log(d.meterF1 || 0)) / Math.log(3)
         d.meterF2 = (9.555 * Math.log(d.meterF2 || 0)) / Math.log(3)
         d.muted = d.muted ? d.muted === 'True' : true
@@ -293,24 +278,7 @@ export class VMixMixerConnection implements MixerConnection {
         d.gainDb = parseFloat(d.gainDb || '0') / 24
         d.number = Number(d.number)
 
-        if (d.volumeF1 === undefined) {
-            return d
-        } else {
-            return [
-                {
-                    ...d,
-                    volume: d.volumeF1,
-                    meterF2: d.meterF1,
-                    linkable: LinkableMode.PRIMARY,
-                },
-                {
-                    ...d,
-                    volume: d.volumeF2,
-                    meterF1: d.meterF2,
-                    linkable: LinkableMode.SECONDARY,
-                },
-            ]
-        }
+        return d
     }
 
     private updateInputState(input: VMixInput, channelIndex: number) {
@@ -336,19 +304,12 @@ export class VMixMixerConnection implements MixerConnection {
             return
         }
 
-        const { outputLevel, fadeActive, privateData } =
+        const { outputLevel, fadeActive } =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[
                 channelIndex
             ]
-        const {
-            inputGain,
-            muteOn,
-            pflOn,
-            pgmOn,
-            voOn,
-            capabilities,
-            isLinked,
-        } = state.faders[0].fader[assignedFaderIndex]
+        const { inputGain, muteOn, pflOn, pgmOn, voOn } =
+            state.faders[0].fader[assignedFaderIndex]
         let sendUpdate = false
 
         const dispatchAndSetUpdateState = (
@@ -424,8 +385,7 @@ export class VMixMixerConnection implements MixerConnection {
 
             if (
                 input.gainDb !== lastInputState?.gainDb &&
-                inputGain !== input.gainDb &&
-                input.linkable !== LinkableMode.SECONDARY
+                inputGain !== input.gainDb
             ) {
                 dispatchAndSetUpdateState({
                     type: FaderActionTypes.SET_INPUT_GAIN,
@@ -438,48 +398,6 @@ export class VMixMixerConnection implements MixerConnection {
                     type: FaderActionTypes.SET_PFL,
                     faderIndex: assignedFaderIndex,
                     pflOn: input.solo,
-                })
-            }
-            if (
-                (input.linkable !== lastInputState?.linkable &&
-                    privateData?.[PrivateDataTag.LINKABLE] !==
-                        input.linkable) ||
-                (!isLinked &&
-                    (capabilities?.isLinkablePrimary !==
-                        (input.linkable === LinkableMode.PRIMARY) ||
-                        capabilities?.isLinkableSecondary !==
-                            (input.linkable === LinkableMode.SECONDARY)))
-            ) {
-                dispatchAndSetUpdateState({
-                    type: FaderActionTypes.SET_CAPABILITY,
-                    faderIndex: assignedFaderIndex,
-                    capability: 'isLinkablePrimary',
-                    enabled: input.linkable === LinkableMode.PRIMARY,
-                })
-                dispatchAndSetUpdateState({
-                    type: FaderActionTypes.SET_CAPABILITY,
-                    faderIndex: assignedFaderIndex,
-                    capability: 'isLinkableSecondary',
-                    enabled: input.linkable === LinkableMode.SECONDARY,
-                })
-                dispatchAndSetUpdateState({
-                    type: ChannelActionTypes.SET_PRIVATE,
-                    channel: channelIndex,
-                    mixerIndex: this.mixerIndex,
-                    tag: PrivateDataTag.LINKABLE,
-                    value: input.linkable,
-                })
-            }
-            if (
-                privateData?.[PrivateDataTag.INPUT_NUMBER] !==
-                String(input.number)
-            ) {
-                dispatchAndSetUpdateState({
-                    type: ChannelActionTypes.SET_PRIVATE,
-                    channel: channelIndex,
-                    mixerIndex: this.mixerIndex,
-                    tag: PrivateDataTag.INPUT_NUMBER,
-                    value: String(input.number),
                 })
             }
         }
@@ -504,12 +422,12 @@ export class VMixMixerConnection implements MixerConnection {
                 )
             })
 
-            sendVuLevel(
-                assignedFaderIndex,
-                VuType.Channel,
-                vuIndex,
-                dbToFloat(input.meterF1 + 12)
-            ) // send 0 directly for silence, otherwise convert
+            // Primary (vuIndex 0) uses meterF1, secondary (vuIndex 1) uses meterF2.
+            const level =
+                vuIndex === 0
+                    ? dbToFloat(input.meterF1 + 12)
+                    : dbToFloat(input.meterF2 + 12)
+            sendVuLevel(assignedFaderIndex, VuType.Channel, vuIndex, level)
         } else {
             sendVuLevel(
                 assignedFaderIndex,
@@ -517,14 +435,12 @@ export class VMixMixerConnection implements MixerConnection {
                 0,
                 dbToFloat(input.meterF1 + 12)
             ) // add +12 to convert from dBFS
-            if (!input.linkable) {
-                sendVuLevel(
-                    assignedFaderIndex,
-                    VuType.Channel,
-                    1,
-                    dbToFloat(input.meterF2 + 12)
-                )
-            }
+            sendVuLevel(
+                assignedFaderIndex,
+                VuType.Channel,
+                1,
+                dbToFloat(input.meterF2 + 12)
+            )
         }
     }
 
@@ -614,8 +530,7 @@ export class VMixMixerConnection implements MixerConnection {
     }
 
     updateInputGain(channelIndex: number, level: number) {
-        const { inputNumber, subchannelNumber, channelType } =
-            this.getInputLocation(channelIndex)
+        const { inputNumber, channelType } = this.getInputLocation(channelIndex)
 
         const mixerMessage =
             this.mixerProtocol.channelTypes[channelType].toMixer
@@ -625,10 +540,7 @@ export class VMixMixerConnection implements MixerConnection {
                 mixerMessage.min + (mixerMessage.max - mixerMessage.min) * level
         }
         this.sendOutMessage(
-            this.appendSubchannelSuffix(
-                mixerMessage.mixerMessage,
-                subchannelNumber
-            ),
+            mixerMessage.mixerMessage,
             inputNumber,
             Math.round(level)
         )
@@ -643,79 +555,96 @@ export class VMixMixerConnection implements MixerConnection {
             const { mixerMessage, value } = selector
             this.sendOutMessage(mixerMessage, inputNumber, value)
         } else {
-            this.hack_rearrangeAudioChannels(inputSelected, inputNumber)
+            const assignedFaderIndex = this.getAssignedFaderIndex(channelIndex)
+            const fader = state.faders[0].fader[assignedFaderIndex]
+            if (
+                fader?.isLinked &&
+                fader.assignedChannels &&
+                fader.assignedChannels.length > 1
+            ) {
+                // Linked pair: same inputSelected on both inputs. Primary gets 'L' preset,
+                // secondary gets 'R' preset. SetVolumeChannelMixer follows inputSelected.
+                const LINKED_PRESETS: Array<'L' | 'R'> = ['L', 'R']
+                const ownChannels = fader.assignedChannels.filter(
+                    (a) => a.mixerIndex === this.mixerIndex
+                )
+                ownChannels.forEach((assigned, i) => {
+                    const inp = assigned.channelIndex + 1
+                    this.hack_rearrangeAudioChannels(
+                        inputSelected,
+                        inp,
+                        LINKED_PRESETS[i]
+                    )
+                })
+            } else {
+                // Unlinked secondary must activate rightInput (it carries the right channel
+                // of the pair); unlinked primary activates leftInput.
+                const isSecondary =
+                    fader?.capabilities?.isLinkableSecondary === true
+                const isLinkable =
+                    fader?.capabilities?.isLinkablePrimary === true ||
+                    fader?.capabilities?.isLinkableSecondary === true
+                this.hack_rearrangeAudioChannels(
+                    inputSelected,
+                    inputNumber,
+                    undefined,
+                    isSecondary,
+                    isLinkable
+                )
+            }
         }
     }
 
     /**
-     * This assumes existence of Channel Matrix Presets called "1L"..."8L",
-     * where the number indicates which input channel is assigned to the L bus channels,
-     * whereas every other channel is assigned to the R channel, e.g.:
-     * 1L means channel 1 is assigned to L, and channels 2...8 are assigned to R.
-     * It also requires a "LR" preset, where each input channel is assigned to both L and R outs.
+     * Applies an AudioChannelMatrixPreset and configures SetVolumeChannelMixer levels
+     * for a given vMix input.
      *
-     * For mix-minus functionality, it also requires special presets for each EXT input:
-     * "EXT1_1L", "EXT1_2L", ..., "EXT1_8L" and "EXT1_LR" for EXT 1
-     * "EXT2_1L", "EXT2_2L", ..., "EXT2_8L" and "EXT2_LR" for EXT 2
-     * ...and so on for each EXT input.
-     * These presets work like the standard ones but exclude the specific EXT input
-     * from the matrix to prevent feedback loops.
+     * inputSelected encodes the pair: leftInput = bits 8-15, rightInput = bits 16-23.
+     * - Linked primary ('L'):   ch leftInput active, 'L' preset applied (mono to Left bus).
+     * - Linked secondary ('R'): ch rightInput active, 'R' preset applied (mono to Right bus).
+     * - Unlinked linkable:      ch leftInput (primary) or rightInput (secondary) active, 'LR' preset
+     *                           routes that one channel to both buses.
+     * - Non-linkable:           both leftInput and rightInput active, '{N}L' preset routes each
+     *                           to its own bus (stereo — two channels simultaneously).
      *
-     * Combined with SetVolumeChannelMixer[n] command, it allows for 64 channel combinations.
+     * Mix-minus prefix variants (e.g. 'EXT1_L', 'EXT1_LR') are used for return feed inputs.
      */
     private hack_rearrangeAudioChannels(
         inputSelected: number,
-        inputNumber: number
+        inputNumber: number,
+        linkedPreset?: 'L' | 'R',
+        isSecondary?: boolean,
+        isLinkable?: boolean
     ) {
         const leftInput = (inputSelected >> 8) & 0xff
         const rightInput = (inputSelected >> 16) & 0xff
-        for (let i = 1; i <= 8; ++i) {
-            if (i !== leftInput && i !== rightInput) {
-                this.sendOutMessage(`SetVolumeChannelMixer${i}`, inputNumber, 0)
-            }
-        }
 
-        // Check if this input should use mix-minus presets
         const returnFeedNumber = this.getReturnFeedNumber(inputNumber)
-        let preset: ChannelMatrixPreset
-
         const prefix =
             state.settings[0].mixers[this.mixerIndex].channelMatrixPrefix ||
             this.mixerProtocol.channelMatrixPrefix
         const lrPresetName = this.mixerProtocol.lrPreset
 
-        if (returnFeedNumber > 0 && prefix && lrPresetName) {
-            // Use mix-minus presets for return feeds to prevent feedback loops
-            // Only when both prefix and preset name are configured
-            preset =
-                rightInput === leftInput
-                    ? `${prefix}${returnFeedNumber}_${lrPresetName}`
-                    : `${prefix}${returnFeedNumber}_${leftInput}L`
-        } else {
-            // Use standard presets for regular inputs or when prefix detection is disabled
-            preset =
-                rightInput === leftInput && lrPresetName
-                    ? lrPresetName
-                    : `${leftInput}L`
-        }
+        const { activeChannels, preset } = resolveChannelMatrixPreset({
+            leftInput,
+            rightInput,
+            linkedPreset,
+            isSecondary,
+            isLinkable,
+            lrPresetName,
+            prefix,
+            returnFeedNumber,
+        })
 
+        const volumes = buildChannelMixerVolumes(activeChannels)
+        for (const [ch, vol] of Object.entries(volumes)) {
+            this.sendOutMessage(`SetVolumeChannelMixer${ch}`, inputNumber, vol)
+        }
         this.sendOutMessage(
             `AudioChannelMatrixApplyPreset`,
             inputNumber,
             preset
         )
-        this.sendOutMessage(
-            `SetVolumeChannelMixer${leftInput}`,
-            inputNumber,
-            100
-        )
-        if (rightInput !== leftInput) {
-            this.sendOutMessage(
-                `SetVolumeChannelMixer${rightInput}`,
-                inputNumber,
-                100
-            )
-        }
     }
     /**
      * Checks if the input should use mix-minus presets by looking for the configured prefix in fader labels.
@@ -772,8 +701,7 @@ export class VMixMixerConnection implements MixerConnection {
     }
 
     updateFadeIOLevel(channelIndex: number, outputLevel: number) {
-        const { inputNumber, subchannelNumber } =
-            this.getInputLocation(channelIndex)
+        const { inputNumber } = this.getInputLocation(channelIndex)
         let { muteOn } = state.faders[0].fader[channelIndex]
         outputLevel = Math.round(100 * outputLevel)
 
@@ -781,11 +709,7 @@ export class VMixMixerConnection implements MixerConnection {
             return
         }
 
-        this.sendOutMessage(
-            this.appendSubchannelSuffix('SetVolume', subchannelNumber),
-            inputNumber,
-            String(outputLevel)
-        )
+        this.sendOutMessage('SetVolume', inputNumber, String(outputLevel))
         this.lastLevel[channelIndex] = outputLevel
 
         if (!muteOn && outputLevel > 0 && !this.audioOn[channelIndex]) {
@@ -805,34 +729,14 @@ export class VMixMixerConnection implements MixerConnection {
     }
 
     private getInputLocation(channelIndex: number): VMixInputLocation {
-        const { privateData, channelType } =
+        const { channelType } =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[
                 channelIndex
             ]
-        const inputNumber = Number(
-            privateData?.[PrivateDataTag.INPUT_NUMBER] ?? '0'
-        )
-        const result: VMixInputLocation = {
-            inputNumber,
+        return {
+            inputNumber: channelIndex + 1,
             channelType,
         }
-        if (privateData?.[PrivateDataTag.LINKABLE] === LinkableMode.PRIMARY) {
-            result.subchannelNumber = 1
-        } else if (
-            privateData?.[PrivateDataTag.LINKABLE] === LinkableMode.SECONDARY
-        ) {
-            result.subchannelNumber = 2
-        }
-        return result
-    }
-
-    private appendSubchannelSuffix(
-        command: string,
-        subchannelNumber: number | undefined
-    ): string {
-        const suffix =
-            subchannelNumber !== undefined ? `Channel${subchannelNumber}` : ''
-        return command + suffix
     }
 
     updateChannelName(channelIndex: number) {
@@ -843,17 +747,46 @@ export class VMixMixerConnection implements MixerConnection {
         let data: Preset = JSON.parse(
             fs.readFileSync(path.resolve(STORAGE_FOLDER, presetName), 'utf8')
         )
-        for (const inputsPreset of data) {
-            for (const inputNumber of inputsPreset.inputNumbers) {
+
+        // Zeroth pass: unlink all currently linked faders so that borrowed channels
+        // are returned to their original faders before we re-read assignments.
+        // Without this, getAssignedFaderIndex() for a secondary input returns the
+        // primary fader index (because linking moves the channels there), causing
+        // the secondary loop to corrupt the primary's capabilities on every reload.
+        state.faders[0].fader.forEach((fader, faderIndex) => {
+            if (fader.isLinked && fader.capabilities?.isLinkablePrimary) {
+                global.mainThreadHandler.setLink(faderIndex, false)
+            }
+        })
+        const linkPass: number[] = []
+        for (const entry of data) {
+            for (const inputNumber of entry.inputNumbers) {
                 this.lastState.forEach((input, channelIndex) => {
                     if (input.number !== inputNumber) return
                     const assignedFaderIndex =
                         this.getAssignedFaderIndex(channelIndex)
-                    if (inputsPreset.resetChannelMatrix) {
-                        const inputSelected = (2 << 16) | (1 << 8)
+                    if (assignedFaderIndex === -1) return
+                    if (entry.resetChannelMatrix) {
+                        // inputSelected encodes leftInput=ch1, rightInput=ch2.
+                        // Linked primary ('L'):   ch1 active.
+                        // Linked secondary ('R'): ch2 active.
+                        // Unlinked linkable:      ch1 (primary) or ch2 (secondary) active, LR preset.
+                        // Non-linkable:           ch1 + ch2 active, {N}L preset.
+                        const inputSelected = (2 << 16) | (1 << 8) // leftInput=1, rightInput=2
+                        const positionInEntry =
+                            entry.inputNumbers.indexOf(inputNumber)
+                        const linkedPreset: 'L' | 'R' | undefined =
+                            entry.isLinked
+                                ? positionInEntry === 0
+                                    ? 'L'
+                                    : 'R'
+                                : undefined
                         this.hack_rearrangeAudioChannels(
                             inputSelected,
-                            inputNumber
+                            inputNumber,
+                            linkedPreset,
+                            false,
+                            entry.isLinkablePrimary === true
                         )
                         store.dispatch({
                             type: FaderActionTypes.SET_INPUT_SELECTOR,
@@ -861,20 +794,49 @@ export class VMixMixerConnection implements MixerConnection {
                             selected: inputSelected,
                         })
                     }
-                    if (inputsPreset.resetGain) {
+                    if (entry.resetGain) {
                         store.dispatch({
                             type: FaderActionTypes.SET_INPUT_GAIN,
                             faderIndex: assignedFaderIndex,
                             level: 0,
                         })
                     }
-                    if (inputsPreset.linkSeparateMono) {
-                        global.mainThreadHandler.setLink(
-                            assignedFaderIndex,
-                            true
-                        )
+                    if (entry.isLinked) {
+                        linkPass.push(assignedFaderIndex)
                     }
-                    for (const command of inputsPreset.commands) {
+                    if (entry.isLinkablePrimary) {
+                        // Mark this fader as primary. Secondary is always faderIndex+1,
+                        // consistent with the assumption made by setLink.
+                        store.dispatch({
+                            type: FaderActionTypes.SET_CAPABILITY,
+                            faderIndex: assignedFaderIndex,
+                            capability: 'isLinkablePrimary',
+                            enabled: true,
+                        })
+                        store.dispatch({
+                            type: FaderActionTypes.SET_CAPABILITY,
+                            faderIndex: assignedFaderIndex,
+                            capability: 'isLinkableSecondary',
+                            enabled: false,
+                        })
+                        const secondaryFaderIndex = assignedFaderIndex + 1
+                        const totalFaders = state.settings[0].numberOfFaders
+                        if (secondaryFaderIndex < totalFaders) {
+                            store.dispatch({
+                                type: FaderActionTypes.SET_CAPABILITY,
+                                faderIndex: secondaryFaderIndex,
+                                capability: 'isLinkablePrimary',
+                                enabled: false,
+                            })
+                            store.dispatch({
+                                type: FaderActionTypes.SET_CAPABILITY,
+                                faderIndex: secondaryFaderIndex,
+                                capability: 'isLinkableSecondary',
+                                enabled: true,
+                            })
+                        }
+                    }
+                    for (const command of entry?.commands ?? []) {
                         this.sendOutMessage(
                             command.name,
                             inputNumber,
@@ -882,6 +844,18 @@ export class VMixMixerConnection implements MixerConnection {
                         )
                     }
                 })
+            }
+        }
+        // Second pass: setLink after all fader state has been fully applied.
+        // Only call setLink on primaries — the reducer sets both primary and
+        // secondary isLinked when called on the primary. Calling it on a
+        // secondary (no isLinkablePrimary capability) would just set isLinked=false.
+        for (const faderIndex of linkPass) {
+            if (
+                state.faders[0].fader[faderIndex]?.capabilities
+                    ?.isLinkablePrimary
+            ) {
+                global.mainThreadHandler.setLink(faderIndex, true)
             }
         }
         global.mainThreadHandler.updateFullClientStore()

@@ -31,7 +31,10 @@ import { logger } from './utils/logger'
 import { CustomPages } from '../../shared/src/reducers/settingsReducer'
 import { FxParam } from '../../shared/src/constants/MixerProtocolInterface'
 import path from 'path'
-import { Channel, NumberOfChannels } from '../../shared/src/reducers/channelsReducer'
+import {
+    Channel,
+    NumberOfChannels,
+} from '../../shared/src/reducers/channelsReducer'
 import { ChannelReference } from '../../shared/src/reducers/fadersReducer'
 import { Dispatch } from 'redux'
 
@@ -71,7 +74,7 @@ export class MainThreadHandlers {
                 )
             })
         }
-        socketServer.emit(IO.SOCKET_SET_FULL_STORE, { state, numberOfChannels } )
+        socketServer.emit(IO.SOCKET_SET_FULL_STORE, { state, numberOfChannels })
     }
 
     updatePartialStore(faderIndex: number) {
@@ -124,7 +127,10 @@ export class MainThreadHandlers {
         state.faders[0].fader.forEach((fader, faderIndex) => {
             fader.assignedChannels?.forEach((channel: ChannelReference) => {
                 if (state.settings[0].numberOfMixers < channel.mixerIndex + 1) {
-                    logger.debug('Assigned mixer not found mixerIndex : ' + channel.mixerIndex)
+                    logger.debug(
+                        'Assigned mixer not found mixerIndex : ' +
+                            channel.mixerIndex
+                    )
                     store.dispatch({
                         type: FaderActionTypes.SET_ASSIGNED_CHANNEL,
                         faderIndex: faderIndex,
@@ -145,10 +151,10 @@ export class MainThreadHandlers {
                 ) {
                     logger.debug(
                         'Faderindex : ' +
-                        faderIndex +
-                        'Assigned channelIndex : ' +
-                        channel.channelIndex +
-                        ' not found - removing assignment'
+                            faderIndex +
+                            'Assigned channelIndex : ' +
+                            channel.channelIndex +
+                            ' not found - removing assignment'
                     )
                     store.dispatch({
                         type: FaderActionTypes.SET_ASSIGNED_CHANNEL,
@@ -163,16 +169,33 @@ export class MainThreadHandlers {
     }
 
     setLink(faderIndex: number, linkOn: boolean) {
+        const totalFaders = state.settings[0].numberOfFaders
+        if (faderIndex < 0 || faderIndex >= totalFaders) return
         store.dispatch({
             type: FaderActionTypes.SET_LINK,
             faderIndex,
             linkOn,
         })
         mixerGenericConnection.updateOutLevel(faderIndex, -1)
-        mixerGenericConnection.updateOutLevel(faderIndex + 1, -1)
+        if (faderIndex + 1 < totalFaders) {
+            mixerGenericConnection.updateOutLevel(faderIndex + 1, -1)
+            mixerGenericConnection.updateInputGain(faderIndex + 1)
+        }
         mixerGenericConnection.updateInputGain(faderIndex)
-        mixerGenericConnection.updateInputGain(faderIndex + 1)
         this.reIndexAssignedChannelsRelation()
+        // Re-apply channel matrix after link state change so the mixer
+        // reflects the new routing (linked = paired, unlinked = independent).
+        mixerGenericConnection.updateInputSelector(faderIndex)
+        if (!linkOn && faderIndex + 1 < totalFaders) {
+            // The secondary fader's inputSelector was not updated while linked.
+            // Copy the primary's value so the mixer can decode the correct channel.
+            store.dispatch({
+                type: FaderActionTypes.SET_INPUT_SELECTOR,
+                faderIndex: faderIndex + 1,
+                selected: state.faders[0].fader[faderIndex].inputSelector,
+            })
+            mixerGenericConnection.updateInputSelector(faderIndex + 1)
+        }
         this.updateFullClientStore()
     }
 
@@ -254,7 +277,21 @@ export class MainThreadHandlers {
                 this.reIndexAssignedChannelsRelation()
                 this.updateFullClientStore()
             })
-            .on(IO.SOCKET_LOAD_MIXER_PRESET, (payload: any) => this.loadMixerPreset(payload))
+            .on(IO.SOCKET_LOAD_MIXER_PRESET, (payload: any) =>
+                this.loadMixerPreset(payload)
+            )
+            .on(IO.SOCKET_SET_CAPABILITY, (payload: any) => {
+                logger.trace(
+                    `Set capability fader ${payload.faderIndex}: ${payload.capability}=${payload.enabled}`
+                )
+                store.dispatch({
+                    type: FaderActionTypes.SET_CAPABILITY,
+                    faderIndex: payload.faderIndex,
+                    capability: payload.capability,
+                    enabled: payload.enabled,
+                })
+                this.updateFullClientStore()
+            })
             .on(IO.SOCKET_GET_PAGES_LIST, () => {
                 logger.info('Get custom pages list')
                 let customPages: CustomPages[] = getCustomPages()
@@ -489,7 +526,9 @@ export class MainThreadHandlers {
                             const newLabel = oldLabel.startsWith(
                                 state.settings[0].labelIgnorePrefix
                             )
-                                ? oldLabel.slice(state.settings[0].labelIgnorePrefix.length)
+                                ? oldLabel.slice(
+                                      state.settings[0].labelIgnorePrefix.length
+                                  )
                                 : oldLabel
                             store.dispatch({
                                 type: ChannelActionTypes.SET_CHANNEL_LABEL,
@@ -545,12 +584,29 @@ export class MainThreadHandlers {
                     }\n  Selected: ${payload.selected}`
                 )
                 logger.debug(payload)
+                const selectedValue = parseFloat(payload.selected)
                 store.dispatch({
                     type: FaderActionTypes.SET_INPUT_SELECTOR,
                     faderIndex: payload.faderIndex,
-                    selected: parseFloat(payload.selected),
+                    selected: selectedValue,
                 })
                 mixerGenericConnection.updateInputSelector(payload.faderIndex)
+                // If this is a linkable primary, keep the secondary in sync so it
+                // always has the same inputSelected to decode rightInput from.
+                const primaryFader = state.faders[0].fader[payload.faderIndex]
+                if (primaryFader?.capabilities?.isLinkablePrimary) {
+                    const secondaryIndex = payload.faderIndex + 1
+                    if (secondaryIndex < state.faders[0].fader.length) {
+                        store.dispatch({
+                            type: FaderActionTypes.SET_INPUT_SELECTOR,
+                            faderIndex: secondaryIndex,
+                            selected: selectedValue,
+                        })
+                        mixerGenericConnection.updateInputSelector(
+                            secondaryIndex
+                        )
+                    }
+                }
                 this.updatePartialStore(payload.faderIndex)
             })
             .on(IO.SOCKET_TOGGLE_ALL_MANUAL, () => {

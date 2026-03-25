@@ -172,6 +172,16 @@ export function ChannelLayoutSettingsButton({
         [faderIndex]
     )
 
+    const handleInputGainRight = useCallback(
+        (level: number) => {
+            window.socketIoClient.emit(IO.SOCKET_SET_INPUT_GAIN, {
+                faderIndex: faderIndex + 1,
+                level: level,
+            })
+        },
+        [faderIndex]
+    )
+
     const handleInputSelect = useCallback(
         (selected: number) => {
             window.socketIoClient.emit(IO.SOCKET_SET_INPUT_SELECTOR, {
@@ -219,32 +229,83 @@ export function ChannelLayoutSettingsButton({
                                         faderIndex={faderIndex}
                                     />
                                 </div>
-                                <hr/>
+                                <hr />
                             </div>
                         </>
                     )}
-                    <div className="channel-layout-gain">
-                        Gain
-                        <RotaryDial
-                            value={fader.inputGain}
-                            onChange={handleInputGainLeft}
-                        />
-                        <div className="row">
-                            <div className="gain-label">{minGainLabel}</div>
-                            <div className="gain-label">{maxGainLabel}</div>
+                    {fader.capabilities?.isLinkablePrimary &&
+                    !fader.isLinked ? (
+                        <div className="channel-layout-gain-pair">
+                            <div className="channel-layout-gain">
+                                Gain 1
+                                <RotaryDial
+                                    value={fader.inputGain}
+                                    onChange={handleInputGainLeft}
+                                />
+                                <div className="row">
+                                    <div className="gain-label">
+                                        {minGainLabel}
+                                    </div>
+                                    <div className="gain-label">
+                                        {maxGainLabel}
+                                    </div>
+                                </div>
+                                <div>
+                                    {Math.round(
+                                        fader.inputGain *
+                                            (maxGainLabel - minGainLabel) +
+                                            minGainLabel
+                                    )}{' '}
+                                    dB
+                                </div>
+                            </div>
+                            <div className="channel-layout-gain">
+                                Gain 2
+                                <RotaryDial
+                                    value={nextFader?.inputGain ?? 0}
+                                    onChange={handleInputGainRight}
+                                />
+                                <div className="row">
+                                    <div className="gain-label">
+                                        {minGainLabel}
+                                    </div>
+                                    <div className="gain-label">
+                                        {maxGainLabel}
+                                    </div>
+                                </div>
+                                <div>
+                                    {Math.round(
+                                        (nextFader?.inputGain ?? 0) *
+                                            (maxGainLabel - minGainLabel) +
+                                            minGainLabel
+                                    )}{' '}
+                                    dB
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            {Math.round(
-                                fader.inputGain *
-                                    (maxGainLabel - minGainLabel) +
-                                    minGainLabel
-                            )}{' '}
-                            dB
+                    ) : (
+                        <div className="channel-layout-gain">
+                            Gain
+                            <RotaryDial
+                                value={fader.inputGain}
+                                onChange={handleInputGainLeft}
+                            />
+                            <div className="row">
+                                <div className="gain-label">{minGainLabel}</div>
+                                <div className="gain-label">{maxGainLabel}</div>
+                            </div>
+                            <div>
+                                {Math.round(
+                                    fader.inputGain *
+                                        (maxGainLabel - minGainLabel) +
+                                        minGainLabel
+                                )}{' '}
+                                dB
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </PopoverContent>
             )}
         </Popover>
     )
 }
-

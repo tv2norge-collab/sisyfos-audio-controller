@@ -186,11 +186,15 @@ As NEXT has been implemented, and PFL usually only work on on channel at a time,
 -   VMix
     -   TCP API based Protocol
     -   2-way Fader, Mute, PFL, Gain & Channel Matrix control
-    -   **Channel Matrix Configuration**:
-        -   **Channel Matrix Prefix**: Prefix to identify return feed inputs When configured, faders with labels matching this prefix + number (like "EXT 1", "RTN 2") use mix-minus presets to prevent feedback loops
-        -   **Channel Matrix Preset**: Preset name for mono/stereo mapping (e.g., "SeparateMono")
-        -   **Behavior**: When both fields are empty, falls back to standard presets (`1L`, `2L`, `SeparateMono`). When configured, uses mix-minus presets (`{PREFIX}{N}_{X}L`, `{PREFIX}{N}_{PRESET}`) for matching inputs
-        -   **Requirements**: Mix-minus presets must be pre-configured in VMix for each return feed input
+    - **Channel Matrix Configuration**:
+        - **Channel Matrix Prefix**: Prefix to identify return feed inputs. When configured, faders with labels matching this prefix + number (like "EXT 1", "RTN 2") use mix-minus presets to prevent feedback loops
+        - **Channel Matrix Preset (lrPreset)**: Preset name used for unlinked linkable inputs (defaults to `LR`)
+        - **Behavior**:
+            - **Linked stereo pair**: two separate vMix inputs sharing one fader. The `L` preset routes all physical channels to the Left bus and the `R` preset routes all to the Right bus; channel volume mixer then activates only the one physical channel carrying audio (primary for `L`, secondary for `R`), silencing the rest
+            - **Unlinked linkable input**: one physical channel active per input; the `LR` preset routes it to both Left and Right buses
+            - **Non-linkable input**: the `{N}L` preset routes channel N to Left and all remaining channels to Right; channel volume mixer then activates exactly two physical channels (left and right of the pair) at 100, silencing the others (e.g. preset `1L` + channels 1 and 2 active)
+            - Return feed variants append the prefix and number: `{PREFIX}{N}_L`, `{PREFIX}{N}_R`, `{PREFIX}{N}_LR`, `{PREFIX}{N}_{N}L`
+        - **Requirements**: `L`, `R`, `LR`, and `{N}L` presets for each non-linkable channel pair (e.g. `1L`, `3L`) must be pre-configured in VMix. Add prefixed variants (e.g. `EXT1_L`) if using a Channel Matrix Prefix
 
 ## Skaarhoj panels:
 

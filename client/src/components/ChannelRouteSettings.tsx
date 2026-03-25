@@ -10,6 +10,7 @@ import {
     SOCKET_ASSIGN_ONE_TO_ONE,
     SOCKET_REMOVE_ALL_CH_ASSIGNMENTS,
     SOCKET_SET_LINK,
+    SOCKET_SET_CAPABILITY,
 } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 import { ChMixerConnection } from '../../../shared/src/reducers/channelsReducer'
 import {
@@ -109,7 +110,7 @@ class ChannelRouteSettings extends React.PureComponent<
         return (
             <select
                 value={this.state.selectedFaderIndex}
-                title='Select the fader to configure the channel routing for'
+                title="Select the fader to configure the channel routing for"
                 onChange={this.handleFaderChange}
                 className="channel-route-selector"
             >
@@ -158,7 +159,11 @@ class ChannelRouteSettings extends React.PureComponent<
                 <React.Fragment key={index}>
                     {showChannelType && (
                         <p className="channel-type-name">
-                            {window.mixerProtocol.channelTypes[channel.channelType].channelTypeName}
+                            {
+                                window.mixerProtocol.channelTypes[
+                                    channel.channelType
+                                ].channelTypeName
+                            }
                         </p>
                     )}
                     <div
@@ -185,12 +190,99 @@ class ChannelRouteSettings extends React.PureComponent<
                             }
                         />
                         {assignedFaderIndex >= 0
-                            ? '   (' + getFaderLabel(assignedFaderIndex, 'FADER') + ')'
+                            ? '   (' +
+                              getFaderLabel(assignedFaderIndex, 'FADER') +
+                              ')'
                             : ' (not assigned)'}
                     </div>
                 </React.Fragment>
             )
         })
+    }
+
+    handleSetCapability(
+        capability: 'isLinkablePrimary' | 'isLinkableSecondary',
+        enabled: boolean
+    ) {
+        const faderIndex = this.state.selectedFaderIndex
+        const fader = this.props.fader[faderIndex]
+        // If disabling primary while currently linked, unlink first
+        if (capability === 'isLinkablePrimary' && !enabled && fader?.isLinked) {
+            window.socketIoClient.emit(SOCKET_SET_LINK, {
+                faderIndex,
+                linkOn: false,
+            })
+        }
+        window.socketIoClient.emit(SOCKET_SET_CAPABILITY, {
+            faderIndex,
+            capability,
+            enabled,
+        })
+        // Capabilities are mutually exclusive
+        if (enabled) {
+            const other =
+                capability === 'isLinkablePrimary'
+                    ? 'isLinkableSecondary'
+                    : 'isLinkablePrimary'
+            window.socketIoClient.emit(SOCKET_SET_CAPABILITY, {
+                faderIndex,
+                capability: other,
+                enabled: false,
+            })
+        }
+    }
+
+    renderLinkability() {
+        const fader = this.props.fader[this.state.selectedFaderIndex]
+        if (!fader) return null
+        const isPrimary = !!fader.capabilities?.isLinkablePrimary
+        const isSecondary = !!fader.capabilities?.isLinkableSecondary
+        return (
+            <div className="channel-route-linkability">
+                <p className="channel-route-mixer-name">LINKABILITY</p>
+                <label className="channel-route-text">
+                    <input
+                        type="checkbox"
+                        checked={isPrimary}
+                        onChange={(e) =>
+                            this.handleSetCapability(
+                                'isLinkablePrimary',
+                                e.target.checked
+                            )
+                        }
+                    />
+                    {' Primary (controls linked secondary)'}
+                </label>
+                <label className="channel-route-text">
+                    <input
+                        type="checkbox"
+                        checked={isSecondary}
+                        onChange={(e) =>
+                            this.handleSetCapability(
+                                'isLinkableSecondary',
+                                e.target.checked
+                            )
+                        }
+                    />
+                    {' Secondary (follows primary)'}
+                </label>
+                {isPrimary && (
+                    <label className="channel-route-text">
+                        <input
+                            type="checkbox"
+                            checked={!!fader.isLinked}
+                            onChange={(e) =>
+                                window.socketIoClient.emit(SOCKET_SET_LINK, {
+                                    faderIndex: this.state.selectedFaderIndex,
+                                    linkOn: e.target.checked,
+                                })
+                            }
+                        />
+                        {' Linked'}
+                    </label>
+                )}
+            </div>
+        )
     }
 
     renderMixer(chMixerConnection: ChMixerConnection, mixerIndex: number) {
@@ -208,8 +300,8 @@ class ChannelRouteSettings extends React.PureComponent<
     render() {
         return (
             <div className="channel-route-body">
-                <div className='channel-route-header'>
-                {this.renderFaderSelector()}
+                <div className="channel-route-header">
+                    {this.renderFaderSelector()}
                 </div>
                 <button className="close" onClick={() => this.handleClose()}>
                     X
@@ -226,6 +318,8 @@ class ChannelRouteSettings extends React.PureComponent<
                 >
                     ROUTE 1.Mixer 1:1
                 </button>
+                <hr />
+                {this.renderLinkability()}
                 <hr />
                 {this.props.chMixerConnections.map(
                     (

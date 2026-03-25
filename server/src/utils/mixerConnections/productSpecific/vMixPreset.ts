@@ -1,17 +1,22 @@
-
 export interface Command {
-    name: string,
+    name: string
     value?: string
 }
-export interface InputsPreset {
+interface CommonPresetOptions {}
+export interface InputsPreset extends CommonPresetOptions {
     inputNumbers: number[]
-    /** vMix commands to execute for each input */
-    commands: Command[]
+    /** vMix commands to execute for this input */
+    commands?: Command[]
     /** whether channel matrix (and channel mixer) should be reset */
     resetChannelMatrix?: boolean
     /** whether channel gain should be set to 0 */
     resetGain?: boolean
-    /** whether "LR" channels of an input should be linked in Sisyfos */
-    linkSeparateMono?: boolean
+    /**
+     * Whether this input is the primary of a linkable stereo pair.
+     * The secondary is implicitly the next consecutive fader.
+     */
+    isLinkablePrimary?: boolean
+    /** Whether the LR channels of this input should be linked in Sisyfos */
+    isLinked?: boolean
 }
 export type Preset = InputsPreset[]
