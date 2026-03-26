@@ -33,6 +33,9 @@ on:
     branches:
       - "master"
       - "main"
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
 
 jobs:
   cache-dependencies:
@@ -171,6 +174,7 @@ jobs:
 
   # Rest of the jobs remain the same but need Yarn setup...
   bump-version:
+    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
     needs:
       - prebuild
@@ -229,6 +233,7 @@ jobs:
           add: "['package.json', 'CHANGELOG.md']"
 
   build:
+    if: always() && !failure() && !cancelled()
     runs-on: ubuntu-latest
     needs:
       - bump-version
@@ -554,6 +559,8 @@ jobs:
           images: "olzzon/${{ github.event.repository.name }}"
           tags: |
             type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -608,6 +615,8 @@ jobs:
               images: ${{ steps.login-ecr.outputs.registry }}/sisyfos-audio-controller
               tags: |
                   type=ref,event=branch
+                  type=semver,pattern={{version}}
+                  type=semver,pattern={{major}}.{{minor}}
 
         - name: Build and push docker image tags
 
