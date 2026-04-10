@@ -8,11 +8,13 @@ import {
     STORAGE_FOLDER,
     saveMixerPreset,
     deleteMixerPreset,
+    saveCustomPages,
+    getCustomPages,
 } from './utils/SettingsStorage'
+import { SOCKET_RETURN_PAGES_LIST } from '../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 
 import express from 'express'
 import path from 'path'
-import fs from 'fs'
 import { Server } from 'http'
 import { Server as SocketServer } from 'socket.io'
 const ROOT_PATH = process.env.ROOT_PATH ?? '/'
@@ -78,6 +80,41 @@ app.delete(
         } catch (error: any) {
             logger.data(error).error(`Error deleting mixer preset: ${filename}`)
             res.status(404).send('File not found')
+        }
+    }
+)
+
+// Pages HTTP endpoints
+app.get('/api/pages', (_req: express.Request, res: express.Response) => {
+    const pages = getCustomPages()
+    res.setHeader('Content-Disposition', 'attachment; filename="pages.json"')
+    res.json(pages)
+})
+
+app.put(
+    '/api/pages',
+    express.json({ limit: '1mb' }),
+    async (req: express.Request, res: express.Response) => {
+        const pages = req.body
+        if (
+            !Array.isArray(pages) ||
+            !pages.every(
+                (p: any) =>
+                    typeof p.id === 'string' &&
+                    typeof p.label === 'string' &&
+                    Array.isArray(p.faders)
+            )
+        ) {
+            res.status(400).send('Invalid pages format')
+            return
+        }
+        try {
+            await saveCustomPages(pages)
+            socketServer.emit(SOCKET_RETURN_PAGES_LIST, pages)
+            res.status(200).send('OK')
+        } catch (error: any) {
+            logger.data(error).error('Error saving pages')
+            res.status(500).send('Error saving pages')
         }
     }
 )

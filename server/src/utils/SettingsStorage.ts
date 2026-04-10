@@ -217,21 +217,12 @@ export const getCustomPages = (): CustomPages[] => {
     }
 }
 
-export const saveCustomPages = (
-    stateCustomPages: any,
-    fileName: string = 'pages.json'
-) => {
-    let json = JSON.stringify(stateCustomPages)
-    fs.writeFile(
-        path.join(STORAGE_FOLDER, fileName),
+export const saveCustomPages = async (stateCustomPages: any): Promise<void> => {
+    const json = JSON.stringify(stateCustomPages)
+    await fs.promises.writeFile(
+        path.join(STORAGE_FOLDER, 'pages.json'),
         json,
-        'utf8',
-        (error: any) => {
-            if (error) {
-                logger.data(error).error('Error saving pages file')
-            } else {
-                logger.info('Pages ' + fileName + ' Saved to storage folder')
-            }
-        }
+        'utf8'
     )
+    logger.info('Pages saved to storage folder')
 }

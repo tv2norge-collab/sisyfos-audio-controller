@@ -115,7 +115,7 @@ const MixerPresetStorage: React.FC = () => {
                     htmlFor="mixer-preset-upload"
                     className="preset-upload-button"
                 >
-                    UPLOAD
+                    IMPORT
                 </label>
                 <input
                     id="mixer-preset-upload"
@@ -141,7 +141,7 @@ const MixerPresetStorage: React.FC = () => {
                                     className="preset-action-button"
                                     onClick={() => handleDownload(file)}
                                 >
-                                    DOWNLOAD
+                                    EXPORT
                                 </button>
                                 <button
                                     className="preset-action-button preset-delete-button"
