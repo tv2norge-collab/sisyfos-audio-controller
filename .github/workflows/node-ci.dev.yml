@@ -10,6 +10,8 @@ on:
       - "develop"
       - 'EAV-*'
       - 'LENA-*'
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   cache-dependencies:
@@ -255,10 +257,9 @@ jobs:
           with:
               images: ${{ steps.login-ecr.outputs.registry }}/sisyfos-audio-controller
               tags: |
-                  type=schedule
                   type=ref,event=branch
-                  type=ref,event=tag
-                  type=raw,value=latest,enable={{is_default_branch}}
+                  type=semver,pattern=v{{version}}
+                  type=semver,pattern=v{{major}}.{{minor}}
 
         - name: Build and push docker image tags
           if: steps.ecrrepo.outputs.ecrrepo-publish == '1' && steps.ecr-tag.outputs.tags != 0
