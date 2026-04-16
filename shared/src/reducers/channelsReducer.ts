@@ -74,11 +74,7 @@ export const channels = (
     if (!(action.type in ChannelActionTypes)) {
         return state;
     }
-    let nextState = [
-        {
-            chMixerConnection: [...state[0].chMixerConnection],
-        },
-    ]
+    let nextState = [structuredClone(state[0])]
 
     if ('mixerIndex' in action && nextState[0].chMixerConnection[action.mixerIndex] === undefined) {
         return nextState

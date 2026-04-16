@@ -184,7 +184,7 @@ export const settings = (
     if (!(action.type in SettingsActionTypes)) {
         return state;
     }
-    let nextState = [Object.assign({}, state[0])]
+    let nextState = [structuredClone(state[0])]
 
     switch (action.type) {
         case SettingsActionTypes.TOGGLE_SHOW_SETTINGS:

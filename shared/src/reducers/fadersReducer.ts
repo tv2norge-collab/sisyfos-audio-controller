@@ -113,12 +113,7 @@ export const faders = (
     if (!(action.type in FaderActionTypes)) {
         return state;
     }
-    let nextState = [
-        {
-            vuMeters: [...state[0].vuMeters],
-            fader: [...state[0].fader],
-        },
-    ]
+    let nextState = [structuredClone(state[0])]
     // Check if faderIndex is valid:
     // this is a left over from the old code, where faderIndex checked on the action type
     // The check is probably because of some calls prior to initialisation of the state

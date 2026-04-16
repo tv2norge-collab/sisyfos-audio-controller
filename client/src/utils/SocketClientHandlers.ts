@@ -145,7 +145,6 @@ export const socketClientHandlers = (store: Store) => {
             (faderIndex: number, channelIndex: number, level: number) => {
                 if (!vuMeters[faderIndex]) vuMeters[faderIndex] = []
                 vuMeters[faderIndex][channelIndex] = level
-                dispatch({ type: SISYFOS_EXTERNAL_STATE_UPDATED })
             }
         )
         .on(
