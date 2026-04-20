@@ -317,8 +317,16 @@ export class VMixMixerConnection implements MixerConnection {
                 continue
 
             const { outputLevel, fadeActive } = channels[channelIndex]
-            const { muteOn } = state.faders[0].fader[assignedFaderIndex]
+            const { muteOn, pgmOn, voOn } =
+                state.faders[0].fader[assignedFaderIndex]
             let sendUpdate = false
+
+            const dispatchAndSetUpdateState = (
+                update: FaderActions | ChannelActions
+            ) => {
+                store.dispatch(update)
+                sendUpdate = true
+            }
 
             // Send VU levels
             sendVuLevel(
@@ -342,28 +350,63 @@ export class VMixMixerConnection implements MixerConnection {
                 volume !== this.lastMasterState?.volume &&
                 Math.abs(outputLevel - volume) > 0.01
             ) {
-                store.dispatch({
+                dispatchAndSetUpdateState({
                     type: FaderActionTypes.SET_FADER_LEVEL,
                     faderIndex: assignedFaderIndex,
                     level: volume,
                 })
-                store.dispatch({
+                dispatchAndSetUpdateState({
                     type: ChannelActionTypes.SET_OUTPUT_LEVEL,
                     channel: assignedFaderIndex,
                     mixerIndex: this.mixerIndex,
                     level: volume,
                 })
-                sendUpdate = true
             }
 
             // Mute feedback from vMix
             if (muted !== this.lastMasterState?.muted && muteOn !== muted) {
-                store.dispatch({
+                dispatchAndSetUpdateState({
                     type: FaderActionTypes.SET_MUTE,
                     faderIndex: assignedFaderIndex,
                     muteOn: muted,
                 })
-                sendUpdate = true
+            }
+
+            if (
+                muted !== this.lastMasterState?.muted &&
+                !muted &&
+                !fadeActive &&
+                !pgmOn &&
+                !voOn
+            ) {
+                dispatchAndSetUpdateState({
+                    type: FaderActionTypes.SET_PGM,
+                    faderIndex: assignedFaderIndex,
+                    pgmOn: true,
+                })
+                dispatchAndSetUpdateState({
+                    type: ChannelActionTypes.SET_OUTPUT_LEVEL,
+                    channel: assignedFaderIndex,
+                    mixerIndex: this.mixerIndex,
+                    level: volume,
+                })
+            }
+
+            if (muted !== this.lastMasterState?.muted && muted) {
+                if (pgmOn) {
+                    dispatchAndSetUpdateState({
+                        type: FaderActionTypes.SET_PGM,
+                        faderIndex: assignedFaderIndex,
+                        pgmOn: false,
+                    })
+                }
+                if (voOn) {
+                    dispatchAndSetUpdateState({
+                        type: FaderActionTypes.SET_VO,
+                        faderIndex: assignedFaderIndex,
+                        voOn: false,
+                    })
+                }
             }
 
             if (sendUpdate) {
