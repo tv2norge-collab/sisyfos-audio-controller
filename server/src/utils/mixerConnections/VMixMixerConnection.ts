@@ -49,6 +49,7 @@ interface VMixInput {
     name: string
     volume: number
     muted: boolean
+    state?: string
     meterF1: number
     meterF2: number
     number: number
@@ -258,6 +259,7 @@ export class VMixMixerConnection implements MixerConnection {
         const attrs = [
             'volume',
             'muted',
+            'state',
             'meterF1',
             'meterF2',
             'number',
@@ -412,6 +414,8 @@ export class VMixMixerConnection implements MixerConnection {
         channelIndex: number,
         input: VMixInput
     ) {
+        const isPaused = (input.state || '').toLowerCase() === 'paused'
+
         if (state.faders[0].fader[assignedFaderIndex].isLinked) {
             let vuIndex: number = state.faders[0].fader[
                 assignedFaderIndex
@@ -423,23 +427,24 @@ export class VMixMixerConnection implements MixerConnection {
             })
 
             // Primary (vuIndex 0) uses meterF1, secondary (vuIndex 1) uses meterF2.
-            const level =
-                vuIndex === 0
-                    ? dbToFloat(input.meterF1 + 12)
-                    : dbToFloat(input.meterF2 + 12)
+            const level = isPaused
+                ? 0
+                : vuIndex === 0
+                  ? dbToFloat(input.meterF1 + 12)
+                  : dbToFloat(input.meterF2 + 12)
             sendVuLevel(assignedFaderIndex, VuType.Channel, vuIndex, level)
         } else {
             sendVuLevel(
                 assignedFaderIndex,
                 VuType.Channel,
                 0,
-                dbToFloat(input.meterF1 + 12)
+                isPaused ? 0 : dbToFloat(input.meterF1 + 12)
             ) // add +12 to convert from dBFS
             sendVuLevel(
                 assignedFaderIndex,
                 VuType.Channel,
                 1,
-                dbToFloat(input.meterF2 + 12)
+                isPaused ? 0 : dbToFloat(input.meterF2 + 12)
             )
         }
     }
