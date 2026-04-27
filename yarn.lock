@@ -9331,7 +9331,7 @@ asn1@evs-broadcast/node-asn1:
   dependencies:
     axios: "npm:^1.7.3"
     querystring: "npm:^0.2.1"
-  checksum: 10c0/9f4f0d8b22260eb66518bb420baf46157121bc994221d5deb59d5ffb50a62b1ad21c64032fc3c50eb6908e39b0ebf99bffc46cf77acb0adb18f819062b6c2c52
+  checksum: 10c0/9e6af1bb357cfce7397563b942a2d74f622ec446ecbb05bd35441b1e01cc002a40945a768496cf2ac6625bcc7a83cae95e28f4f935addbc675fc1205f8ab58de
   languageName: node
   linkType: hard
 
@@ -10746,7 +10746,7 @@ asn1@evs-broadcast/node-asn1:
   languageName: node
   linkType: hard
 
-"react-redux@npm:^9.1.0, react-redux@npm:^9.1.2":
+"react-redux@npm:^9.1.2":
   version: 9.2.0
   resolution: "react-redux@npm:9.2.0"
   dependencies:
@@ -11625,10 +11625,10 @@ asn1@evs-broadcast/node-asn1:
 
 "shared@file:../shared::locator=server%40workspace%3Aserver":
   version: 0.0.0
-  resolution: "shared@file:../shared#../shared::hash=6290eb&locator=server%40workspace%3Aserver"
+  resolution: "shared@file:../shared#../shared::hash=2e2f16&locator=server%40workspace%3Aserver"
   dependencies:
     redux: "npm:^5.0.1"
-  checksum: 10c0/b9faf2fbf7c85c083b89761738db1f93eae7458bafc5f21b0e5b59dc760589c2867da8107f7b45fc6f72481a87325bb295990eeec8260fcb789c47e6fb23c18d
+  checksum: 10c0/2927cc13c9571233b98570df4a6c80404cad9d7cc603607b5a625a7e5a7602d85db15dd82172c62ec0821879c11d50b51c166ec2f71e7e15386e073fc8d59ff1
   languageName: node
   linkType: hard
 
@@ -11773,14 +11773,17 @@ asn1@evs-broadcast/node-asn1:
     react-dom: "npm:^18.2.0"
     react-draggable: "npm:^4.4.6"
     react-i18next: "npm:^12.2.2"
-    react-redux: "npm:^9.1.0"
     react-select: "npm:^5.8.0"
     react-slider: "npm:^2.0.6"
-    redux: "npm:^5.0.1"
     rollup: "npm:^4.18.1"
     rollup-plugin-postcss: "npm:^4.0.2"
     socket.io-client: "npm:^4.7.4"
     webmidi: "npm:^2.5.1"
+  peerDependencies:
+    react: ^18.2.0 || ^19.0.0
+    react-dom: ^18.2.0 || ^19.0.0
+    react-redux: ^9.1.0
+    redux: ^5.0.1
   languageName: unknown
   linkType: soft
 

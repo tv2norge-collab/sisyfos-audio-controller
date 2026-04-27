@@ -7,17 +7,28 @@ import {
     SOCKET_GET_MIXER_PRESET_LIST,
     SOCKET_GET_PAGES_LIST,
 } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
-import storeRedux from '../../../shared/src/reducers/store'
+import defaultStoreRedux from '../../../shared/src/reducers/store'
+import type { Store } from 'redux'
+import { setActiveSisyfosStore } from '../utils/labels'
 
-export function useSocketConnection(customUri?: string, customPath?: string, query?: Record<string, string>) {
-    const [initialized, setInitialized] = useState(false);
+export function useSocketConnection(
+    customUri?: string,
+    customPath?: string,
+    query?: Record<string, string>,
+    store?: Store
+) {
+    const [initialized, setInitialized] = useState(false)
+    const querySignature = JSON.stringify(query ?? {})
+
     useEffect(() => {
-        window.storeRedux = storeRedux
+        const resolvedStore = store ?? defaultStoreRedux
+        window.storeRedux = resolvedStore
+        setActiveSisyfosStore(resolvedStore)
 
         //Subscribe to redux store:
-        window.reduxState = window.storeRedux.getState()
-        const unsubscribe = window.storeRedux.subscribe(() => {
-            window.reduxState = window.storeRedux.getState()
+        window.reduxState = resolvedStore.getState()
+        const unsubscribe = resolvedStore.subscribe(() => {
+            window.reduxState = resolvedStore.getState()
         })
 
         const { pathname, host } = window.location
@@ -29,7 +40,7 @@ export function useSocketConnection(customUri?: string, customPath?: string, que
             path: socketServerPath,
             query,
         })
-        socketClientHandlers()
+        socketClientHandlers(resolvedStore)
 
         window.socketIoClient.emit(SOCKET_GET_SNAPSHOT_LIST)
         window.socketIoClient.emit(SOCKET_GET_CCG_LIST)
@@ -41,16 +52,17 @@ export function useSocketConnection(customUri?: string, customPath?: string, que
         window.socketIoClient.emit('get-settings', 'update local settings')
         window.socketIoClient.emit(SOCKET_GET_PAGES_LIST)
 
-        setInitialized(true);
+        setInitialized(true)
 
         return () => {
             if (window.socketIoClient) {
-                window.socketIoClient.removeAllListeners()
                 window.socketIoClient.disconnect()
+                window.socketIoClient.removeAllListeners()
             }
             unsubscribe()
             window.socketIoClient = undefined
+            setActiveSisyfosStore()
         }
-    }, [customUri, customPath])
+    }, [customUri, customPath, querySignature, store, query])
     return { initialized }
 }

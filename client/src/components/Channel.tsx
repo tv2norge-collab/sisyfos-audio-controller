@@ -154,10 +154,23 @@ class Channel extends React.Component<
     }
 
     handleLevel(event: any) {
+        const level = parseFloat(event)
+        window.socketIoClient?.beginFaderDrag?.(this.faderIndex)
+        window.socketIoClient?.applyFaderDragLevel?.(this.faderIndex, level)
         window.socketIoClient.emit(IO.SOCKET_SET_FADERLEVEL, {
             faderIndex: this.faderIndex,
-            level: parseFloat(event),
+            level,
         })
+    }
+
+    handleDragStart() {
+        window.socketIoClient?.beginFaderDrag?.(this.faderIndex)
+    }
+
+    handleDragEnd(event: any) {
+        const level = parseFloat(event)
+        window.socketIoClient?.applyFaderDragLevel?.(this.faderIndex, level)
+        window.socketIoClient?.endFaderDrag?.(this.faderIndex)
     }
 
     handleZeroLevel() {
@@ -262,8 +275,14 @@ class Channel extends React.Component<
                 start={[this.props.fader.faderLevel]}
                 step={0.01}
                 connect
+                onStart={() => {
+                    this.handleDragStart()
+                }}
                 onSlide={(event: any) => {
                     this.handleLevel(event)
+                }}
+                onEnd={(event: any) => {
+                    this.handleDragEnd(event)
                 }}
                 pips={{
                     mode: 'values',

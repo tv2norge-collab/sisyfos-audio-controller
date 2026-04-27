@@ -1,4 +1,17 @@
-import { ReduxStore } from '../../../shared/src/reducers/store'
+import defaultStoreRedux, {
+    ReduxStore,
+} from '../../../shared/src/reducers/store'
+import type { Store } from 'redux'
+
+let activeStore: Store = defaultStoreRedux
+
+export function setActiveSisyfosStore(store?: Store) {
+    activeStore = store ?? defaultStoreRedux
+}
+
+export function getSisyfosReduxState(): ReduxStore {
+    return activeStore.getState() as ReduxStore
+}
 
 export function getChannelLabel(
     state: ReduxStore,
@@ -23,7 +36,7 @@ export function getChannelLabel(
 }
 
 export function getFaderLabel(faderIndex: number, defaultName = 'CH'): string {
-    const state: ReduxStore = window.reduxState
+    const state = getSisyfosReduxState()
     const automationLabel =
         state.faders[0].fader[faderIndex] &&
         state.faders[0].fader[faderIndex].label !== ''

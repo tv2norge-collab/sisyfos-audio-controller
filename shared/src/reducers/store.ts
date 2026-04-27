@@ -16,4 +16,4 @@ export default store
 
 export type AppDispatch = typeof store.dispatch;
 
-export { Store } from 'redux'
+export type { Store } from 'redux'
