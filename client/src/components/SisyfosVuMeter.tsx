@@ -75,6 +75,10 @@ export class SisyfosVuMeter extends React.Component<
             this.applyMeterConfig(this.props.meterConfig)
             this.initializeCanvas()
         }
+        if (prevProps.level !== this.props.level && !this.animationFrame) {
+            this.previousValue = -1
+            this.paintVuMeter()
+        }
     }
 
     componentWillUnmount() {
@@ -129,7 +133,12 @@ export class SisyfosVuMeter extends React.Component<
         this.intersectionObserver = new IntersectionObserver(
             (entries) => {
                 const [entry] = entries
-                this.setState({ isVisible: entry.isIntersecting })
+                const isNowVisible = entry.isIntersecting
+                this.setState({ isVisible: isNowVisible })
+                if (isNowVisible && !this.animationFrame) {
+                    this.previousValue = -1
+                    this.paintVuMeter()
+                }
             },
             {
                 threshold: 0.1,
@@ -181,6 +190,12 @@ export class SisyfosVuMeter extends React.Component<
     }
 
     private paintVuMeter = () => {
+        this.animationFrame = undefined
+
+        if (!this.state.isVisible) {
+            return
+        }
+
         if (!this.canvas || !this.canvasContext) {
             this.animationFrame = requestAnimationFrame(this.paintVuMeter)
             return
@@ -188,8 +203,8 @@ export class SisyfosVuMeter extends React.Component<
 
         this.value = this.getCurrentLevel()
 
-        if (this.value === this.previousValue) {
-            window.requestAnimationFrame(this.paintVuMeter)
+        if (this.value === this.previousValue && !this.props.getLevel) {
+            // level prop is stable — stop loop, componentDidUpdate restarts it on change
             return
         }
         this.previousValue = this.value
@@ -243,7 +258,7 @@ export class SisyfosVuMeter extends React.Component<
             2
         )
 
-        window.requestAnimationFrame(this.paintVuMeter)
+        this.animationFrame = requestAnimationFrame(this.paintVuMeter)
     }
 
     render() {
