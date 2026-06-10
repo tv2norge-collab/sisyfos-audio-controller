@@ -584,22 +584,16 @@ export class VMixMixerConnection implements MixerConnection {
         const isPaused = (input.state || '').toLowerCase() === 'paused'
 
         if (state.faders[0].fader[assignedFaderIndex].isLinked) {
-            let vuIndex: number = state.faders[0].fader[
-                assignedFaderIndex
-            ].assignedChannels?.findIndex((assigned) => {
-                return (
-                    assigned.mixerIndex === this.mixerIndex &&
-                    assigned.channelIndex === channelIndex
-                )
-            })
-
-            // Primary (vuIndex 0) uses meterF1, secondary (vuIndex 1) uses meterF2.
+            // Linked pair: primary fader receives meterF1 (L), secondary receives meterF2 (R).
+            const isLinkedPrimary =
+                state.faders[0].fader[assignedFaderIndex].capabilities
+                    ?.isLinkablePrimary === true
             const level = isPaused
                 ? 0
-                : vuIndex === 0
+                : isLinkedPrimary
                   ? dbToFloat(input.meterF1 + 12)
                   : dbToFloat(input.meterF2 + 12)
-            sendVuLevel(assignedFaderIndex, VuType.Channel, vuIndex, level)
+            sendVuLevel(assignedFaderIndex, VuType.Channel, 0, level)
         } else {
             sendVuLevel(
                 assignedFaderIndex,
@@ -747,25 +741,24 @@ export class VMixMixerConnection implements MixerConnection {
         } else {
             const assignedFaderIndex = this.getAssignedFaderIndex(channelIndex)
             const fader = state.faders[0].fader[assignedFaderIndex]
-            if (
-                fader?.isLinked &&
-                fader.assignedChannels &&
-                fader.assignedChannels.length > 1
-            ) {
+            if (fader?.isLinked && fader?.capabilities?.isLinkablePrimary) {
                 // Linked pair: same inputSelected on both inputs. Primary gets 'L' preset,
                 // secondary gets 'R' preset. SetVolumeChannelMixer follows inputSelected.
-                const LINKED_PRESETS: Array<'L' | 'R'> = ['L', 'R']
-                const ownChannels = fader.assignedChannels.filter(
-                    (a) => a.mixerIndex === this.mixerIndex
+                // Each fader now owns its own channel, so apply the correct preset per fader.
+                this.hack_rearrangeAudioChannels(
+                    inputSelected,
+                    inputNumber,
+                    'L'
                 )
-                ownChannels.forEach((assigned, i) => {
-                    const inp = assigned.channelIndex + 1
-                    this.hack_rearrangeAudioChannels(
-                        inputSelected,
-                        inp,
-                        LINKED_PRESETS[i]
-                    )
-                })
+            } else if (
+                fader?.isLinked &&
+                fader?.capabilities?.isLinkableSecondary
+            ) {
+                this.hack_rearrangeAudioChannels(
+                    inputSelected,
+                    inputNumber,
+                    'R'
+                )
             } else {
                 // Unlinked secondary must activate rightInput (it carries the right channel
                 // of the pair); unlinked primary activates leftInput.

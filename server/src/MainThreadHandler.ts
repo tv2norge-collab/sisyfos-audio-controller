@@ -94,6 +94,28 @@ export class MainThreadHandlers {
                 })
             }
         )
+
+        // If this is a linked primary, also push the secondary fader's state
+        const fader = state.faders[0].fader[faderIndex]
+        if (fader?.isLinked && fader?.capabilities?.isLinkablePrimary) {
+            const secondaryIndex = faderIndex + 1
+            if (secondaryIndex < state.settings[0].numberOfFaders) {
+                socketServer.emit(IO.SOCKET_SET_STORE_FADER, {
+                    faderIndex: secondaryIndex,
+                    state: state.faders[0].fader[secondaryIndex],
+                })
+                state.faders[0].fader[secondaryIndex].assignedChannels?.forEach(
+                    (channel: ChannelReference) => {
+                        socketServer.emit(IO.SOCKET_SET_STORE_CHANNEL, {
+                            channelIndex: channel.channelIndex,
+                            state: state.channels[0].chMixerConnection[
+                                channel.mixerIndex
+                            ].channel[channel.channelIndex],
+                        })
+                    }
+                )
+            }
+        }
     }
 
     updateMixerOnline(mixerIndex: number, onLineState?: boolean) {
@@ -176,26 +198,21 @@ export class MainThreadHandlers {
             faderIndex,
             linkOn,
         })
+        // updateOutLevel/updateInputGain/updateInputSelector on primary will also
+        // propagate to secondary when linking (since primary is now linked).
         mixerGenericConnection.updateOutLevel(faderIndex, -1)
-        if (faderIndex + 1 < totalFaders) {
+        mixerGenericConnection.updateInputGain(faderIndex)
+        mixerGenericConnection.updateInputSelector(faderIndex)
+        mixerGenericConnection.updatePflState(faderIndex)
+        if (!linkOn && faderIndex + 1 < totalFaders) {
+            // When unlinking, primary is no longer linked so propagation won't trigger.
+            // Explicitly update secondary so it reflects its own state independently.
             mixerGenericConnection.updateOutLevel(faderIndex + 1, -1)
             mixerGenericConnection.updateInputGain(faderIndex + 1)
-        }
-        mixerGenericConnection.updateInputGain(faderIndex)
-        this.reIndexAssignedChannelsRelation()
-        // Re-apply channel matrix after link state change so the mixer
-        // reflects the new routing (linked = paired, unlinked = independent).
-        mixerGenericConnection.updateInputSelector(faderIndex)
-        if (!linkOn && faderIndex + 1 < totalFaders) {
-            // The secondary fader's inputSelector was not updated while linked.
-            // Copy the primary's value so the mixer can decode the correct channel.
-            store.dispatch({
-                type: FaderActionTypes.SET_INPUT_SELECTOR,
-                faderIndex: faderIndex + 1,
-                selected: state.faders[0].fader[faderIndex].inputSelector,
-            })
             mixerGenericConnection.updateInputSelector(faderIndex + 1)
+            mixerGenericConnection.updatePflState(faderIndex + 1)
         }
+        this.reIndexAssignedChannelsRelation()
         this.updateFullClientStore()
     }
 

@@ -9,10 +9,7 @@ import '../assets/css/NoUiSlider.css'
 //assets:
 import '../assets/css/Channel.css'
 import * as IO from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
-import {
-    ChannelReference,
-    Fader,
-} from '../../../shared/src/reducers/fadersReducer'
+import { Fader } from '../../../shared/src/reducers/fadersReducer'
 import {
     FirstInRowButtonType,
     SecondInRowButtonType,
@@ -38,6 +35,7 @@ import { RootState } from '../../../shared/src/reducers/indexReducer'
 interface ChannelInjectProps {
     t: any
     fader: Fader
+    secondaryFader?: Fader
     settings: Settings
     channelType: number
     channelTypeIndex: number
@@ -209,20 +207,33 @@ class Channel extends React.Component<
                 </React.Fragment>
             )
         } else {
-            let assignedChannels: ChannelReference[] = this.props.fader
-                .assignedChannels || [{ mixerIndex: 0, channelIndex: 0 }]
+            const ownChannels = this.props.fader.assignedChannels?.length ?? 1
+            const secondaryChannels =
+                this.props.fader.isLinked &&
+                this.props.fader.capabilities?.isLinkablePrimary
+                    ? this.props.secondaryFader?.assignedChannels?.length ?? 1
+                    : 0
+            const secondaryFaderIndex = this.faderIndex + 1
             return (
                 <React.Fragment>
-                    {!window.location.search.includes('vu=0') &&
-                        assignedChannels?.map(
-                            (assigned: ChannelReference, index) => (
+                    {!window.location.search.includes('vu=0') && (
+                        <>
+                            {Array.from({ length: ownChannels }, (_, i) => (
                                 <VuMeter
                                     faderIndex={this.faderIndex}
-                                    channel={index}
-                                    key={index}
+                                    channel={i}
+                                    key={`own-${i}`}
                                 />
-                            )
-                        )}{' '}
+                            ))}
+                            {Array.from({ length: secondaryChannels }, (_, i) => (
+                                <VuMeter
+                                    faderIndex={secondaryFaderIndex}
+                                    channel={i}
+                                    key={`secondary-${i}`}
+                                />
+                            ))}
+                        </>
+                    )}{' '}
                 </React.Fragment>
             )
         }
@@ -651,6 +662,11 @@ const mapStateToProps = (state: RootState, props: any): ChannelInjectProps => {
     return {
         t: props.t,
         fader: state.faders[0].fader[props.faderIndex],
+        secondaryFader:
+            state.faders[0].fader[props.faderIndex]?.isLinked &&
+            state.faders[0].fader[props.faderIndex]?.capabilities?.isLinkablePrimary
+                ? state.faders[0].fader[props.faderIndex + 1]
+                : undefined,
         settings: state.settings[0],
         channelType: firstAssingedChannel?.channelType || 0, // If no channels assigned, use first channel type
         channelTypeIndex: firstAssingedChannel?.channelTypeIndex || 0,
