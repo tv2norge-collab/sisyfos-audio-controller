@@ -7,8 +7,6 @@ export interface InputsPreset extends CommonPresetOptions {
     inputNumbers: number[]
     /** vMix commands to execute for this input */
     commands?: Command[]
-    /** whether channel matrix (and channel mixer) should be reset */
-    resetChannelMatrix?: boolean
     /** whether channel gain should be set to 0 */
     resetGain?: boolean
     /**

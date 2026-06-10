@@ -114,12 +114,14 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
         this.setState({ settings: settingsCopy })
     }
 
-    handleSelectChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    handleSelectChange = (
+        event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
         const settingsCopy: SettingsInterface = { ...this.state.settings }
         ;(settingsCopy as any)[event.target.name] = Number(event.target.value)
         this.setState({ settings: settingsCopy })
     }
-    
+
     handleNumberOfMixers = (event: ChangeEvent<HTMLInputElement>) => {
         let settingsCopy = Object.assign({}, this.state.settings)
         settingsCopy.numberOfMixers = parseInt(event.target.value) || 1
@@ -403,27 +405,6 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                     />
                                 </label>
                                 <br />
-                                {window.mixerProtocolPresets[
-                                    mixer.mixerProtocol
-                                ].protocol === MixerConnectionTypes.vMix && (
-                                    <>
-                                        <label className="settings-input-field">
-                                            CHANNEL MATRIX PREFIX :
-                                            <input
-                                                name="channelMatrixPrefix"
-                                                type="text"
-                                                value={mixer.channelMatrixPrefix || ''}
-                                                onChange={(event) =>
-                                                    this.handleMixerChange(
-                                                        event,
-                                                        mixerIndex
-                                                    )
-                                                }
-                                            />
-                                        </label>
-                                        <br />
-                                    </>
-                                )}
                                 {window.mixerProtocol.protocol ===
                                 MixerConnectionTypes.GenericMidi
                                     ? this.renderMixerMidiSettings()
@@ -556,7 +537,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 <div className="settings-header">AUTOMATION</div>
                 <label
                     className="settings-input-field"
-                    title="Using the prefix label, it's possible for a mixer to control the AUTO/MANUAL 
+                    title="Using the prefix label, it's possible for a mixer to control the AUTO/MANUAL
                         state in Sisyfos, this is a two way functionality, so pressing AUTO/MANUAL in UI also sets the label on the connected mixer"
                 >
                     LABEL CONTROLS AUTO/MANUAL:
@@ -582,7 +563,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 <br />
                 <label
                     className="settings-input-field"
-                    title="The default behavior for Sisyfos is to have a target level on the fader, and then use the PGM ON for fading to the target level, 
+                    title="The default behavior for Sisyfos is to have a target level on the fader, and then use the PGM ON for fading to the target level,
                     the PGM ON Follows mixer, makes the fader follow the mixer level and the PGM button becomes a fadeout button"
                 >
                     PGM ON FOLLOWS MIXER :
@@ -603,13 +584,10 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     IN 1.ROW BUTTON :
                     <select
                         name="firstInRowButton"
-                        
                         value={this.state.settings.firstInRowButton}
                         onChange={this.handleSelectChange}
                     >
-                        <option value={FirstInRowButtonType.NONE}>
-                            None
-                        </option>
+                        <option value={FirstInRowButtonType.NONE}>None</option>
                         <option value={FirstInRowButtonType.AUTO_MANUAL}>
                             Auto/Manual
                         </option>
@@ -620,16 +598,11 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     IN 2.ROW BUTTON :
                     <select
                         name="secondInRowButton"
-                        
                         value={this.state.settings.secondInRowButton}
                         onChange={this.handleSelectChange}
                     >
-                        <option value={SecondInRowButtonType.NONE}>
-                            None
-                        </option>
-                        <option value={SecondInRowButtonType.MUTE}>
-                            Mute
-                        </option>
+                        <option value={SecondInRowButtonType.NONE}>None</option>
+                        <option value={SecondInRowButtonType.MUTE}>Mute</option>
                     </select>
                 </label>
                 <br />
@@ -637,16 +610,11 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     IN 3.ROW BUTTON :
                     <select
                         name="thirdInRowButton"
-                        
                         value={this.state.settings.thirdInRowButton}
                         onChange={this.handleSelectChange}
                     >
-                        <option value={ThirdInRowButtonType.NONE}>
-                            None
-                        </option>
-                        <option value={ThirdInRowButtonType.AMIX}>
-                            Amix
-                        </option>
+                        <option value={ThirdInRowButtonType.NONE}>None</option>
+                        <option value={ThirdInRowButtonType.AMIX}>Amix</option>
                         <option value={ThirdInRowButtonType.CHANNEL_OPTIONS}>
                             Channel Options
                         </option>
@@ -661,7 +629,6 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     OUT 2.ROW BUTTON :
                     <select
                         name="secondOutRowButton"
-                        
                         value={this.state.settings.secondOutRowButton}
                         onChange={this.handleSelectChange}
                     >

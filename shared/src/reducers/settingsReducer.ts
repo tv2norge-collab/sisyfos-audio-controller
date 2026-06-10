@@ -1,7 +1,5 @@
 import { MixerProtocolPresets } from '../constants/MixerProtocolPresets'
-import {
-    SettingsActionTypes,
-} from '../actions/settingsActions'
+import { SettingsActionTypes } from '../actions/settingsActions'
 import { RootAction } from './indexReducer'
 
 export enum PageType {
@@ -91,10 +89,10 @@ export interface Settings {
     numberOfCustomPages: number
     chanStripFollowsPFL: boolean
     labelType: 'automatic' | 'user' | 'automation' | 'channel'
-    
+
     /** Connection state */
     serverOnline: boolean
-    
+
     // Deprecated:
     automationMode?: boolean
     showPfl?: boolean
@@ -119,7 +117,6 @@ export interface MixerSettings {
     mixerOnline: boolean
     localIp: string
     localOscPort: number
-    channelMatrixPrefix?: string // Channel prefix for VMix mixers (e.g., "EXT")
 }
 
 export const defaultSettingsReducerState: Array<Settings> = [
@@ -182,7 +179,7 @@ export const settings = (
     action: RootAction
 ): Array<Settings> => {
     if (!(action.type in SettingsActionTypes)) {
-        return state;
+        return state
     }
     let nextState = [structuredClone(state[0])]
 
@@ -242,7 +239,7 @@ export const settings = (
                     start: 0,
                 }
             } else {
-               currentPage = {
+                currentPage = {
                     type: action.pageType,
                     id: '',
                     start: action.id,
