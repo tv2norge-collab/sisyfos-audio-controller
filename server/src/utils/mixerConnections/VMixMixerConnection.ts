@@ -36,6 +36,11 @@ import { Preset } from './productSpecific/vMixPreset'
 import { VMixPoller } from './productSpecific/VMixPoller'
 import { VMixConnectionWatchdog } from './productSpecific/VMixConnectionWatchdog'
 import { MasterAudioBus } from 'vmix-js-utils/dist/types/audio-bus'
+import {
+    MixerInputSelectorPlugin,
+    InputSelectorUpdate,
+} from '../inputSelectorPlugins/InputSelectorPlugin'
+import { createInputSelectorPlugin } from '../inputSelectorPlugins/inputSelectorPluginRegistry'
 
 /** If no XML received within 2 seconds, we reconnect the feedback connection */
 const CONNECTION_WATCHDOG_TIMEOUT_MS = 2000
@@ -74,6 +79,8 @@ export class VMixMixerConnection implements MixerConnection {
 
     private poller: VMixPoller
     private watchdog: VMixConnectionWatchdog
+
+    private inputSelectorPlugin: MixerInputSelectorPlugin | undefined
 
     audioOn: Record<string, boolean> = {}
     lastLevel: Record<string, number> = {}
@@ -147,6 +154,7 @@ export class VMixMixerConnection implements MixerConnection {
             }
         )
         this.setupMixerConnection()
+        this.setupInputSelectorPlugin()
     }
 
     private setMixerOnlineState(onLineState: boolean) {
@@ -722,6 +730,16 @@ export class VMixMixerConnection implements MixerConnection {
         // Master output has no channel matrix routing
         if (this.isMasterChannel(channelIndex)) return
 
+        // If a input selector plugin is active, delegate to it
+        if (this.inputSelectorPlugin) {
+            this.inputSelectorPlugin.sendSelectorChange({
+                channelIndex,
+                inputSelected,
+                timestamp: Date.now(),
+            })
+            return
+        }
+
         const { inputNumber, channelType } = this.getInputLocation(channelIndex)
         const selector =
             this.mixerProtocol.channelTypes[channelType].toMixer
@@ -774,6 +792,43 @@ export class VMixMixerConnection implements MixerConnection {
             // this.sendOutMessage('SetVolume', channelTypeIndex + 1, 75, '')
             this.audioOn[channelIndex] = false
         }
+    }
+
+    private setupInputSelectorPlugin() {
+        const mixerSettings = state.settings[0].mixers[this.mixerIndex]
+        const pluginConfig = mixerSettings?.inputSelectorPlugin
+        if (!pluginConfig?.enabled || !pluginConfig.pluginId) return
+
+        this.inputSelectorPlugin = createInputSelectorPlugin(
+            pluginConfig.pluginId,
+            (pluginConfig.options || {}) as Record<string, unknown>,
+            {
+                mixerIndex: this.mixerIndex,
+                onExternalUpdate: (update: InputSelectorUpdate) => {
+                    this.applyExternalSelectorUpdate(update)
+                },
+                onStatus: (status) => {
+                    logger
+                        .data(status)
+                        .debug(
+                            `Input selector plugin status [mixer ${this.mixerIndex}]`
+                        )
+                },
+            }
+        )
+        this.inputSelectorPlugin?.connect()
+    }
+
+    private applyExternalSelectorUpdate(update: InputSelectorUpdate) {
+        const { channelIndex, inputSelected } = update
+        const faderIndex = this.getAssignedFaderIndex(channelIndex)
+        if (faderIndex === -1 || !state.faders[0].fader[faderIndex]) return
+        store.dispatch({
+            type: FaderActionTypes.SET_INPUT_SELECTOR,
+            faderIndex,
+            selected: inputSelected,
+        })
+        global.mainThreadHandler.updatePartialStore(faderIndex)
     }
 
     private getInputLocation(channelIndex: number): VMixInputLocation {
