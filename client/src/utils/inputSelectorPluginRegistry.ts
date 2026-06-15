@@ -1,6 +1,8 @@
 import React from 'react'
 import { InputSelectorPluginConfig } from '../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
 import { Fader } from '../../../shared/src/reducers/fadersReducer'
+import DigigramInputSelectorPluginSettings from '../components/inputSelectorPlugins/digigram/DigigramInputSelectorPluginSettings'
+import DigigramInputSelectorPluginChannelLayout from '../components/inputSelectorPlugins/digigram/DigigramInputSelectorPluginChannelLayout'
 
 export interface InputSelectorPluginSettingsRendererProps {
     config: InputSelectorPluginConfig
@@ -20,7 +22,12 @@ interface ClientInputSelectorPluginDefinition {
     ChannelLayoutRenderer: React.ComponentType<InputSelectorPluginChannelLayoutRendererProps>
 }
 
-const registry: Record<string, ClientInputSelectorPluginDefinition> = {}
+const registry: Record<string, ClientInputSelectorPluginDefinition> = {
+    digigram: {
+        SettingsRenderer: DigigramInputSelectorPluginSettings,
+        ChannelLayoutRenderer: DigigramInputSelectorPluginChannelLayout,
+    },
+}
 
 export function getInputSelectorPluginSettingsRenderer(
     pluginId: string

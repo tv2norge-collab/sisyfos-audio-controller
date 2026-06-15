@@ -4,6 +4,7 @@ import {
     MixerInputSelectorPlugin,
     InputSelectorPluginContext,
 } from './InputSelectorPlugin'
+import { digigramInputSelectorPluginDefinition } from './digigram'
 
 interface InputSelectorPluginDefinition {
     manifest: InputSelectorPluginManifest
@@ -14,7 +15,10 @@ interface InputSelectorPluginDefinition {
     }
 }
 
-const registry: Record<string, InputSelectorPluginDefinition> = {}
+const registry: Record<string, InputSelectorPluginDefinition> = {
+    [digigramInputSelectorPluginDefinition.manifest.pluginId]:
+        digigramInputSelectorPluginDefinition,
+}
 
 export function getInputSelectorPluginDefinition(
     pluginId: string
