@@ -1,7 +1,7 @@
 import { MixerProtocolPresets } from '../constants/MixerProtocolPresets'
 import { SettingsActionTypes } from '../actions/settingsActions'
 import { RootAction } from './indexReducer'
-import { InputSelectorPluginConfig } from '../InputSelectorPluginConfig'
+import { InputSelectorPluginConfig } from '../inputSelectorPlugins/InputSelectorPluginConfig'
 
 export enum PageType {
     All,

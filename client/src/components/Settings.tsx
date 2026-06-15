@@ -20,7 +20,7 @@ import { SOCKET_SAVE_SETTINGS } from '../../../shared/src/constants/SOCKET_IO_DI
 import { SettingsActionTypes } from '../../../shared/src/actions/settingsActions'
 import { MixerConnectionTypes } from '../../../shared/src/constants/MixerProtocolInterface'
 import { getInputSelectorPluginSettingsRenderer } from '../utils/inputSelectorPluginRegistry'
-import { InputSelectorPluginConfig } from '../../../shared/src/InputSelectorPluginConfig'
+import { InputSelectorPluginConfig } from '../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
 
 //Set style for Select dropdown component:
 const selectorColorStyles = {

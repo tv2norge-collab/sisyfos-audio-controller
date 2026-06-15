@@ -1,6 +1,6 @@
-import { InputSelectorPluginOptions } from '../../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
+import { InputSelectorPluginOptions } from '../../../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
 
-export type InputSelectorUpdate = {
+export type FaderSelectorState = {
     /** 0-based mixer channel index */
     channelIndex: number
     inputSelected: number
@@ -18,14 +18,14 @@ export interface InputSelectorPluginStatus {
 export interface MixerInputSelectorPlugin {
     connect(): void
     disconnect(): void
-    sendSelectorChange(change: InputSelectorUpdate): void
+    sendSelectorChange(change: FaderSelectorState): void
     requestState(): void
     getStatus(): InputSelectorPluginStatus
 }
 
 export interface InputSelectorPluginContext {
     mixerIndex: number
-    onExternalUpdate: (update: InputSelectorUpdate) => void
+    onExternalUpdate: (update: FaderSelectorState) => void
     onStatus: (status: InputSelectorPluginStatus) => void
 }
 

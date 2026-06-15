@@ -1,5 +1,5 @@
 import React from 'react'
-import { InputSelectorPluginConfig } from '../../../shared/src/InputSelectorPluginConfig'
+import { InputSelectorPluginConfig } from '../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
 import { Fader } from '../../../shared/src/reducers/fadersReducer'
 
 export interface InputSelectorPluginSettingsRendererProps {

@@ -1,4 +1,4 @@
-import { InputSelectorPluginManifest } from '../../../../shared/src/InputSelectorPluginConfig'
+import { InputSelectorPluginManifest } from '../../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
 import {
     InputSelectorPluginFactory,
     MixerInputSelectorPlugin,
