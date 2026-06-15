@@ -313,16 +313,7 @@ export class MixerGenericConnection {
                 )
             }
         )
-        // Propagate to linked secondary
-        if (
-            state.faders[0].fader[faderIndex]?.isLinked &&
-            state.faders[0].fader[faderIndex]?.capabilities?.isLinkablePrimary
-        ) {
-            const secondaryIndex = faderIndex + 1
-            if (state.faders[0].fader[secondaryIndex]) {
-                this.updateInputSelector(secondaryIndex)
-            }
-        }
+        // Don't propagate to linked secondary because input selectors are independent
     }
 
     updatePflState = (faderIndex: number) => {

@@ -174,7 +174,7 @@ export const faders = (
         case FaderActionTypes.SET_INPUT_SELECTOR:
             nextState[0].fader[action.faderIndex].inputSelector =
                 action.selected
-            mirrorPrimaryProperties(nextState[0].fader, action.faderIndex)
+            // Not mirroring because input selectors are independent
             return nextState
         case FaderActionTypes.SET_FADER_FX:
             if (!nextState[0].fader[action.faderIndex][action.fxParam]) {
@@ -482,7 +482,7 @@ function mirrorPrimaryProperties(faders: Fader[], primaryIndex: number): void {
 
     secondary.faderLevel = primary.faderLevel
     secondary.inputGain = primary.inputGain
-    secondary.inputSelector = primary.inputSelector
+    // secondary.inputSelector = primary.inputSelector not mirroring input selector, because selectors are independent
     secondary.pgmOn = primary.pgmOn
     secondary.voOn = primary.voOn
     secondary.slowFadeOn = primary.slowFadeOn

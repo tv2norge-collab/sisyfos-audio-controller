@@ -19,6 +19,8 @@ import { ChangeEvent } from 'react'
 import { SOCKET_SAVE_SETTINGS } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 import { SettingsActionTypes } from '../../../shared/src/actions/settingsActions'
 import { MixerConnectionTypes } from '../../../shared/src/constants/MixerProtocolInterface'
+import { getInputSelectorPluginSettingsRenderer } from '../utils/inputSelectorPluginRegistry'
+import { InputSelectorPluginConfig } from '../../../shared/src/InputSelectorPluginConfig'
 
 //Set style for Select dropdown component:
 const selectorColorStyles = {
@@ -184,6 +186,19 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
         this.setState({ settings: settingsCopy })
     }
 
+    handleInputSelectorPluginChange = (
+        mixerIndex: number,
+        pluginConfig: InputSelectorPluginConfig
+    ) => {
+        const settingsCopy = { ...this.state.settings }
+        settingsCopy.mixers = [...settingsCopy.mixers]
+        settingsCopy.mixers[mixerIndex] = {
+            ...settingsCopy.mixers[mixerIndex],
+            inputSelectorPlugin: pluginConfig,
+        }
+        this.setState({ settings: settingsCopy })
+    }
+
     handleSave = () => {
         let settingsCopy = Object.assign({}, this.state.settings)
         settingsCopy.showSettings = false
@@ -200,6 +215,35 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
 
     handleCancel = () => {
         this.props.dispatch({ type: SettingsActionTypes.TOGGLE_SHOW_SETTINGS })
+    }
+
+    renderInputSelectorPluginSettings = (mixerIndex: number) => {
+        const mixer = this.state.settings.mixers[mixerIndex]
+        const pluginConfig = mixer?.inputSelectorPlugin
+        if (!pluginConfig?.enabled || !pluginConfig.pluginId) return null
+
+        const PluginSettingsRenderer = getInputSelectorPluginSettingsRenderer(
+            pluginConfig.pluginId
+        )
+        if (!PluginSettingsRenderer) return null
+
+        return (
+            <>
+                <div className="settings-header">
+                    INPUT SELECTOR PLUGIN - MIXER {mixerIndex + 1}:
+                </div>
+                <PluginSettingsRenderer
+                    config={pluginConfig}
+                    mixerIndex={mixerIndex}
+                    onChange={(updated) =>
+                        this.handleInputSelectorPluginChange(
+                            mixerIndex,
+                            updated
+                        )
+                    }
+                />
+            </>
+        )
     }
 
     renderChannelTypeSettings = (mixerIndex: number) => {
@@ -412,6 +456,83 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                 <br />
                                 {this.renderChannelTypeSettings(mixerIndex)}
                                 <br />
+                                <div className="settings-subheader">
+                                    INPUT SELECTOR PLUGIN:
+                                </div>
+                                <label className="settings-input-field">
+                                    PLUGIN:
+                                    <select
+                                        value={
+                                            mixer.inputSelectorPlugin
+                                                ?.pluginId ?? ''
+                                        }
+                                        onChange={(event) => {
+                                            const pluginId = event.target.value
+                                            this.handleInputSelectorPluginChange(
+                                                mixerIndex,
+                                                pluginId
+                                                    ? {
+                                                          pluginId,
+                                                          enabled:
+                                                              mixer
+                                                                  .inputSelectorPlugin
+                                                                  ?.enabled ??
+                                                              false,
+                                                          options:
+                                                              mixer
+                                                                  .inputSelectorPlugin
+                                                                  ?.options,
+                                                      }
+                                                    : {
+                                                          pluginId: '',
+                                                          enabled: false,
+                                                      }
+                                            )
+                                        }}
+                                    >
+                                        <option value="">None</option>
+                                        {(
+                                            window.inputSelectorPlugins ?? []
+                                        ).map((p) => (
+                                            <option
+                                                key={p.pluginId}
+                                                value={p.pluginId}
+                                            >
+                                                {p.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                                <br />
+                                {mixer.inputSelectorPlugin?.pluginId && (
+                                    <>
+                                        <label className="settings-input-field">
+                                            ENABLED:
+                                            <input
+                                                type="checkbox"
+                                                checked={
+                                                    mixer.inputSelectorPlugin
+                                                        ?.enabled ?? false
+                                                }
+                                                onChange={(event) =>
+                                                    this.handleInputSelectorPluginChange(
+                                                        mixerIndex,
+                                                        {
+                                                            ...mixer.inputSelectorPlugin!,
+                                                            enabled:
+                                                                event.target
+                                                                    .checked,
+                                                        }
+                                                    )
+                                                }
+                                            />
+                                        </label>
+                                        <br />
+                                        {this.renderInputSelectorPluginSettings(
+                                            mixerIndex
+                                        )}
+                                    </>
+                                )}
                             </React.Fragment>
                         )
                     }

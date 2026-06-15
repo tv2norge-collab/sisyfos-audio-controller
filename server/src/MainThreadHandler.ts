@@ -37,6 +37,7 @@ import {
 } from '../../shared/src/reducers/channelsReducer'
 import { ChannelReference } from '../../shared/src/reducers/fadersReducer'
 import { Dispatch } from 'redux'
+import { getAllInputSelectorPluginManifests } from './utils/inputSelectorPlugins/inputSelectorPluginRegistry'
 
 export class MainThreadHandlers {
     snapshotHandler: SnapshotHandler
@@ -243,6 +244,7 @@ export class MainThreadHandlers {
                         ],
                     mixerProtocolPresets: mixerProtocolPresets,
                     mixerProtocolList: mixerProtocolList,
+                    inputSelectorPlugins: getAllInputSelectorPluginManifests(),
                 })
             })
             .on(IO.SOCKET_GET_SNAPSHOT_LIST, () => {
@@ -610,22 +612,6 @@ export class MainThreadHandlers {
                     selected: selectedValue,
                 })
                 mixerGenericConnection.updateInputSelector(payload.faderIndex)
-                // If this is a linkable primary, keep the secondary in sync so it
-                // always has the same inputSelected to decode rightInput from.
-                const primaryFader = state.faders[0].fader[payload.faderIndex]
-                if (primaryFader?.capabilities?.isLinkablePrimary) {
-                    const secondaryIndex = payload.faderIndex + 1
-                    if (secondaryIndex < state.faders[0].fader.length) {
-                        store.dispatch({
-                            type: FaderActionTypes.SET_INPUT_SELECTOR,
-                            faderIndex: secondaryIndex,
-                            selected: selectedValue,
-                        })
-                        mixerGenericConnection.updateInputSelector(
-                            secondaryIndex
-                        )
-                    }
-                }
                 this.updatePartialStore(payload.faderIndex)
             })
             .on(IO.SOCKET_TOGGLE_ALL_MANUAL, () => {

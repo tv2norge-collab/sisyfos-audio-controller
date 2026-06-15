@@ -3,6 +3,7 @@ import ReactDom from 'react-dom'
 import App from './src/components/App'
 
 import { MixerProtocol } from '../shared/src/constants/MixerProtocolInterface'
+import { InputSelectorPluginManifest } from '../shared/src/InputSelectorPluginConfig'
 import ContextProvider from './src/components/ContextProvider'
 declare global {
     interface Window {
@@ -16,6 +17,7 @@ declare global {
         snapshotFileList: string[]
         ccgFileList: string[]
         mixerPresetList: string[]
+        inputSelectorPlugins: InputSelectorPluginManifest[]
     }
 }
 

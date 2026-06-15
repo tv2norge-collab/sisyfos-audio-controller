@@ -6,12 +6,16 @@ import {
 } from './utils/outputLevelServer'
 import {
     STORAGE_FOLDER,
+    saveSettings,
     saveMixerPreset,
     deleteMixerPreset,
     saveCustomPages,
     getCustomPages,
 } from './utils/SettingsStorage'
 import { SOCKET_RETURN_PAGES_LIST } from '../../shared/src/constants/SOCKET_IO_DISPATCHERS'
+import { state, store } from './reducers/store'
+import { SettingsActionTypes } from '../../shared/src/actions/settingsActions'
+import { getInputSelectorPluginDefinition } from './utils/inputSelectorPlugins/inputSelectorPluginRegistry'
 
 import express from 'express'
 import path from 'path'
@@ -116,6 +120,115 @@ app.put(
             logger.data(error).error('Error saving pages')
             res.status(500).send('Error saving pages')
         }
+    }
+)
+
+const pickAllowedOptions = (
+    source: Record<string, any>,
+    allowedKeys: string[]
+): Record<string, any> => {
+    return allowedKeys.reduce(
+        (acc, key) => {
+            if (Object.prototype.hasOwnProperty.call(source, key)) {
+                acc[key] = source[key]
+            }
+            return acc
+        },
+        {} as Record<string, any>
+    )
+}
+
+// Plugin options import/export HTTP endpoints
+app.get(
+    '/api/plugin-settings/:pluginId/:mixerIndex',
+    (req: express.Request, res: express.Response) => {
+        const pluginId = String(req.params.pluginId || '')
+        const mixerIndex = Number(req.params.mixerIndex)
+        if (!pluginId || Number.isNaN(mixerIndex)) {
+            res.status(400).send('Invalid plugin id or mixer index')
+            return
+        }
+
+        const definition = getInputSelectorPluginDefinition(pluginId)
+        if (!definition) {
+            res.status(404).send('Unknown plugin')
+            return
+        }
+
+        const { importExportKeys } = definition.settings
+        if (!importExportKeys.length) {
+            res.status(400).send('Plugin does not support import/export')
+            return
+        }
+
+        const options = (state.settings[0].mixers[mixerIndex]
+            ?.inputSelectorPlugin?.options || {}) as Record<string, any>
+        const payload = pickAllowedOptions(options, importExportKeys)
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename="${pluginId}-mixer-${mixerIndex}-settings.json"`
+        )
+        res.json(payload)
+    }
+)
+
+app.put(
+    '/api/plugin-settings/:pluginId/:mixerIndex',
+    express.json({ limit: '1mb' }),
+    (req: express.Request, res: express.Response) => {
+        const pluginId = String(req.params.pluginId || '')
+        const mixerIndex = Number(req.params.mixerIndex)
+        if (!pluginId || Number.isNaN(mixerIndex)) {
+            res.status(400).send('Invalid plugin id or mixer index')
+            return
+        }
+
+        if (
+            !req.body ||
+            typeof req.body !== 'object' ||
+            Array.isArray(req.body)
+        ) {
+            res.status(400).send('Invalid import payload')
+            return
+        }
+
+        const definition = getInputSelectorPluginDefinition(pluginId)
+        if (!definition) {
+            res.status(404).send('Unknown plugin')
+            return
+        }
+
+        const { importExportKeys } = definition.settings
+        if (!importExportKeys.length) {
+            res.status(400).send('Plugin does not support import/export')
+            return
+        }
+
+        const mixer = state.settings[0].mixers[mixerIndex]
+        if (!mixer?.inputSelectorPlugin) {
+            res.status(404).send('Plugin not configured for this mixer')
+            return
+        }
+
+        const importedOptions = pickAllowedOptions(req.body, importExportKeys)
+
+        const nextSettings = JSON.parse(
+            JSON.stringify(state.settings[0])
+        ) as (typeof state.settings)[0]
+        nextSettings.mixers[mixerIndex].inputSelectorPlugin = {
+            ...mixer.inputSelectorPlugin,
+            options: {
+                ...(mixer.inputSelectorPlugin.options || {}),
+                ...importedOptions,
+            },
+        }
+        store.dispatch({
+            type: SettingsActionTypes.UPDATE_SETTINGS,
+            settings: nextSettings,
+        })
+        saveSettings(nextSettings)
+        socketServer.emit('set-settings', nextSettings)
+        res.status(200).json(importedOptions)
     }
 )
 

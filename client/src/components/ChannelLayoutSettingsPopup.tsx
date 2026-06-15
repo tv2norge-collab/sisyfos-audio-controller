@@ -9,6 +9,7 @@ import '../assets/css/ChannelLayoutSettings.css'
 import * as IO from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 import { RotaryDial } from './RotaryDial'
 import { InputSelector } from './InputSelector'
+import { getInputSelectorPluginChannelLayoutRenderer } from '../utils/inputSelectorPluginRegistry'
 
 interface AmixtoggleProps {
     fader: Fader
@@ -61,6 +62,31 @@ export function ChannelLayoutSettingsButton({
     const nextFader = useAppSelector(
         (store) => store.faders[0].fader[faderIndex + 1]
     )
+    const pluginLayoutState = useAppSelector((store) => {
+        const mixerIndex = fader.assignedChannels?.[0]?.mixerIndex
+        if (mixerIndex === undefined) {
+            return undefined
+        }
+        const inputSelectorPlugin =
+            store.settings[0].mixers[mixerIndex]?.inputSelectorPlugin
+        if (!inputSelectorPlugin?.enabled) {
+            return undefined
+        }
+
+        const plugin = window.inputSelectorPlugins?.find(
+            (plugin) => plugin.pluginId === inputSelectorPlugin.pluginId
+        )
+
+        return plugin
+            ? {
+                  config: inputSelectorPlugin,
+                  faderIndex,
+                  renderer: getInputSelectorPluginChannelLayoutRenderer(
+                      plugin.pluginId
+                  ),
+              }
+            : undefined
+    })
 
     const minGainLabel =
         window.mixerProtocol.channelTypes[0].fromMixer.CHANNEL_INPUT_GAIN?.[0]
@@ -96,6 +122,23 @@ export function ChannelLayoutSettingsButton({
         [faderIndex]
     )
 
+    const handleInputSelect = useCallback(
+        (selected: number) => {
+            window.socketIoClient.emit(IO.SOCKET_SET_INPUT_SELECTOR, {
+                faderIndex,
+                selected,
+            })
+        },
+        [faderIndex]
+    )
+
+    const toggleLink = useCallback(() => {
+        window.socketIoClient.emit(IO.SOCKET_SET_LINK, {
+            faderIndex,
+            linkOn: !fader.isLinked,
+        })
+    }, [faderIndex, fader.isLinked])
+
     const isActive = chanLayoutSettingsShown === faderIndex
 
     return (
@@ -120,12 +163,42 @@ export function ChannelLayoutSettingsButton({
                         <AmixToggle fader={fader} faderIndex={faderIndex} />
                         <div className="channel-layout-selector">
                             <div className="content">
-                                <InputSelector
-                                    fader={fader}
-                                    faderIndex={faderIndex}
-                                />
+                                {fader.capabilities?.isLinkablePrimary && (
+                                    <div className="row channel-layout-selectors">
+                                        <button
+                                            onClick={toggleLink}
+                                            className={classNames(
+                                                'channel-layout-selector-button',
+                                                { active: fader.isLinked }
+                                            )}
+                                        >
+                                            L+R
+                                        </button>
+                                        <button
+                                            onClick={toggleLink}
+                                            className={classNames(
+                                                'channel-layout-selector-button',
+                                                { active: !fader.isLinked }
+                                            )}
+                                        >
+                                            1|2
+                                        </button>
+                                    </div>
+                                )}
+                                {pluginLayoutState?.renderer ? (
+                                    <pluginLayoutState.renderer
+                                        config={pluginLayoutState.config}
+                                        faderIndex={faderIndex}
+                                        fader={fader}
+                                        handleInputSelect={handleInputSelect}
+                                    />
+                                ) : (
+                                    <InputSelector
+                                        fader={fader}
+                                        faderIndex={faderIndex}
+                                    />
+                                )}
                             </div>
-                            <hr />
                         </div>
                     </>
                     {fader.capabilities?.isLinkablePrimary &&

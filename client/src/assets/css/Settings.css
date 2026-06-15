@@ -14,7 +14,7 @@
     z-index: 2;
 }
 
-.settings-header{
+.settings-header {
     margin-top: 20px;
     margin-bottom: 20px;
     color: white;
@@ -24,6 +24,13 @@
     border-style: solid;
 }
 
+.settings-subheader {
+    margin-top: 12px;
+    margin-bottom: 8px;
+    color: rgb(210, 210, 210);
+    font-size: 1.05em;
+    font-weight: 600;
+}
 
 .settings-items-body {
     margin-top: 10px;
@@ -38,14 +45,14 @@
     line-height: 1.8em;
 }
 
-
 .settings-show-channel-selection {
     white-space: nowrap;
     margin: 5px;
     color: rgb(255, 255, 255);
 }
 
-input[type=text], select {
+input[type='text'],
+select {
     text-align: right;
     margin: 5px;
     font-size: 1.1em;
@@ -73,6 +80,21 @@ select option {
     width: 120px;
     line-height: 100%;
     background: rgb(13, 77, 18);
+    color: white;
+    font-family: 'Roboto Condensed', sans-serif;
+    border-radius: 4px;
+    border-width: 1;
+    border-color: black;
+    outline: 0;
+}
+
+.settings-plugin-import-export-button {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    width: 120px;
+    line-height: 100%;
+    background: rgb(64, 64, 64);
     color: white;
     font-family: 'Roboto Condensed', sans-serif;
     border-radius: 4px;
@@ -111,5 +133,3 @@ select option {
     border-width: 0;
     outline: 0;
 }
-
-

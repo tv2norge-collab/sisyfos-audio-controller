@@ -1,6 +1,7 @@
 import { MixerProtocolPresets } from '../constants/MixerProtocolPresets'
 import { SettingsActionTypes } from '../actions/settingsActions'
 import { RootAction } from './indexReducer'
+import { InputSelectorPluginConfig } from '../InputSelectorPluginConfig'
 
 export enum PageType {
     All,
@@ -117,6 +118,7 @@ export interface MixerSettings {
     mixerOnline: boolean
     localIp: string
     localOscPort: number
+    inputSelectorPlugin?: InputSelectorPluginConfig
 }
 
 export const defaultSettingsReducerState: Array<Settings> = [
