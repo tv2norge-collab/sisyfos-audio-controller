@@ -20,7 +20,10 @@ import { SOCKET_SAVE_SETTINGS } from '../../../shared/src/constants/SOCKET_IO_DI
 import { SettingsActionTypes } from '../../../shared/src/actions/settingsActions'
 import { MixerConnectionTypes } from '../../../shared/src/constants/MixerProtocolInterface'
 import { getInputSelectorPluginSettingsRenderer } from '../utils/inputSelectorPluginRegistry'
-import { InputSelectorPluginConfig } from '../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
+import { getFaderLinkPluginSettingsRenderer } from '../utils/faderLinkPluginRegistry'
+import {
+    MixerPluginConfig,
+} from '../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
 
 //Set style for Select dropdown component:
 const selectorColorStyles = {
@@ -188,13 +191,26 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
 
     handleInputSelectorPluginChange = (
         mixerIndex: number,
-        pluginConfig: InputSelectorPluginConfig
+        pluginConfig: MixerPluginConfig
     ) => {
         const settingsCopy = { ...this.state.settings }
         settingsCopy.mixers = [...settingsCopy.mixers]
         settingsCopy.mixers[mixerIndex] = {
             ...settingsCopy.mixers[mixerIndex],
             inputSelectorPlugin: pluginConfig,
+        }
+        this.setState({ settings: settingsCopy })
+    }
+
+    handleFaderLinkPluginChange = (
+        mixerIndex: number,
+        pluginConfig: MixerPluginConfig
+    ) => {
+        const settingsCopy = { ...this.state.settings }
+        settingsCopy.mixers = [...settingsCopy.mixers]
+        settingsCopy.mixers[mixerIndex] = {
+            ...settingsCopy.mixers[mixerIndex],
+            faderLinkPlugin: pluginConfig,
         }
         this.setState({ settings: settingsCopy })
     }
@@ -215,6 +231,32 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
 
     handleCancel = () => {
         this.props.dispatch({ type: SettingsActionTypes.TOGGLE_SHOW_SETTINGS })
+    }
+
+    renderFaderLinkPluginSettings = (mixerIndex: number) => {
+        const mixer = this.state.settings.mixers[mixerIndex]
+        const pluginConfig = mixer?.faderLinkPlugin
+        if (!pluginConfig?.enabled || !pluginConfig.pluginId) return null
+
+        const PluginSettingsRenderer = getFaderLinkPluginSettingsRenderer(
+            pluginConfig.pluginId
+        )
+        if (!PluginSettingsRenderer) return null
+
+        return (
+            <>
+                <div className="settings-header">
+                    FADER LINK PLUGIN - MIXER {mixerIndex + 1}:
+                </div>
+                <PluginSettingsRenderer
+                    config={pluginConfig}
+                    mixerIndex={mixerIndex}
+                    onChange={(updated) =>
+                        this.handleFaderLinkPluginChange(mixerIndex, updated)
+                    }
+                />
+            </>
+        )
     }
 
     renderInputSelectorPluginSettings = (mixerIndex: number) => {
@@ -529,6 +571,90 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                         </label>
                                         <br />
                                         {this.renderInputSelectorPluginSettings(
+                                            mixerIndex
+                                        )}
+                                    </>
+                                )}
+                                <br />
+                                <div className="settings-subheader">
+                                    FADER LINK PLUGIN:
+                                </div>
+                                <label className="settings-input-field">
+                                    PLUGIN:
+                                    <select
+                                        value={
+                                            mixer.faderLinkPlugin?.pluginId ??
+                                            ''
+                                        }
+                                        onChange={(event) => {
+                                            const pluginId = event.target.value
+                                            this.handleFaderLinkPluginChange(
+                                                mixerIndex,
+                                                pluginId
+                                                    ? {
+                                                          pluginId,
+                                                          enabled:
+                                                              mixer
+                                                                  .faderLinkPlugin
+                                                                  ?.enabled ??
+                                                              false,
+                                                          options:
+                                                              mixer
+                                                                  .faderLinkPlugin
+                                                                  ?.options,
+                                                      }
+                                                    : {
+                                                          pluginId: '',
+                                                          enabled: false,
+                                                      }
+                                            )
+                                        }}
+                                    >
+                                        <option value="">None</option>
+                                        {(window.faderLinkPlugins ?? [])
+                                            .filter(
+                                                (p) =>
+                                                    !p.supportedMixers ||
+                                                    p.supportedMixers.includes(
+                                                        mixer.mixerProtocol
+                                                    )
+                                            )
+                                            .map((p) => (
+                                                <option
+                                                    key={p.pluginId}
+                                                    value={p.pluginId}
+                                                >
+                                                    {p.label}
+                                                </option>
+                                            ))}
+                                    </select>
+                                </label>
+                                <br />
+                                {mixer.faderLinkPlugin?.pluginId && (
+                                    <>
+                                        <label className="settings-input-field">
+                                            ENABLED:
+                                            <input
+                                                type="checkbox"
+                                                checked={
+                                                    mixer.faderLinkPlugin
+                                                        ?.enabled ?? false
+                                                }
+                                                onChange={(event) =>
+                                                    this.handleFaderLinkPluginChange(
+                                                        mixerIndex,
+                                                        {
+                                                            ...mixer.faderLinkPlugin!,
+                                                            enabled:
+                                                                event.target
+                                                                    .checked,
+                                                        }
+                                                    )
+                                                }
+                                            />
+                                        </label>
+                                        <br />
+                                        {this.renderFaderLinkPluginSettings(
                                             mixerIndex
                                         )}
                                     </>

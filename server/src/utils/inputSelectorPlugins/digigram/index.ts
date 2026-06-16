@@ -19,7 +19,4 @@ export const digigramInputSelectorPluginDefinition = {
         label: 'Digigram ALP',
     },
     factory: digigramFactory,
-    settings: {
-        importExportKeys: ['channelMappings'],
-    },
 }

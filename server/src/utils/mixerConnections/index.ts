@@ -32,4 +32,5 @@ export interface MixerConnection {
         value: string,
     ): void
     updateFadeIOLevel(channelIndex: number, outputLevel: number): void
+    onFaderLink?(faderIndex: number, linkOn: boolean): void
 }

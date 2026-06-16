@@ -1,37 +1,37 @@
-.digigram-channel-selector-table-wrapper {
+.vmix-fader-link-table-wrapper {
     margin: 8px auto 12px;
     overflow-x: auto;
     display: flex;
     justify-content: center;
 }
 
-.digigram-channel-selector-table {
+.vmix-fader-link-table {
     width: auto;
     border-collapse: collapse;
     color: white;
     font-size: 0.95em;
 }
 
-.digigram-channel-selector-table th,
-.digigram-channel-selector-table td {
+.vmix-fader-link-table th,
+.vmix-fader-link-table td {
     padding: 0;
     border: 1px solid rgb(72, 72, 72);
     text-align: center;
     vertical-align: middle;
 }
 
-.digigram-channel-selector-table th {
+.vmix-fader-link-table th {
     background-color: rgb(46, 46, 46);
     color: rgb(220, 220, 220);
     font-weight: 600;
     padding: 4px 6px;
 }
 
-.digigram-channel-selector-table td {
+.vmix-fader-link-table td {
     background-color: rgb(37, 37, 37);
 }
 
-.digigram-channel-selector-table .digigram-channel-selector-table-input {
+.vmix-fader-link-table .vmix-fader-link-table-input {
     display: block;
     width: 100%;
     height: 26px;
@@ -48,18 +48,18 @@
     appearance: none;
 }
 
-.digigram-channel-selector-table .digigram-channel-selector-table-input::-webkit-outer-spin-button,
-.digigram-channel-selector-table .digigram-channel-selector-table-input::-webkit-inner-spin-button {
+.vmix-fader-link-table .vmix-fader-link-table-input::-webkit-outer-spin-button,
+.vmix-fader-link-table .vmix-fader-link-table-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 
-.digigram-channel-selector-table-empty {
+.vmix-fader-link-table-empty {
     color: rgb(180, 180, 180);
     font-style: italic;
 }
 
-.digigram-channel-selector-remove-btn {
+.vmix-fader-link-remove-btn {
     outline: none;
     border: 1px solid #555;
     background-color: #5a0000;
@@ -74,6 +74,6 @@
     flex-shrink: 0;
 }
 
-.digigram-channel-selector-remove-btn:hover {
+.vmix-fader-link-remove-btn:hover {
     background-color: #800000;
 }

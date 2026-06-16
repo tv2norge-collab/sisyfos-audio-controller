@@ -1,8 +1,8 @@
 import React from 'react'
 import './DigigramInputSelectorPluginSettings.css'
 import {
-    InputSelectorPluginConfig,
-    InputSelectorPluginOptions,
+    MixerPluginConfig,
+    MixerPluginOptions,
 } from '../../../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
 import {
     defaultDigigramInputSelectorOptions,
@@ -12,9 +12,9 @@ import {
 import PluginSettingsImportExport from '../../PluginSettingsImportExport'
 
 interface DigigramInputSelectorPluginSettingsProps {
-    config: InputSelectorPluginConfig
+    config: MixerPluginConfig
     mixerIndex: number
-    onChange: (pluginConfig: InputSelectorPluginConfig) => void
+    onChange: (pluginConfig: MixerPluginConfig) => void
 }
 
 const DISPLAY_OFFSET = 1
@@ -24,7 +24,7 @@ const toDisplayValue = (value: number) => value + DISPLAY_OFFSET
 const fromDisplayValue = (value: number) => Math.max(0, value - DISPLAY_OFFSET)
 
 const normalizeChannelMappings = (
-    value: InputSelectorPluginConfig['options']
+    value: MixerPluginConfig['options']
 ): DigigramChannelMapping[] => {
     const mappings = value?.channelMappings
     if (!Array.isArray(mappings)) {
@@ -60,7 +60,7 @@ const normalizeChannelMappings = (
 }
 
 const resolveDigigramOptions = (
-    config: InputSelectorPluginConfig
+    config: MixerPluginConfig
 ): DigigramInputSelectorOptions => {
     const options = config.options || {}
     return {
@@ -81,7 +81,7 @@ const DigigramInputSelectorPluginSettings: React.FC<
     const updateOptions = (nextOptions: DigigramInputSelectorOptions) => {
         onChange({
             ...config,
-            options: nextOptions as unknown as InputSelectorPluginOptions,
+            options: nextOptions as unknown as MixerPluginOptions,
         })
     }
 
@@ -137,8 +137,7 @@ const DigigramInputSelectorPluginSettings: React.FC<
             <PluginSettingsImportExport
                 pluginId={config.pluginId}
                 mixerIndex={mixerIndex}
-                canImportExport={true}
-                currentOptions={{ channelMappings: options.channelMappings }}
+                options={options}
                 onImportedOptions={(importedOptions) =>
                     updateOptions({
                         ...options,

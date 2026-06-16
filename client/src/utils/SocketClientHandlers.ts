@@ -93,6 +93,7 @@ export const socketClientHandlers = (store: Store) => {
             window.mixerProtocolPresets = payload.mixerProtocolPresets
             window.mixerProtocolList = payload.mixerProtocolList
             window.inputSelectorPlugins = payload.inputSelectorPlugins || []
+            window.faderLinkPlugins = payload.faderLinkPlugins || []
             dispatch({ type: SISYFOS_EXTERNAL_STATE_UPDATED })
         })
         .on(SOCKET_SET_MIXER_ONLINE, (payload: any) => {

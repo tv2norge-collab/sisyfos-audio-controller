@@ -37,7 +37,7 @@ import {
 } from '../../shared/src/reducers/channelsReducer'
 import { ChannelReference } from '../../shared/src/reducers/fadersReducer'
 import { Dispatch } from 'redux'
-import { getAllInputSelectorPluginManifests } from './utils/inputSelectorPlugins/inputSelectorPluginRegistry'
+import { getInputSelectorManifests, getFaderLinkManifests } from './utils/mixerPluginRegistry'
 
 export class MainThreadHandlers {
     snapshotHandler: SnapshotHandler
@@ -199,6 +199,12 @@ export class MainThreadHandlers {
             faderIndex,
             linkOn,
         })
+        state.faders[0].fader[faderIndex]?.assignedChannels?.forEach((ch) => {
+            mixerGenericConnection.mixerConnection[ch.mixerIndex]?.onFaderLink?.(
+                faderIndex,
+                linkOn
+            )
+        })
         // updateOutLevel/updateInputGain/updateInputSelector on primary will also
         // propagate to secondary when linking (since primary is now linked).
         mixerGenericConnection.updateOutLevel(faderIndex, -1)
@@ -244,7 +250,8 @@ export class MainThreadHandlers {
                         ],
                     mixerProtocolPresets: mixerProtocolPresets,
                     mixerProtocolList: mixerProtocolList,
-                    inputSelectorPlugins: getAllInputSelectorPluginManifests(),
+                    inputSelectorPlugins: getInputSelectorManifests(),
+                    faderLinkPlugins: getFaderLinkManifests(),
                 })
             })
             .on(IO.SOCKET_GET_SNAPSHOT_LIST, () => {

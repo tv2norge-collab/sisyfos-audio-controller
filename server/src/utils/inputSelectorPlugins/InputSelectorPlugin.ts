@@ -1,4 +1,4 @@
-import { InputSelectorPluginOptions } from '../../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
+import { MixerPluginOptions } from '../../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
 
 export type InputSelectorUpdate = {
     /** 0-based mixer channel index */
@@ -30,6 +30,6 @@ export interface InputSelectorPluginContext {
 }
 
 export type InputSelectorPluginFactory = (
-    pluginOptions: InputSelectorPluginOptions,
+    pluginOptions: MixerPluginOptions,
     context: InputSelectorPluginContext
 ) => MixerInputSelectorPlugin | undefined

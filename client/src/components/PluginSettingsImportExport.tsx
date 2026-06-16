@@ -3,27 +3,23 @@ import React from 'react'
 interface PluginSettingsImportExportProps {
     pluginId: string
     mixerIndex: number
-    canImportExport: boolean
-    currentOptions: Record<string, unknown>
+    options: object
     onImportedOptions: (options: Record<string, unknown>) => void
 }
 
 const PluginSettingsImportExport: React.FC<PluginSettingsImportExportProps> = ({
     pluginId,
     mixerIndex,
-    canImportExport,
-    currentOptions,
+    options,
     onImportedOptions,
 }) => {
     const importInputRef = React.useRef<HTMLInputElement>(null)
-
-    const getPluginImportUrl = () =>
-        `/api/plugin-settings/${encodeURIComponent(pluginId)}/${mixerIndex}`
+    const apiUrl = `/api/plugin-settings/${encodeURIComponent(pluginId)}/${mixerIndex}`
 
     const exportPluginSettings = () => {
         try {
             const filename = `${pluginId}-mixer-${mixerIndex}-settings.json`
-            const blob = new Blob([JSON.stringify(currentOptions, null, 2)], {
+            const blob = new Blob([JSON.stringify({ options }, null, 2)], {
                 type: 'application/json',
             })
             const url = window.URL.createObjectURL(blob)
@@ -48,11 +44,11 @@ const PluginSettingsImportExport: React.FC<PluginSettingsImportExportProps> = ({
 
         try {
             const text = await file.text()
-            const parsed = JSON.parse(text)
-            const response = await fetch(getPluginImportUrl(), {
+            const parsed = JSON.parse(text) as { options?: Record<string, unknown> }
+            const response = await fetch(apiUrl, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(parsed),
+                body: JSON.stringify({ options: parsed.options ?? parsed }),
             })
 
             if (!response.ok) {
@@ -61,18 +57,11 @@ const PluginSettingsImportExport: React.FC<PluginSettingsImportExportProps> = ({
                 return
             }
 
-            const importedOptions = (await response.json()) as Record<
-                string,
-                unknown
-            >
-            onImportedOptions(importedOptions)
+            const result = (await response.json()) as { options: Record<string, unknown> }
+            onImportedOptions(result.options)
         } catch (_error) {
             window.alert('Failed to import plugin settings')
         }
-    }
-
-    if (!canImportExport) {
-        return null
     }
 
     return (

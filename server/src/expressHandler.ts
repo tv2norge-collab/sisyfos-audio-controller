@@ -15,7 +15,7 @@ import {
 import { SOCKET_RETURN_PAGES_LIST } from '../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 import { state, store } from './reducers/store'
 import { SettingsActionTypes } from '../../shared/src/actions/settingsActions'
-import { getInputSelectorPluginDefinition } from './utils/inputSelectorPlugins/inputSelectorPluginRegistry'
+import { getPluginEntry } from './utils/mixerPluginRegistry'
 
 import express from 'express'
 import path from 'path'
@@ -123,22 +123,9 @@ app.put(
     }
 )
 
-const pickAllowedOptions = (
-    source: Record<string, any>,
-    allowedKeys: string[]
-): Record<string, any> => {
-    return allowedKeys.reduce(
-        (acc, key) => {
-            if (Object.prototype.hasOwnProperty.call(source, key)) {
-                acc[key] = source[key]
-            }
-            return acc
-        },
-        {} as Record<string, any>
-    )
-}
-
-// Plugin options import/export HTTP endpoints
+// Plugin settings HTTP endpoints (unified for all plugin types)
+// GET returns { enabled, options }
+// PUT accepts { enabled?, options? } — upserts the plugin config for this mixer
 app.get(
     '/api/plugin-settings/:pluginId/:mixerIndex',
     (req: express.Request, res: express.Response) => {
@@ -149,26 +136,21 @@ app.get(
             return
         }
 
-        const definition = getInputSelectorPluginDefinition(pluginId)
-        if (!definition) {
+        const entry = getPluginEntry(pluginId)
+        if (!entry) {
             res.status(404).send('Unknown plugin')
             return
         }
 
-        const { importExportKeys } = definition.settings
-        if (!importExportKeys.length) {
-            res.status(400).send('Plugin does not support import/export')
-            return
-        }
-
-        const options = (state.settings[0].mixers[mixerIndex]
-            ?.inputSelectorPlugin?.options || {}) as Record<string, any>
-        const payload = pickAllowedOptions(options, importExportKeys)
+        const config = state.settings[0].mixers[mixerIndex]?.[entry.stateKey]
         res.setHeader(
             'Content-Disposition',
             `attachment; filename="${pluginId}-mixer-${mixerIndex}-settings.json"`
         )
-        res.json(payload)
+        res.json({
+            enabled: config?.enabled ?? false,
+            options: config?.options ?? {},
+        })
     }
 )
 
@@ -188,39 +170,38 @@ app.put(
             typeof req.body !== 'object' ||
             Array.isArray(req.body)
         ) {
-            res.status(400).send('Invalid import payload')
+            res.status(400).send('Body must be a JSON object')
             return
         }
 
-        const definition = getInputSelectorPluginDefinition(pluginId)
-        if (!definition) {
+        const entry = getPluginEntry(pluginId)
+        if (!entry) {
             res.status(404).send('Unknown plugin')
             return
         }
 
-        const { importExportKeys } = definition.settings
-        if (!importExportKeys.length) {
-            res.status(400).send('Plugin does not support import/export')
-            return
-        }
+        const body = req.body as { enabled?: boolean; options?: Record<string, unknown> }
 
-        const mixer = state.settings[0].mixers[mixerIndex]
-        if (!mixer?.inputSelectorPlugin) {
-            res.status(404).send('Plugin not configured for this mixer')
-            return
-        }
+        const existing = state.settings[0].mixers[mixerIndex]?.[entry.stateKey]
+        const newEnabled =
+            typeof body.enabled === 'boolean' ? body.enabled : (existing?.enabled ?? false)
 
-        const importedOptions = pickAllowedOptions(req.body, importExportKeys)
+        let mergedOptions: Record<string, unknown> = { ...(existing?.options || {}) }
+        if (body.options !== undefined) {
+            if (typeof body.options !== 'object' || Array.isArray(body.options)) {
+                res.status(400).send('options must be an object')
+                return
+            }
+            mergedOptions = { ...mergedOptions, ...body.options }
+        }
 
         const nextSettings = JSON.parse(
             JSON.stringify(state.settings[0])
         ) as (typeof state.settings)[0]
-        nextSettings.mixers[mixerIndex].inputSelectorPlugin = {
-            ...mixer.inputSelectorPlugin,
-            options: {
-                ...(mixer.inputSelectorPlugin.options || {}),
-                ...importedOptions,
-            },
+        nextSettings.mixers[mixerIndex][entry.stateKey] = {
+            pluginId,
+            enabled: newEnabled,
+            options: mergedOptions,
         }
         store.dispatch({
             type: SettingsActionTypes.UPDATE_SETTINGS,
@@ -228,7 +209,7 @@ app.put(
         })
         saveSettings(nextSettings)
         socketServer.emit('set-settings', nextSettings)
-        res.status(200).json(importedOptions)
+        res.status(200).json({ enabled: newEnabled, options: mergedOptions })
     }
 )
 

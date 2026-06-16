@@ -40,7 +40,8 @@ import {
     MixerInputSelectorPlugin,
     InputSelectorUpdate,
 } from '../inputSelectorPlugins/InputSelectorPlugin'
-import { createInputSelectorPlugin } from '../inputSelectorPlugins/inputSelectorPluginRegistry'
+import { MixerFaderLinkPlugin } from '../faderLinkPlugins/FaderLinkPlugin'
+import { createInputSelectorPlugin, createFaderLinkPlugin } from '../mixerPluginRegistry'
 
 /** If no XML received within 2 seconds, we reconnect the feedback connection */
 const CONNECTION_WATCHDOG_TIMEOUT_MS = 2000
@@ -81,6 +82,7 @@ export class VMixMixerConnection implements MixerConnection {
     private watchdog: VMixConnectionWatchdog
 
     private inputSelectorPlugin: MixerInputSelectorPlugin | undefined
+    private faderLinkPlugin: MixerFaderLinkPlugin | undefined
 
     audioOn: Record<string, boolean> = {}
     lastLevel: Record<string, number> = {}
@@ -103,6 +105,7 @@ export class VMixMixerConnection implements MixerConnection {
 
         this.mixerProtocol = mixerProtocol
         this.mixerIndex = mixerIndex
+        this.faderLinkPlugin = this.createFaderLinkPlugin()
 
         this.watchdog = new VMixConnectionWatchdog(
             () => {
@@ -581,31 +584,16 @@ export class VMixMixerConnection implements MixerConnection {
         input: VMixInput
     ) {
         const isPaused = (input.state || '').toLowerCase() === 'paused'
-
-        if (state.faders[0].fader[assignedFaderIndex].isLinked) {
-            // Linked pair: primary fader receives meterF1 (L), secondary receives meterF2 (R).
-            const isLinkedPrimary =
-                state.faders[0].fader[assignedFaderIndex].capabilities
-                    ?.isLinkablePrimary === true
-            const level = isPaused
-                ? 0
-                : isLinkedPrimary
-                  ? dbToFloat(input.meterF1 + 12)
-                  : dbToFloat(input.meterF2 + 12)
-            sendVuLevel(assignedFaderIndex, VuType.Channel, 0, level)
+        const levelL = isPaused ? 0 : dbToFloat(input.meterF1 + 12)
+        const levelR = isPaused ? 0 : dbToFloat(input.meterF2 + 12)
+        if (this.faderLinkPlugin) {
+            const fader = state.faders[0].fader[assignedFaderIndex]
+            const isLinked = fader?.isLinked === true
+            const isLinkedPrimary = isLinked && fader?.capabilities?.isLinkablePrimary === true
+            this.faderLinkPlugin.sendVuLevels(assignedFaderIndex, levelL, levelR, isLinked, isLinkedPrimary)
         } else {
-            sendVuLevel(
-                assignedFaderIndex,
-                VuType.Channel,
-                0,
-                isPaused ? 0 : dbToFloat(input.meterF1 + 12)
-            ) // add +12 to convert from dBFS
-            sendVuLevel(
-                assignedFaderIndex,
-                VuType.Channel,
-                1,
-                isPaused ? 0 : dbToFloat(input.meterF2 + 12)
-            )
+            sendVuLevel(assignedFaderIndex, VuType.Channel, 0, levelL)
+            sendVuLevel(assignedFaderIndex, VuType.Channel, 1, levelR)
         }
     }
 
@@ -794,6 +782,26 @@ export class VMixMixerConnection implements MixerConnection {
         }
     }
 
+    private createFaderLinkPlugin(): MixerFaderLinkPlugin | undefined {
+        const pluginConfig =
+            state.settings[0].mixers[this.mixerIndex]?.faderLinkPlugin
+        if (!pluginConfig?.enabled || !pluginConfig.pluginId) return undefined
+        return createFaderLinkPlugin(pluginConfig, {
+            mixerIndex: this.mixerIndex,
+            sendCommand: this.sendOutMessage,
+            resolveInputNumber: (faderIndex: number) => {
+                const assigned = state.faders[0].fader[
+                    faderIndex
+                ]?.assignedChannels?.find(
+                    (ch) => ch.mixerIndex === this.mixerIndex
+                )
+                return assigned !== undefined
+                    ? assigned.channelIndex + 1
+                    : undefined
+            },
+        })
+    }
+
     private setupInputSelectorPlugin() {
         const mixerSettings = state.settings[0].mixers[this.mixerIndex]
         const pluginConfig = mixerSettings?.inputSelectorPlugin
@@ -851,16 +859,14 @@ export class VMixMixerConnection implements MixerConnection {
             fs.readFileSync(path.resolve(STORAGE_FOLDER, presetName), 'utf8')
         )
 
-        // Zeroth pass: unlink all currently linked faders so that borrowed channels
-        // are returned to their original faders before we re-read assignments.
-        // Without this, getAssignedFaderIndex() for a secondary input returns the
-        // primary fader index (because linking moves the channels there), causing
-        // the secondary loop to corrupt the primary's capabilities on every reload.
+        // Unlink all before applying the new preset so Redux link state and vMix
+        // matrix presets are clean before the new configuration is set up.
         state.faders[0].fader.forEach((fader, faderIndex) => {
             if (fader.isLinked && fader.capabilities?.isLinkablePrimary) {
                 global.mainThreadHandler.setLink(faderIndex, false)
             }
         })
+
         const linkPass: number[] = []
         for (const entry of data) {
             for (const inputNumber of entry.inputNumbers) {
@@ -880,8 +886,6 @@ export class VMixMixerConnection implements MixerConnection {
                         linkPass.push(assignedFaderIndex)
                     }
                     if (entry.isLinkablePrimary) {
-                        // Mark this fader as primary. Secondary is always faderIndex+1,
-                        // consistent with the assumption made by setLink.
                         store.dispatch({
                             type: FaderActionTypes.SET_CAPABILITY,
                             faderIndex: assignedFaderIndex,
@@ -895,8 +899,7 @@ export class VMixMixerConnection implements MixerConnection {
                             enabled: false,
                         })
                         const secondaryFaderIndex = assignedFaderIndex + 1
-                        const totalFaders = state.settings[0].numberOfFaders
-                        if (secondaryFaderIndex < totalFaders) {
+                        if (secondaryFaderIndex < state.settings[0].numberOfFaders) {
                             store.dispatch({
                                 type: FaderActionTypes.SET_CAPABILITY,
                                 faderIndex: secondaryFaderIndex,
@@ -921,10 +924,9 @@ export class VMixMixerConnection implements MixerConnection {
                 })
             }
         }
-        // Second pass: setLink after all fader state has been fully applied.
-        // Only call setLink on primaries — the reducer sets both primary and
-        // secondary isLinked when called on the primary. Calling it on a
-        // secondary (no isLinkablePrimary capability) would just set isLinked=false.
+        // Second pass: link after all fader state has been fully applied.
+        // Only link primaries — the service (and underlying reducer) propagates
+        // the link state to the secondary automatically.
         for (const faderIndex of linkPass) {
             if (
                 state.faders[0].fader[faderIndex]?.capabilities
@@ -934,6 +936,10 @@ export class VMixMixerConnection implements MixerConnection {
             }
         }
         global.mainThreadHandler.updateFullClientStore()
+    }
+
+    onFaderLink(faderIndex: number, linkOn: boolean): void {
+        this.faderLinkPlugin?.onFaderLink(faderIndex, linkOn)
     }
 
     injectCommand(command: string[]) {}

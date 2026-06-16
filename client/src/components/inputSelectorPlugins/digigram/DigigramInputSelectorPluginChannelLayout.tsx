@@ -1,19 +1,19 @@
 import React from 'react'
 import { Fader } from '../../../../../shared/src/reducers/fadersReducer'
 import * as IO from '../../../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
-import { InputSelectorPluginConfig } from '../../../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
+import { MixerPluginConfig } from '../../../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
 import { DigigramInputSelectorOptions } from '../../../../../shared/src/inputSelectorPlugins/digigram/DigigramInputSelectorPluginOptions'
 import { useAppSelector } from '../../../hooks/redux'
 
 interface DigigramInputSelectorPluginChannelLayoutProps {
-    config: InputSelectorPluginConfig
+    config: MixerPluginConfig
     faderIndex: number
     fader: Fader
     handleInputSelect: (selected: number) => void
 }
 
 const getDigigramOptions = (
-    config: InputSelectorPluginConfig
+    config: MixerPluginConfig
 ): DigigramInputSelectorOptions => {
     const options = config.options || {}
     const channelMappings = Array.isArray(options.channelMappings)

@@ -1,17 +1,17 @@
 import React from 'react'
-import { InputSelectorPluginConfig } from '../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
+import { MixerPluginConfig } from '../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
 import { Fader } from '../../../shared/src/reducers/fadersReducer'
 import DigigramInputSelectorPluginSettings from '../components/inputSelectorPlugins/digigram/DigigramInputSelectorPluginSettings'
 import DigigramInputSelectorPluginChannelLayout from '../components/inputSelectorPlugins/digigram/DigigramInputSelectorPluginChannelLayout'
 
 export interface InputSelectorPluginSettingsRendererProps {
-    config: InputSelectorPluginConfig
+    config: MixerPluginConfig
     mixerIndex: number
-    onChange: (pluginConfig: InputSelectorPluginConfig) => void
+    onChange: (pluginConfig: MixerPluginConfig) => void
 }
 
 export interface InputSelectorPluginChannelLayoutRendererProps {
-    config: InputSelectorPluginConfig
+    config: MixerPluginConfig
     faderIndex: number
     fader: Fader
     handleInputSelect: (selected: number) => void
