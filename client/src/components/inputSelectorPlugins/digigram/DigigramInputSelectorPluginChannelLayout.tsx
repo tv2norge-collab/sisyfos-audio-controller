@@ -60,7 +60,7 @@ const DigigramInputSelectorPluginChannelLayout: React.FC<
 > = ({ config, faderIndex, fader, handleInputSelect }) => {
     const options = getDigigramOptions(config)
     const mapping = options.channelMappings.find(
-        (entry) => entry.sisyfosChannel === faderIndex + 1
+        (entry) => entry.sisyfosChannel === faderIndex
     )
 
     if (!mapping) {
