@@ -39,9 +39,12 @@ import { MasterAudioBus } from 'vmix-js-utils/dist/types/audio-bus'
 import {
     MixerInputSelectorPlugin,
     InputSelectorUpdate,
+    InputSelectorPluginContext,
 } from '../inputSelectorPlugins/InputSelectorPlugin'
-import { MixerFaderLinkPlugin } from '../faderLinkPlugins/FaderLinkPlugin'
-import { createInputSelectorPlugin, createFaderLinkPlugin } from '../mixerPluginRegistry'
+import {
+    MixerFaderLinkPlugin,
+    FaderLinkPluginContext,
+} from '../faderLinkPlugins/FaderLinkPlugin'
 
 /** If no XML received within 2 seconds, we reconnect the feedback connection */
 const CONNECTION_WATCHDOG_TIMEOUT_MS = 2000
@@ -81,7 +84,7 @@ export class VMixMixerConnection implements MixerConnection {
     private poller: VMixPoller
     private watchdog: VMixConnectionWatchdog
 
-    private inputSelectorPlugin: MixerInputSelectorPlugin | undefined
+    inputSelectorPlugin: MixerInputSelectorPlugin | undefined
     private faderLinkPlugin: MixerFaderLinkPlugin | undefined
 
     audioOn: Record<string, boolean> = {}
@@ -105,7 +108,7 @@ export class VMixMixerConnection implements MixerConnection {
 
         this.mixerProtocol = mixerProtocol
         this.mixerIndex = mixerIndex
-        this.faderLinkPlugin = this.createFaderLinkPlugin()
+
 
         this.watchdog = new VMixConnectionWatchdog(
             () => {
@@ -157,7 +160,6 @@ export class VMixMixerConnection implements MixerConnection {
             }
         )
         this.setupMixerConnection()
-        this.setupInputSelectorPlugin()
     }
 
     private setMixerOnlineState(onLineState: boolean) {
@@ -782,11 +784,12 @@ export class VMixMixerConnection implements MixerConnection {
         }
     }
 
-    private createFaderLinkPlugin(): MixerFaderLinkPlugin | undefined {
-        const pluginConfig =
-            state.settings[0].mixers[this.mixerIndex]?.faderLinkPlugin
-        if (!pluginConfig?.enabled || !pluginConfig.pluginId) return undefined
-        return createFaderLinkPlugin(pluginConfig, {
+    setFaderLinkPlugin(plugin: MixerFaderLinkPlugin | undefined): void {
+        this.faderLinkPlugin = plugin
+    }
+
+    getFaderLinkPluginContext(): FaderLinkPluginContext {
+        return {
             mixerIndex: this.mixerIndex,
             sendCommand: this.sendOutMessage,
             resolveInputNumber: (faderIndex: number) => {
@@ -799,32 +802,21 @@ export class VMixMixerConnection implements MixerConnection {
                     ? assigned.channelIndex + 1
                     : undefined
             },
-        })
+        }
     }
 
-    private setupInputSelectorPlugin() {
-        const mixerSettings = state.settings[0].mixers[this.mixerIndex]
-        const pluginConfig = mixerSettings?.inputSelectorPlugin
-        if (!pluginConfig?.enabled || !pluginConfig.pluginId) return
+    setInputSelectorPlugin(plugin: MixerInputSelectorPlugin | undefined): void {
+        this.inputSelectorPlugin = plugin
+    }
 
-        this.inputSelectorPlugin = createInputSelectorPlugin(
-            pluginConfig.pluginId,
-            (pluginConfig.options || {}) as Record<string, unknown>,
-            {
-                mixerIndex: this.mixerIndex,
-                onExternalUpdate: (update: InputSelectorUpdate) => {
-                    this.applyExternalSelectorUpdate(update)
-                },
-                onStatus: (status) => {
-                    logger
-                        .data(status)
-                        .debug(
-                            `Input selector plugin status [mixer ${this.mixerIndex}]`
-                        )
-                },
-            }
-        )
-        this.inputSelectorPlugin?.connect()
+    getInputSelectorPluginContext(): InputSelectorPluginContext {
+        return {
+            mixerIndex: this.mixerIndex,
+            onExternalUpdate: (update) => this.applyExternalSelectorUpdate(update),
+            onStatus: (status) => {
+                logger.data(status).debug(`Input selector plugin status [mixer ${this.mixerIndex}]`)
+            },
+        }
     }
 
     private applyExternalSelectorUpdate(update: InputSelectorUpdate) {

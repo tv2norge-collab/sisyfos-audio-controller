@@ -15,7 +15,10 @@ import {
 import { SOCKET_RETURN_PAGES_LIST } from '../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 import { state, store } from './reducers/store'
 import { SettingsActionTypes } from '../../shared/src/actions/settingsActions'
-import { getPluginEntry } from './utils/mixerPluginRegistry'
+import {
+    getPluginEntry,
+    getInputSelectorPlugin,
+} from './utils/mixerPluginRegistry'
 
 import express from 'express'
 import path from 'path'
@@ -180,15 +183,25 @@ app.put(
             return
         }
 
-        const body = req.body as { enabled?: boolean; options?: Record<string, unknown> }
+        const body = req.body as {
+            enabled?: boolean
+            options?: Record<string, unknown>
+        }
 
         const existing = state.settings[0].mixers[mixerIndex]?.[entry.stateKey]
         const newEnabled =
-            typeof body.enabled === 'boolean' ? body.enabled : (existing?.enabled ?? false)
+            typeof body.enabled === 'boolean'
+                ? body.enabled
+                : (existing?.enabled ?? false)
 
-        let mergedOptions: Record<string, unknown> = { ...(existing?.options || {}) }
+        let mergedOptions: Record<string, unknown> = {
+            ...(existing?.options || {}),
+        }
         if (body.options !== undefined) {
-            if (typeof body.options !== 'object' || Array.isArray(body.options)) {
+            if (
+                typeof body.options !== 'object' ||
+                Array.isArray(body.options)
+            ) {
                 res.status(400).send('options must be an object')
                 return
             }
@@ -210,6 +223,42 @@ app.put(
         saveSettings(nextSettings)
         socketServer.emit('set-settings', nextSettings)
         res.status(200).json({ enabled: newEnabled, options: mergedOptions })
+    }
+)
+
+app.post(
+    '/api/plugin-state/:pluginId/:mixerIndex/reset',
+    (req: express.Request, res: express.Response) => {
+        const mixerIndex = Number(req.params.mixerIndex)
+        if (Number.isNaN(mixerIndex)) {
+            res.status(400).send('Invalid mixer index')
+            return
+        }
+        const pluginId = String(req.params.pluginId || '')
+        const entry = getPluginEntry(pluginId)
+        if (!entry) {
+            res.status(404).send('Unknown plugin')
+            return
+        }
+        const plugin = getInputSelectorPlugin(mixerIndex)
+        if (!plugin) {
+            res.status(404).send(
+                'No active input selector plugin for this mixer'
+            )
+            return
+        }
+        if (!plugin.reset) {
+            res.status(405).send('This plugin does not support reset')
+            return
+        }
+        try {
+            plugin.reset()
+        } catch (error) {
+            logger.data(error).error('Input selector reset failed')
+            res.status(500).send('Reset failed')
+            return
+        }
+        res.status(200).send('OK')
     }
 )
 

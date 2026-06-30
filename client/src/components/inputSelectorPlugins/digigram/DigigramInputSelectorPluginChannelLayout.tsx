@@ -40,10 +40,14 @@ const getDigigramOptions = (
                           typeof mapping.inputChannelFirst === 'number'
                               ? mapping.inputChannelFirst
                               : 1,
-                      inputChannelLast:
-                          typeof mapping.inputChannelLast === 'number'
-                              ? mapping.inputChannelLast
+                      inputCount:
+                          typeof mapping.inputCount === 'number'
+                              ? mapping.inputCount
                               : 8,
+                      defaultInput:
+                          typeof mapping.defaultInput === 'number'
+                              ? mapping.defaultInput
+                              : 1,
                   },
               ]
           })
@@ -74,7 +78,7 @@ const DigigramInputSelectorPluginChannelLayout: React.FC<
     const rightSelected = nextFader?.inputSelector
 
     const selectableChannels = Array.from(
-        { length: mapping.inputChannelLast - mapping.inputChannelFirst + 1 },
+        { length: mapping.inputCount },
         (_, index) => mapping.inputChannelFirst + index
     )
 

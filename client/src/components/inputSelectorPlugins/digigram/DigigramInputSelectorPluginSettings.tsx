@@ -50,10 +50,14 @@ const normalizeChannelMappings = (
                     typeof mapping.inputChannelFirst === 'number'
                         ? mapping.inputChannelFirst
                         : 0,
-                inputChannelLast:
-                    typeof mapping.inputChannelLast === 'number'
-                        ? mapping.inputChannelLast
-                        : 7,
+                inputCount:
+                    typeof mapping.inputCount === 'number'
+                        ? mapping.inputCount
+                        : 8,
+                defaultInput:
+                    typeof mapping.defaultInput === 'number'
+                        ? mapping.defaultInput
+                        : 0,
             },
         ]
     })
@@ -77,6 +81,22 @@ const DigigramInputSelectorPluginSettings: React.FC<
     DigigramInputSelectorPluginSettingsProps
 > = ({ config, mixerIndex, onChange }) => {
     const options = resolveDigigramOptions(config)
+
+    const resetAssignments = () => {
+        fetch(`/api/plugin-state/digigram/${mixerIndex}/reset`, {
+            method: 'POST',
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    return response.text().then((text) => {
+                        window.alert(text || 'Failed to reset inputs')
+                    })
+                }
+            })
+            .catch(() => {
+                window.alert('Failed to reset inputs')
+            })
+    }
 
     const updateOptions = (nextOptions: DigigramInputSelectorOptions) => {
         onChange({
@@ -117,7 +137,8 @@ const DigigramInputSelectorPluginSettings: React.FC<
                     sisyfosChannel: 0,
                     digigramOutChannel: 0,
                     inputChannelFirst: 0,
-                    inputChannelLast: 7,
+                    inputCount: 8,
+                    defaultInput: 0,
                 },
             ],
         })
@@ -169,7 +190,8 @@ const DigigramInputSelectorPluginSettings: React.FC<
                             <th>Sisyfos channel</th>
                             <th>Digigram out</th>
                             <th>Input first</th>
-                            <th>Input last</th>
+                            <th>Input count</th>
+                            <th>Default input</th>
                             <th aria-label="Actions" />
                         </tr>
                     </thead>
@@ -228,13 +250,27 @@ const DigigramInputSelectorPluginSettings: React.FC<
                                     <input
                                         className="digigram-channel-selector-table-input"
                                         type="number"
+                                        value={mapping.inputCount}
+                                        onChange={(event) =>
+                                            updateMapping(
+                                                index,
+                                                'inputCount',
+                                                Number(event.target.value)
+                                            )
+                                        }
+                                    />
+                                </td>
+                                <td>
+                                    <input
+                                        className="digigram-channel-selector-table-input"
+                                        type="number"
                                         value={toDisplayValue(
-                                            mapping.inputChannelLast
+                                            mapping.defaultInput
                                         )}
                                         onChange={(event) =>
                                             updateDisplayedMapping(
                                                 index,
-                                                'inputChannelLast',
+                                                'defaultInput',
                                                 Number(event.target.value)
                                             )
                                         }
@@ -255,7 +291,7 @@ const DigigramInputSelectorPluginSettings: React.FC<
                         {!options.channelMappings.length ? (
                             <tr>
                                 <td
-                                    colSpan={5}
+                                    colSpan={6}
                                     className="digigram-channel-selector-table-empty"
                                 >
                                     No mappings configured.
@@ -272,6 +308,14 @@ const DigigramInputSelectorPluginSettings: React.FC<
                 onClick={addMapping}
             >
                 Add mapping
+            </button>
+
+            <button
+                className="settings-plugin-import-export-button"
+                type="button"
+                onClick={resetAssignments}
+            >
+                Reset selectors
             </button>
         </>
     )

@@ -32,6 +32,11 @@ import { sendChLevelsToOuputServer } from './outputLevelServer'
 import { MixerConnection } from './mixerConnections'
 import { SecondOutRowButtonType } from '../../../shared/src/reducers/settingsReducer'
 import { LawoMC2Connection } from './mixerConnections/LawoMC2Connection'
+import {
+    createInputSelectorPlugin,
+    registerInputSelectorPlugin,
+    createFaderLinkPlugin,
+} from './mixerPluginRegistry'
 
 export class MixerGenericConnection {
     mixerProtocol: MixerProtocolGeneric[]
@@ -145,6 +150,8 @@ export class MixerGenericConnection {
             }
         })
 
+        this.setupPlugins()
+
         // Setup timers for fade in & out
         this.initializeTimers()
     }
@@ -165,6 +172,34 @@ export class MixerGenericConnection {
                 )
             }
         )
+    }
+
+    private setupPlugins() {
+        this.mixerConnection.forEach((connection, index) => {
+            const mixerSettings = state.settings[0].mixers[index]
+
+            if (connection.setInputSelectorPlugin && connection.getInputSelectorPluginContext) {
+                const config = mixerSettings?.inputSelectorPlugin
+                if (config?.enabled && config.pluginId) {
+                    const plugin = createInputSelectorPlugin(
+                        config.pluginId,
+                        (config.options || {}) as Record<string, unknown>,
+                        connection.getInputSelectorPluginContext()
+                    )
+                    connection.setInputSelectorPlugin(plugin)
+                    plugin?.connect()
+                    registerInputSelectorPlugin(index, plugin)
+                }
+            }
+
+            if (connection.setFaderLinkPlugin && connection.getFaderLinkPluginContext) {
+                const config = mixerSettings?.faderLinkPlugin
+                if (config?.enabled && config.pluginId) {
+                    const plugin = createFaderLinkPlugin(config, connection.getFaderLinkPluginContext())
+                    connection.setFaderLinkPlugin(plugin)
+                }
+            }
+        })
     }
 
     clearTimer = (mixerIndex: number, channelIndex: number) => {

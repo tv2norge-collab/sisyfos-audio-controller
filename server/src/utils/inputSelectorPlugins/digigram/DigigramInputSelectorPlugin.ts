@@ -75,6 +75,7 @@ export class DigigramInputSelectorPlugin implements MixerInputSelectorPlugin {
     private static readonly DEFAULT_HEARTBEAT_INTERVAL_MS = 5000
     private static readonly DEFAULT_STALE_TIMEOUT_MS = 20000
     private static readonly DEFAULT_CONNECT_INTERVAL_MS = 1000
+    private static readonly LOCAL_CHANGE_LOCK_MS = 1000
 
     private readonly configOptions: DigigramInputSelectorOptions
     private readonly context: InputSelectorPluginContext
@@ -92,7 +93,14 @@ export class DigigramInputSelectorPlugin implements MixerInputSelectorPlugin {
     private messageSequence = 0
     private initialStateRequested = false
     private initialConnectSent = false
-    private readonly lastSelectorByChannel = new Map<number, number>()
+    private readonly localChangeLockByChannel = new Map<
+        number,
+        NodeJS.Timeout
+    >()
+    private readonly pendingExternalByChannel = new Map<
+        number,
+        { channelNumber: number; inputSelected: number }
+    >()
     private readonly sisyfosToChannelMapping = new Map<
         number,
         DigigramChannelMapping
@@ -187,7 +195,27 @@ export class DigigramInputSelectorPlugin implements MixerInputSelectorPlugin {
             return
         }
 
-        this.lastSelectorByChannel.set(channelNumber, change.inputSelected)
+        const existingLock = this.localChangeLockByChannel.get(channelNumber)
+        if (existingLock) clearTimeout(existingLock)
+        this.pendingExternalByChannel.delete(channelNumber)
+        this.localChangeLockByChannel.set(
+            channelNumber,
+            setTimeout(() => {
+                this.localChangeLockByChannel.delete(channelNumber)
+                const pending = this.pendingExternalByChannel.get(channelNumber)
+                if (pending) {
+                    this.pendingExternalByChannel.delete(channelNumber)
+                    const timestamp = Date.now()
+                    this.context.onExternalUpdate({
+                        channelIndex: pending.channelNumber,
+                        inputSelected: pending.inputSelected,
+                        timestamp,
+                    })
+                    this.lastStateSyncAt = timestamp
+                    this.emitStatus()
+                }
+            }, DigigramInputSelectorPlugin.LOCAL_CHANGE_LOCK_MS)
+        )
 
         this.send({
             channel: DigigramInputSelectorPlugin.SERVICE_SETTINGS_CHANNEL,
@@ -318,18 +346,14 @@ export class DigigramInputSelectorPlugin implements MixerInputSelectorPlugin {
         if (message.channel === DigigramInputSelectorPlugin.SETTINGS_CHANNEL) {
             const updates = this.extractSelectorUpdates(message)
             for (const update of updates) {
-                const lastSelected = this.lastSelectorByChannel.get(
-                    update.channelNumber
-                )
-                if (lastSelected === update.inputSelected) {
+                if (this.localChangeLockByChannel.has(update.channelNumber)) {
+                    this.pendingExternalByChannel.set(
+                        update.channelNumber,
+                        update
+                    )
                     continue
                 }
-
                 const timestamp = Date.now()
-                this.lastSelectorByChannel.set(
-                    update.channelNumber,
-                    update.inputSelected
-                )
                 this.context.onExternalUpdate({
                     channelIndex: update.channelNumber,
                     inputSelected: update.inputSelected,
@@ -548,7 +572,7 @@ export class DigigramInputSelectorPlugin implements MixerInputSelectorPlugin {
 
         if (
             inputSelected < mapping.inputChannelFirst ||
-            inputSelected > mapping.inputChannelLast
+            inputSelected > mapping.inputChannelFirst + mapping.inputCount - 1
         ) {
             return undefined
         }
@@ -567,7 +591,8 @@ export class DigigramInputSelectorPlugin implements MixerInputSelectorPlugin {
 
         if (
             digigramInputChannel < mapping.inputChannelFirst ||
-            digigramInputChannel > mapping.inputChannelLast
+            digigramInputChannel >
+                mapping.inputChannelFirst + mapping.inputCount - 1
         ) {
             return undefined
         }
@@ -583,6 +608,19 @@ export class DigigramInputSelectorPlugin implements MixerInputSelectorPlugin {
             this.reconnectTimer = undefined
             this.connect()
         }, DigigramInputSelectorPlugin.DEFAULT_RECONNECT_DELAY_MS)
+    }
+
+    reset(): void {
+        for (const mapping of this.configOptions.channelMappings) {
+            this.sendSelectorChange({
+                channelIndex: mapping.sisyfosChannel,
+                inputSelected: mapping.defaultInput,
+            })
+            this.context.onExternalUpdate({
+                channelIndex: mapping.sisyfosChannel,
+                inputSelected: mapping.defaultInput,
+            })
+        }
     }
 
     getStatus(): InputSelectorPluginStatus {

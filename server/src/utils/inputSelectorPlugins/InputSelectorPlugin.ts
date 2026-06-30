@@ -21,6 +21,7 @@ export interface MixerInputSelectorPlugin {
     sendSelectorChange(change: InputSelectorUpdate): void
     requestState(): void
     getStatus(): InputSelectorPluginStatus
+    reset?(): void
 }
 
 export interface InputSelectorPluginContext {

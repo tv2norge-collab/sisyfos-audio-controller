@@ -1,4 +1,12 @@
 import { FxParam } from '../../../../shared/src/constants/MixerProtocolInterface'
+import {
+    MixerInputSelectorPlugin,
+    InputSelectorPluginContext,
+} from '../inputSelectorPlugins/InputSelectorPlugin'
+import {
+    MixerFaderLinkPlugin,
+    FaderLinkPluginContext,
+} from '../faderLinkPlugins/FaderLinkPlugin'
 
 /**
  * For two consecutive channels, if one is linkable as PRIMARY and the other as SECONDARY,
@@ -33,4 +41,8 @@ export interface MixerConnection {
     ): void
     updateFadeIOLevel(channelIndex: number, outputLevel: number): void
     onFaderLink?(faderIndex: number, linkOn: boolean): void
+    setInputSelectorPlugin?(plugin: MixerInputSelectorPlugin | undefined): void
+    getInputSelectorPluginContext?(): InputSelectorPluginContext
+    setFaderLinkPlugin?(plugin: MixerFaderLinkPlugin | undefined): void
+    getFaderLinkPluginContext?(): FaderLinkPluginContext
 }

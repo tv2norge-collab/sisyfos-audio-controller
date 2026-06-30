@@ -2,7 +2,8 @@ export interface DigigramChannelMapping {
     sisyfosChannel: number
     digigramOutChannel: number
     inputChannelFirst: number
-    inputChannelLast: number
+    inputCount: number
+    defaultInput: number
 }
 
 export interface DigigramInputSelectorOptions {
