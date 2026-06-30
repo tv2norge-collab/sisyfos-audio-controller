@@ -3,36 +3,21 @@ import React from 'react'
 interface PluginSettingsImportExportProps {
     pluginId: string
     mixerIndex: number
-    options: object
+    hasUnsavedChanges: boolean
     onImportedOptions: (options: Record<string, unknown>) => void
 }
 
 const PluginSettingsImportExport: React.FC<PluginSettingsImportExportProps> = ({
     pluginId,
     mixerIndex,
-    options,
+    hasUnsavedChanges,
     onImportedOptions,
 }) => {
     const importInputRef = React.useRef<HTMLInputElement>(null)
     const apiUrl = `/api/plugin-settings/${encodeURIComponent(pluginId)}/${mixerIndex}`
 
     const exportPluginSettings = () => {
-        try {
-            const filename = `${pluginId}-mixer-${mixerIndex}-settings.json`
-            const blob = new Blob([JSON.stringify({ options }, null, 2)], {
-                type: 'application/json',
-            })
-            const url = window.URL.createObjectURL(blob)
-            const link = document.createElement('a')
-            link.href = url
-            link.download = filename
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-            window.URL.revokeObjectURL(url)
-        } catch (_error) {
-            window.alert('Failed to export plugin settings')
-        }
+        window.location.href = apiUrl
     }
 
     const importPluginSettings = async (
@@ -71,6 +56,8 @@ const PluginSettingsImportExport: React.FC<PluginSettingsImportExportProps> = ({
                     className="settings-plugin-import-export-button"
                     type="button"
                     onClick={exportPluginSettings}
+                    disabled={hasUnsavedChanges}
+                    title={hasUnsavedChanges ? 'Save settings before exporting' : undefined}
                 >
                     Export settings
                 </button>

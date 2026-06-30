@@ -47,6 +47,7 @@ class VMixFaderLinkPlugin implements MixerFaderLinkPlugin {
 
     private findPrefix(channelIndex: number): string | undefined {
         const prefix = this.mappings.find((m) => m.channelIndex === channelIndex)?.prefix
+        // Empty string means no prefix — treat the same as unset
         return prefix || undefined
     }
 

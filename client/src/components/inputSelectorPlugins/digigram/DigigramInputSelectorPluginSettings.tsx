@@ -159,7 +159,7 @@ const DigigramInputSelectorPluginSettings: React.FC<
             <PluginSettingsImportExport
                 pluginId={config.pluginId}
                 mixerIndex={mixerIndex}
-                options={options}
+                hasUnsavedChanges={hasUnsavedChanges}
                 onImportedOptions={(importedOptions) =>
                     updateOptions({
                         ...options,

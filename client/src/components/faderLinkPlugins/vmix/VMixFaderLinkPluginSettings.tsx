@@ -83,7 +83,7 @@ const VMixFaderLinkPluginSettings: React.FC<FaderLinkPluginSettingsRendererProps
                 <PluginSettingsImportExport
                     pluginId={config.pluginId}
                     mixerIndex={mixerIndex}
-                    options={options}
+                    hasUnsavedChanges={hasUnsavedChanges}
                     onImportedOptions={(imported) =>
                         updateMappings(
                             (imported.channelMappings as VMixFaderLinkChannelMapping[]) ??
