@@ -20,7 +20,7 @@ function resolveOptions(config: MixerPluginConfig): VMixFaderLinkPluginOptions {
 }
 
 const VMixFaderLinkPluginSettings: React.FC<FaderLinkPluginSettingsRendererProps> =
-    ({ config, mixerIndex, onChange }) => {
+    ({ config, mixerIndex, hasUnsavedChanges, onChange }) => {
         const options = resolveOptions(config)
 
         const updateMappings = (
@@ -41,11 +41,37 @@ const VMixFaderLinkPluginSettings: React.FC<FaderLinkPluginSettingsRendererProps
             )
         }
 
+        const updateBoolMapping = (
+            index: number,
+            key: keyof VMixFaderLinkChannelMapping,
+            value: boolean
+        ) => {
+            updateMappings(
+                options.channelMappings.map((m, i) =>
+                    i === index ? { ...m, [key]: value } : m
+                )
+            )
+        }
+
         const addMapping = () => {
             updateMappings([
                 ...options.channelMappings,
-                { channelIndex: 0, prefix: '' },
+                { channelIndex: 0, prefix: '', isLinkablePrimary: false, isLinked: false },
             ])
+        }
+
+        const resetAssignments = () => {
+            fetch(`/api/plugin-state/vmix/${mixerIndex}/reset`, { method: 'POST' })
+                .then((response) => {
+                    if (!response.ok) {
+                        return response.text().then((text) => {
+                            window.alert(text || 'Failed to reset')
+                        })
+                    }
+                })
+                .catch(() => {
+                    window.alert('Failed to reset')
+                })
         }
 
         const removeMapping = (index: number) => {
@@ -71,6 +97,8 @@ const VMixFaderLinkPluginSettings: React.FC<FaderLinkPluginSettingsRendererProps
                             <tr>
                                 <th>Sisyfos channel</th>
                                 <th>Preset prefix</th>
+                                <th>Linkable primary</th>
+                                <th>Linked</th>
                                 <th aria-label="Actions" />
                             </tr>
                         </thead>
@@ -114,6 +142,24 @@ const VMixFaderLinkPluginSettings: React.FC<FaderLinkPluginSettingsRendererProps
                                         />
                                     </td>
                                     <td>
+                                        <input
+                                            type="checkbox"
+                                            checked={mapping.isLinkablePrimary ?? false}
+                                            onChange={(e) =>
+                                                updateBoolMapping(index, 'isLinkablePrimary', e.target.checked)
+                                            }
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="checkbox"
+                                            checked={mapping.isLinked ?? false}
+                                            onChange={(e) =>
+                                                updateBoolMapping(index, 'isLinked', e.target.checked)
+                                            }
+                                        />
+                                    </td>
+                                    <td>
                                         <button
                                             className="vmix-fader-link-remove-btn"
                                             type="button"
@@ -128,7 +174,7 @@ const VMixFaderLinkPluginSettings: React.FC<FaderLinkPluginSettingsRendererProps
                             {!options.channelMappings.length && (
                                 <tr>
                                     <td
-                                        colSpan={3}
+                                        colSpan={5}
                                         className="vmix-fader-link-table-empty"
                                     >
                                         No mappings configured.
@@ -144,6 +190,15 @@ const VMixFaderLinkPluginSettings: React.FC<FaderLinkPluginSettingsRendererProps
                     onClick={addMapping}
                 >
                     Add mapping
+                </button>
+                <button
+                    className="settings-plugin-import-export-button"
+                    type="button"
+                    onClick={resetAssignments}
+                    disabled={hasUnsavedChanges}
+                    title={hasUnsavedChanges ? 'Save settings before resetting' : undefined}
+                >
+                    Reset links
                 </button>
             </>
         )

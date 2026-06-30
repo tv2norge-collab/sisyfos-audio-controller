@@ -1,6 +1,8 @@
 export interface VMixFaderLinkChannelMapping {
     channelIndex: number
     prefix: string
+    isLinkablePrimary?: boolean
+    isLinked?: boolean
 }
 
 export interface VMixFaderLinkPluginOptions {

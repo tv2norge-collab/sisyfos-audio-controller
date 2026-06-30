@@ -7,6 +7,7 @@ import DigigramInputSelectorPluginChannelLayout from '../components/inputSelecto
 export interface InputSelectorPluginSettingsRendererProps {
     config: MixerPluginConfig
     mixerIndex: number
+    hasUnsavedChanges: boolean
     onChange: (pluginConfig: MixerPluginConfig) => void
 }
 

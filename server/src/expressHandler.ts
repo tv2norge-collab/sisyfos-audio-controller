@@ -18,6 +18,7 @@ import { SettingsActionTypes } from '../../shared/src/actions/settingsActions'
 import {
     getPluginEntry,
     getInputSelectorPlugin,
+    getFaderLinkPlugin,
 } from './utils/mixerPluginRegistry'
 
 import express from 'express'
@@ -240,11 +241,12 @@ app.post(
             res.status(404).send('Unknown plugin')
             return
         }
-        const plugin = getInputSelectorPlugin(mixerIndex)
+        const plugin =
+            entry.stateKey === 'inputSelectorPlugin'
+                ? getInputSelectorPlugin(mixerIndex)
+                : getFaderLinkPlugin(mixerIndex)
         if (!plugin) {
-            res.status(404).send(
-                'No active input selector plugin for this mixer'
-            )
+            res.status(404).send('No active plugin for this mixer')
             return
         }
         if (!plugin.reset) {

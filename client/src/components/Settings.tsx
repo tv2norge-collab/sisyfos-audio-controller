@@ -243,6 +243,11 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
         )
         if (!PluginSettingsRenderer) return null
 
+        const savedConfig =
+            this.props.store.settings[0].mixers[mixerIndex]?.faderLinkPlugin
+        const hasUnsavedChanges =
+            JSON.stringify(pluginConfig) !== JSON.stringify(savedConfig)
+
         return (
             <>
                 <div className="settings-header">
@@ -251,6 +256,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 <PluginSettingsRenderer
                     config={pluginConfig}
                     mixerIndex={mixerIndex}
+                    hasUnsavedChanges={hasUnsavedChanges}
                     onChange={(updated) =>
                         this.handleFaderLinkPluginChange(mixerIndex, updated)
                     }
@@ -269,6 +275,11 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
         )
         if (!PluginSettingsRenderer) return null
 
+        const savedConfig =
+            this.props.store.settings[0].mixers[mixerIndex]?.inputSelectorPlugin
+        const hasUnsavedChanges =
+            JSON.stringify(pluginConfig) !== JSON.stringify(savedConfig)
+
         return (
             <>
                 <div className="settings-header">
@@ -277,6 +288,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 <PluginSettingsRenderer
                     config={pluginConfig}
                     mixerIndex={mixerIndex}
+                    hasUnsavedChanges={hasUnsavedChanges}
                     onChange={(updated) =>
                         this.handleInputSelectorPluginChange(
                             mixerIndex,

@@ -14,6 +14,7 @@ import PluginSettingsImportExport from '../../PluginSettingsImportExport'
 interface DigigramInputSelectorPluginSettingsProps {
     config: MixerPluginConfig
     mixerIndex: number
+    hasUnsavedChanges: boolean
     onChange: (pluginConfig: MixerPluginConfig) => void
 }
 
@@ -79,7 +80,7 @@ const resolveDigigramOptions = (
 
 const DigigramInputSelectorPluginSettings: React.FC<
     DigigramInputSelectorPluginSettingsProps
-> = ({ config, mixerIndex, onChange }) => {
+> = ({ config, mixerIndex, hasUnsavedChanges, onChange }) => {
     const options = resolveDigigramOptions(config)
 
     const resetAssignments = () => {
@@ -314,6 +315,8 @@ const DigigramInputSelectorPluginSettings: React.FC<
                 className="settings-plugin-import-export-button"
                 type="button"
                 onClick={resetAssignments}
+                disabled={hasUnsavedChanges}
+                title={hasUnsavedChanges ? 'Save settings before resetting' : undefined}
             >
                 Reset selectors
             </button>

@@ -21,18 +21,16 @@ const MATRIX_PRESET_LR = 'LR'
 function normalizeMappings(
     options: VMixFaderLinkPluginOptions
 ): VMixFaderLinkChannelMapping[] {
-    return options.channelMappings.filter(
-        (m) =>
-            typeof m.channelIndex === 'number' &&
-            typeof m.prefix === 'string' &&
-            m.prefix !== ''
-    )
+    return options.channelMappings.filter((m) => typeof m.channelIndex === 'number')
 }
 
 class VMixFaderLinkPlugin implements MixerFaderLinkPlugin {
     private readonly mappings: VMixFaderLinkChannelMapping[]
     private readonly sendCommand: FaderLinkPluginContext['sendCommand']
     private readonly resolveInputNumber: FaderLinkPluginContext['resolveInputNumber']
+    private readonly setLinkableCapability: FaderLinkPluginContext['setLinkableCapability']
+    private readonly setLinked: FaderLinkPluginContext['setLinked']
+    private readonly clearAllLinkCapabilities: FaderLinkPluginContext['clearAllLinkCapabilities']
 
     constructor(config: MixerPluginConfig, context: FaderLinkPluginContext) {
         const options: VMixFaderLinkPluginOptions = {
@@ -42,10 +40,14 @@ class VMixFaderLinkPlugin implements MixerFaderLinkPlugin {
         this.mappings = normalizeMappings(options)
         this.sendCommand = context.sendCommand
         this.resolveInputNumber = context.resolveInputNumber
+        this.setLinkableCapability = context.setLinkableCapability
+        this.setLinked = context.setLinked
+        this.clearAllLinkCapabilities = context.clearAllLinkCapabilities
     }
 
     private findPrefix(channelIndex: number): string | undefined {
-        return this.mappings.find((m) => m.channelIndex === channelIndex)?.prefix
+        const prefix = this.mappings.find((m) => m.channelIndex === channelIndex)?.prefix
+        return prefix || undefined
     }
 
     private resolveLinkPreset(primaryChannelIndex: number): string {
@@ -94,6 +96,20 @@ class VMixFaderLinkPlugin implements MixerFaderLinkPlugin {
                 )
                 this.sendCommand(SET_VOLUME_CHANNEL_MIXER, secondaryInput, '1,0')
                 this.sendCommand(SET_VOLUME_CHANNEL_MIXER, secondaryInput, '2,100')
+            }
+        }
+    }
+
+    reset(): void {
+        this.clearAllLinkCapabilities()
+        for (const mapping of this.mappings) {
+            if (mapping.isLinkablePrimary) {
+                this.setLinkableCapability(mapping.channelIndex, true)
+            }
+        }
+        for (const mapping of this.mappings) {
+            if (mapping.isLinked) {
+                this.setLinked(mapping.channelIndex, true)
             }
         }
     }

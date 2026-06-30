@@ -5,7 +5,7 @@ import {
 } from '../inputSelectorPlugins/InputSelectorPlugin'
 import {
     MixerFaderLinkPlugin,
-    FaderLinkPluginContext,
+    FaderLinkPluginConnectionContext,
 } from '../faderLinkPlugins/FaderLinkPlugin'
 
 /**
@@ -44,5 +44,5 @@ export interface MixerConnection {
     setInputSelectorPlugin?(plugin: MixerInputSelectorPlugin | undefined): void
     getInputSelectorPluginContext?(): InputSelectorPluginContext
     setFaderLinkPlugin?(plugin: MixerFaderLinkPlugin | undefined): void
-    getFaderLinkPluginContext?(): FaderLinkPluginContext
+    getFaderLinkPluginContext?(): FaderLinkPluginConnectionContext
 }

@@ -5,6 +5,7 @@ import VMixFaderLinkPluginSettings from '../components/faderLinkPlugins/vmix/VMi
 export interface FaderLinkPluginSettingsRendererProps {
     config: MixerPluginConfig
     mixerIndex: number
+    hasUnsavedChanges: boolean
     onChange: (pluginConfig: MixerPluginConfig) => void
 }
 

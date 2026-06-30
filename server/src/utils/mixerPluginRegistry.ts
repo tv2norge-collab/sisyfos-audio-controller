@@ -87,6 +87,25 @@ export function getInputSelectorPlugin(
     return inputSelectorInstances.get(mixerIndex)
 }
 
+const faderLinkInstances = new Map<number, MixerFaderLinkPlugin>()
+
+export function registerFaderLinkPlugin(
+    mixerIndex: number,
+    plugin: MixerFaderLinkPlugin | undefined
+): void {
+    if (plugin) {
+        faderLinkInstances.set(mixerIndex, plugin)
+    } else {
+        faderLinkInstances.delete(mixerIndex)
+    }
+}
+
+export function getFaderLinkPlugin(
+    mixerIndex: number
+): MixerFaderLinkPlugin | undefined {
+    return faderLinkInstances.get(mixerIndex)
+}
+
 export function getInputSelectorManifests(): MixerPluginManifest[] {
     return Object.values(registry)
         .filter((e): e is InputSelectorEntry => e.stateKey === 'inputSelectorPlugin')
