@@ -4,6 +4,13 @@ import typescript from '@rollup/plugin-typescript';
 import commonjs from '@rollup/plugin-commonjs';
 import svgr from '@svgr/rollup';
 import path from 'path';
+import { createRequire } from 'module';
+
+const pkg = createRequire(import.meta.url)('./package.json');
+const externalPackages = [
+  ...Object.keys(pkg.dependencies ?? {}),
+  ...Object.keys(pkg.peerDependencies ?? {}),
+];
 
 export default {
   input: './src/index.tsx', // Entry point of the component library
@@ -30,8 +37,12 @@ export default {
     }),
     svgr()
   ],
-  external: [
-    'react', // Prevent bundling react
-    'react-dom' // Prevent bundling react-dom
-  ],
+  // Anything the package declares as a dependency/peerDependency is the
+  // consumer's responsibility to provide, not ours to bundle. Deriving this
+  // from package.json (rather than a hand-maintained list) keeps it in sync
+  // automatically and stops Rollup from warning about every one of them as
+  // an "unresolved" external it had to guess about.
+  external: (id) => externalPackages.some(
+    (name) => id === name || id.startsWith(`${name}/`)
+  ),
 };
