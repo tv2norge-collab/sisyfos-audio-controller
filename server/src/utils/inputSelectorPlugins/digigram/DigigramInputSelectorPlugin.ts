@@ -612,6 +612,10 @@ export class DigigramInputSelectorPlugin implements MixerInputSelectorPlugin {
 
     reset(): void {
         for (const mapping of this.configOptions.channelMappings) {
+            // No default input configured means something else decides what is
+            // selected, so leave the channel alone.
+            if (mapping.defaultInput === undefined) continue
+
             this.sendSelectorChange({
                 channelIndex: mapping.sisyfosChannel,
                 inputSelected: mapping.defaultInput,

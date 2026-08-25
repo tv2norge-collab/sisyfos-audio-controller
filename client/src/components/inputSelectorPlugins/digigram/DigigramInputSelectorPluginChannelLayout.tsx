@@ -47,7 +47,7 @@ const getDigigramOptions = (
                       defaultInput:
                           typeof mapping.defaultInput === 'number'
                               ? mapping.defaultInput
-                              : 1,
+                              : undefined,
                   },
               ]
           })

@@ -3,7 +3,7 @@ export interface DigigramChannelMapping {
     digigramOutChannel: number
     inputChannelFirst: number
     inputCount: number
-    defaultInput: number
+    defaultInput?: number
 }
 
 export interface DigigramInputSelectorOptions {

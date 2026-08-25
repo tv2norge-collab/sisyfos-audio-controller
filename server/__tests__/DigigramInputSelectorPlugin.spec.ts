@@ -304,4 +304,68 @@ describe('DigigramInputSelectorPlugin', () => {
             timestamp: expect.any(Number),
         })
     })
+
+    it('reset applies the configured default input', () => {
+        const onExternalUpdate = jest.fn()
+        const plugin = createPlugin(onExternalUpdate)
+
+        plugin.connect()
+        emit('open')
+        emitMessage([
+            {
+                channel: '/meta/handshake',
+                successful: true,
+                clientId: 'client-1',
+            },
+        ])
+        socket.sentPayloads.length = 0
+        onExternalUpdate.mockClear()
+
+        plugin.reset()
+
+        expect(onExternalUpdate).toHaveBeenCalledWith({
+            channelIndex: 7,
+            inputSelected: 10,
+        })
+        expect(parsedSentPayloads()).toContainEqual(
+            expect.objectContaining({
+                channel: '/service/ravenna/settings',
+            })
+        )
+    })
+
+    it('reset leaves channels without a default input untouched', () => {
+        const onExternalUpdate = jest.fn()
+        const plugin = createPlugin(onExternalUpdate, jest.fn(), {
+            channelMappings: [
+                {
+                    sisyfosChannel: 7,
+                    digigramOutChannel: 30,
+                    inputChannelFirst: 10,
+                    inputCount: 6,
+                },
+            ],
+        })
+
+        plugin.connect()
+        emit('open')
+        emitMessage([
+            {
+                channel: '/meta/handshake',
+                successful: true,
+                clientId: 'client-1',
+            },
+        ])
+        socket.sentPayloads.length = 0
+        onExternalUpdate.mockClear()
+
+        plugin.reset()
+
+        expect(onExternalUpdate).not.toHaveBeenCalled()
+        expect(parsedSentPayloads()).not.toContainEqual(
+            expect.objectContaining({
+                channel: '/service/ravenna/settings',
+            })
+        )
+    })
 })

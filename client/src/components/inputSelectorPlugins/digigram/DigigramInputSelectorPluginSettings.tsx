@@ -58,7 +58,7 @@ const normalizeChannelMappings = (
                 defaultInput:
                     typeof mapping.defaultInput === 'number'
                         ? mapping.defaultInput
-                        : 0,
+                        : undefined,
             },
         ]
     })
@@ -109,7 +109,7 @@ const DigigramInputSelectorPluginSettings: React.FC<
     const updateMapping = (
         mappingIndex: number,
         key: keyof DigigramChannelMapping,
-        value: number
+        value: number | undefined
     ) => {
         const channelMappings = options.channelMappings.map((mapping, index) =>
             index === mappingIndex ? { ...mapping, [key]: value } : mapping
@@ -129,6 +129,18 @@ const DigigramInputSelectorPluginSettings: React.FC<
         updateMapping(mappingIndex, key, fromDisplayValue(value))
     }
 
+    const updateOptionalDisplayedMapping = (
+        mappingIndex: number,
+        key: keyof DigigramChannelMapping,
+        value: string
+    ) => {
+        updateMapping(
+            mappingIndex,
+            key,
+            value === '' ? undefined : fromDisplayValue(Number(value))
+        )
+    }
+
     const addMapping = () => {
         updateOptions({
             ...options,
@@ -139,7 +151,6 @@ const DigigramInputSelectorPluginSettings: React.FC<
                     digigramOutChannel: 0,
                     inputChannelFirst: 0,
                     inputCount: 8,
-                    defaultInput: 0,
                 },
             ],
         })
@@ -265,14 +276,19 @@ const DigigramInputSelectorPluginSettings: React.FC<
                                     <input
                                         className="digigram-channel-selector-table-input"
                                         type="number"
-                                        value={toDisplayValue(
-                                            mapping.defaultInput
-                                        )}
+                                        value={
+                                            mapping.defaultInput === undefined
+                                                ? ''
+                                                : toDisplayValue(
+                                                      mapping.defaultInput
+                                                  )
+                                        }
+                                        placeholder="None"
                                         onChange={(event) =>
-                                            updateDisplayedMapping(
+                                            updateOptionalDisplayedMapping(
                                                 index,
                                                 'defaultInput',
-                                                Number(event.target.value)
+                                                event.target.value
                                             )
                                         }
                                     />
@@ -316,7 +332,11 @@ const DigigramInputSelectorPluginSettings: React.FC<
                 type="button"
                 onClick={resetAssignments}
                 disabled={hasUnsavedChanges}
-                title={hasUnsavedChanges ? 'Save settings before resetting' : undefined}
+                title={
+                    hasUnsavedChanges
+                        ? 'Save settings before resetting'
+                        : undefined
+                }
             >
                 Reset selectors
             </button>
