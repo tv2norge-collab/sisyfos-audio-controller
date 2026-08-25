@@ -1,4 +1,3 @@
-const webpack = require('webpack')
 const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 
@@ -59,9 +58,6 @@ module.exports = {
         new HtmlWebpackPlugin({
             template: './index.ejs',
             inject: true,
-        }),
-        new webpack.DefinePlugin({
-            'process.env.NODE_ENV': JSON.stringify('production'),
         }),
     ],
     stats: {

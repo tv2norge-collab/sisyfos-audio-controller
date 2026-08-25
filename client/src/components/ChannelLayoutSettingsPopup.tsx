@@ -8,86 +8,8 @@ import { Popover, PopoverContent, PopoverTrigger } from './Popover'
 import '../assets/css/ChannelLayoutSettings.css'
 import * as IO from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 import { RotaryDial } from './RotaryDial'
-import { MixerConnectionTypes } from '../../../shared/src/constants/MixerProtocolInterface'
 import { InputSelector } from './InputSelector'
-
-const SELECTABLE_CHANNELS = [1, 2, 3, 4, 5, 6, 7, 8]
-
-interface ChannelLayoutContentProps {
-    fader: Fader
-    handleInputSelect: (selected: number) => void
-    toggleLink: () => void
-}
-
-function ChannelLayoutContent({
-    fader,
-    handleInputSelect,
-    toggleLink,
-}: ChannelLayoutContentProps) {
-    return (
-        <>
-            {' '}
-            {fader.capabilities?.isLinkablePrimary && (
-                <div className="row channel-layout-selectors">
-                    <button
-                        onClick={toggleLink}
-                        className={classNames(
-                            'channel-layout-selector-button',
-                            { active: fader.isLinked }
-                        )}
-                    >
-                        L+R
-                    </button>
-                    <button
-                        onClick={toggleLink}
-                        className={classNames(
-                            'channel-layout-selector-button',
-                            { active: !fader.isLinked }
-                        )}
-                    >
-                        1|2
-                    </button>
-                </div>
-            )}
-            <div className="channel-layout-matrix">
-                <span>CH</span>
-                <span>{fader.isLinked ? 'L' : 1}</span>
-                <span>{fader.isLinked ? 'R' : 2}</span>
-                {SELECTABLE_CHANNELS.map((channel) => (
-                    <React.Fragment key={channel}>
-                        <span>{channel}</span>
-                        <input
-                            type="checkbox"
-                            aria-label="Channel 1"
-                            checked={
-                                ((fader.inputSelector >> 8) & 0xff) === channel
-                            }
-                            onChange={() =>
-                                handleInputSelect(
-                                    (fader.inputSelector & ~(0xff << 8)) |
-                                        (channel << 8)
-                                )
-                            }
-                        />
-                        <input
-                            type="checkbox"
-                            aria-label="Channel 2"
-                            checked={
-                                ((fader.inputSelector >> 16) & 0xff) === channel
-                            }
-                            onChange={() =>
-                                handleInputSelect(
-                                    (fader.inputSelector & ~(0xff << 16)) |
-                                        (channel << 16)
-                                )
-                            }
-                        />
-                    </React.Fragment>
-                ))}
-            </div>
-        </>
-    )
-}
+import { getInputSelectorPluginChannelLayoutRenderer } from '../utils/inputSelectorPluginRegistry'
 
 interface AmixtoggleProps {
     fader: Fader
@@ -140,6 +62,31 @@ export function ChannelLayoutSettingsButton({
     const nextFader = useAppSelector(
         (store) => store.faders[0].fader[faderIndex + 1]
     )
+    const pluginLayoutState = useAppSelector((store) => {
+        const mixerIndex = fader.assignedChannels?.[0]?.mixerIndex
+        if (mixerIndex === undefined) {
+            return undefined
+        }
+        const inputSelectorPlugin =
+            store.settings[0].mixers[mixerIndex]?.inputSelectorPlugin
+        if (!inputSelectorPlugin?.enabled) {
+            return undefined
+        }
+
+        const plugin = window.inputSelectorPlugins?.find(
+            (plugin) => plugin.pluginId === inputSelectorPlugin.pluginId
+        )
+
+        return plugin
+            ? {
+                  config: inputSelectorPlugin,
+                  faderIndex,
+                  renderer: getInputSelectorPluginChannelLayoutRenderer(
+                      plugin.pluginId
+                  ),
+              }
+            : undefined
+    })
 
     const minGainLabel =
         window.mixerProtocol.channelTypes[0].fromMixer.CHANNEL_INPUT_GAIN?.[0]
@@ -154,13 +101,6 @@ export function ChannelLayoutSettingsButton({
             channel: faderIndex,
         })
     }
-
-    const toggleLink = useCallback(() => {
-        window.socketIoClient.emit(IO.SOCKET_SET_LINK, {
-            faderIndex,
-            linkOn: !fader.isLinked,
-        })
-    }, [fader.isLinked, faderIndex])
 
     const handleInputGainLeft = useCallback(
         (level: number) => {
@@ -185,12 +125,19 @@ export function ChannelLayoutSettingsButton({
     const handleInputSelect = useCallback(
         (selected: number) => {
             window.socketIoClient.emit(IO.SOCKET_SET_INPUT_SELECTOR, {
-                faderIndex: faderIndex,
-                selected: selected,
+                faderIndex,
+                selected,
             })
         },
         [faderIndex]
     )
+
+    const toggleLink = useCallback(() => {
+        window.socketIoClient.emit(IO.SOCKET_SET_LINK, {
+            faderIndex,
+            linkOn: !fader.isLinked,
+        })
+    }, [faderIndex, fader.isLinked])
 
     const isActive = chanLayoutSettingsShown === faderIndex
 
@@ -212,27 +159,48 @@ export function ChannelLayoutSettingsButton({
             </PopoverTrigger>
             {isActive && (
                 <PopoverContent className="channel-layout-popover">
-                    {window.mixerProtocol.protocol ===
-                    MixerConnectionTypes.vMix ? (
-                        <ChannelLayoutContent
-                            fader={fader}
-                            handleInputSelect={handleInputSelect}
-                            toggleLink={toggleLink}
-                        />
-                    ) : (
-                        <>
-                            <AmixToggle fader={fader} faderIndex={faderIndex} />
-                            <div className="channel-layout-selector">
-                                <div className="content">
+                    <>
+                        <AmixToggle fader={fader} faderIndex={faderIndex} />
+                        <div className="channel-layout-selector">
+                            <div className="content">
+                                {fader.capabilities?.isLinkablePrimary && (
+                                    <div className="row channel-layout-selectors">
+                                        <button
+                                            onClick={toggleLink}
+                                            className={classNames(
+                                                'channel-layout-selector-button',
+                                                { active: fader.isLinked }
+                                            )}
+                                        >
+                                            L+R
+                                        </button>
+                                        <button
+                                            onClick={toggleLink}
+                                            className={classNames(
+                                                'channel-layout-selector-button',
+                                                { active: !fader.isLinked }
+                                            )}
+                                        >
+                                            1|2
+                                        </button>
+                                    </div>
+                                )}
+                                {pluginLayoutState?.renderer ? (
+                                    <pluginLayoutState.renderer
+                                        config={pluginLayoutState.config}
+                                        faderIndex={faderIndex}
+                                        fader={fader}
+                                        handleInputSelect={handleInputSelect}
+                                    />
+                                ) : (
                                     <InputSelector
                                         fader={fader}
                                         faderIndex={faderIndex}
                                     />
-                                </div>
-                                <hr />
+                                )}
                             </div>
-                        </>
-                    )}
+                        </div>
+                    </>
                     {fader.capabilities?.isLinkablePrimary &&
                     !fader.isLinked ? (
                         <div className="channel-layout-gain-pair">
