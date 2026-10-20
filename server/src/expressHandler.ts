@@ -6,12 +6,20 @@ import {
 } from './utils/outputLevelServer'
 import {
     STORAGE_FOLDER,
+    saveSettings,
     saveMixerPreset,
     deleteMixerPreset,
     saveCustomPages,
     getCustomPages,
 } from './utils/SettingsStorage'
 import { SOCKET_RETURN_PAGES_LIST } from '../../shared/src/constants/SOCKET_IO_DISPATCHERS'
+import { state, store } from './reducers/store'
+import { SettingsActionTypes } from '../../shared/src/actions/settingsActions'
+import {
+    getPluginEntry,
+    getInputSelectorPlugin,
+    getFaderLinkPlugin,
+} from './utils/mixerPluginRegistry'
 
 import express from 'express'
 import path from 'path'
@@ -116,6 +124,143 @@ app.put(
             logger.data(error).error('Error saving pages')
             res.status(500).send('Error saving pages')
         }
+    }
+)
+
+// Plugin settings HTTP endpoints (unified for all plugin types)
+// GET returns { enabled, options }
+// PUT accepts { enabled?, options? } — upserts the plugin config for this mixer
+app.get(
+    '/api/plugin-settings/:pluginId/:mixerIndex',
+    (req: express.Request, res: express.Response) => {
+        const pluginId = String(req.params.pluginId || '')
+        const mixerIndex = Number(req.params.mixerIndex)
+        if (!pluginId || Number.isNaN(mixerIndex)) {
+            res.status(400).send('Invalid plugin id or mixer index')
+            return
+        }
+
+        const entry = getPluginEntry(pluginId)
+        if (!entry) {
+            res.status(404).send('Unknown plugin')
+            return
+        }
+
+        const config = state.settings[0].mixers[mixerIndex]?.[entry.stateKey]
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename="${pluginId}-mixer-${mixerIndex}-settings.json"`
+        )
+        res.json({
+            enabled: config?.enabled ?? false,
+            options: config?.options ?? {},
+        })
+    }
+)
+
+app.put(
+    '/api/plugin-settings/:pluginId/:mixerIndex',
+    express.json({ limit: '1mb' }),
+    (req: express.Request, res: express.Response) => {
+        const pluginId = String(req.params.pluginId || '')
+        const mixerIndex = Number(req.params.mixerIndex)
+        if (!pluginId || Number.isNaN(mixerIndex)) {
+            res.status(400).send('Invalid plugin id or mixer index')
+            return
+        }
+
+        if (
+            !req.body ||
+            typeof req.body !== 'object' ||
+            Array.isArray(req.body)
+        ) {
+            res.status(400).send('Body must be a JSON object')
+            return
+        }
+
+        const entry = getPluginEntry(pluginId)
+        if (!entry) {
+            res.status(404).send('Unknown plugin')
+            return
+        }
+
+        const body = req.body as {
+            enabled?: boolean
+            options?: Record<string, unknown>
+        }
+
+        const existing = state.settings[0].mixers[mixerIndex]?.[entry.stateKey]
+        const newEnabled =
+            typeof body.enabled === 'boolean'
+                ? body.enabled
+                : (existing?.enabled ?? false)
+
+        let mergedOptions: Record<string, unknown> = {
+            ...(existing?.options || {}),
+        }
+        if (body.options !== undefined) {
+            if (
+                typeof body.options !== 'object' ||
+                Array.isArray(body.options)
+            ) {
+                res.status(400).send('options must be an object')
+                return
+            }
+            mergedOptions = { ...mergedOptions, ...body.options }
+        }
+
+        const nextSettings = JSON.parse(
+            JSON.stringify(state.settings[0])
+        ) as (typeof state.settings)[0]
+        nextSettings.mixers[mixerIndex][entry.stateKey] = {
+            pluginId,
+            enabled: newEnabled,
+            options: mergedOptions,
+        }
+        store.dispatch({
+            type: SettingsActionTypes.UPDATE_SETTINGS,
+            settings: nextSettings,
+        })
+        saveSettings(nextSettings)
+        socketServer.emit('set-settings', nextSettings)
+        res.status(200).json({ enabled: newEnabled, options: mergedOptions })
+    }
+)
+
+app.post(
+    '/api/plugin-state/:pluginId/:mixerIndex/reset',
+    (req: express.Request, res: express.Response) => {
+        const mixerIndex = Number(req.params.mixerIndex)
+        if (Number.isNaN(mixerIndex)) {
+            res.status(400).send('Invalid mixer index')
+            return
+        }
+        const pluginId = String(req.params.pluginId || '')
+        const entry = getPluginEntry(pluginId)
+        if (!entry) {
+            res.status(404).send('Unknown plugin')
+            return
+        }
+        const plugin =
+            entry.stateKey === 'inputSelectorPlugin'
+                ? getInputSelectorPlugin(mixerIndex)
+                : getFaderLinkPlugin(mixerIndex)
+        if (!plugin) {
+            res.status(404).send('No active plugin for this mixer')
+            return
+        }
+        if (!plugin.reset) {
+            res.status(405).send('This plugin does not support reset')
+            return
+        }
+        try {
+            plugin.reset()
+        } catch (error) {
+            logger.data(error).error('Input selector reset failed')
+            res.status(500).send('Reset failed')
+            return
+        }
+        res.status(200).send('OK')
     }
 )
 

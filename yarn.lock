@@ -11626,6 +11626,7 @@ asn1@evs-broadcast/node-asn1:
     vmix-js-utils: "npm:^4.0.19"
     web-midi-api: "npm:^2.2.5"
     webmidi: "npm:^2.5.1"
+    ws: "npm:^8.21.0"
   languageName: unknown
   linkType: soft
 
@@ -11668,10 +11669,10 @@ asn1@evs-broadcast/node-asn1:
 
 "shared@file:../shared::locator=server%40workspace%3Aserver":
   version: 0.0.0
-  resolution: "shared@file:../shared#../shared::hash=bc2dca&locator=server%40workspace%3Aserver"
+  resolution: "shared@file:../shared#../shared::hash=5c98cc&locator=server%40workspace%3Aserver"
   dependencies:
     redux: "npm:^5.0.1"
-  checksum: 10c0/ec86227007f88e6efee8907bac44728191076934c56f98458167d7edca1b7e22abfead6502a957dec0a02295da23ecf999e19872de075b1e09ae0d9bcbf7d9c8
+  checksum: 10c0/2c01cc83f236980538bacb36a19a9fbe83728f33faa768a6e38f3cfcec43835f997adbc2491f2fc56bf887f451d02feb57a592dfe35bf35514b13bb17021c39c
   languageName: node
   linkType: hard
 
@@ -13517,6 +13518,21 @@ asn1@evs-broadcast/node-asn1:
     utf-8-validate:
       optional: true
   checksum: 10c0/25eb33aff17edcb90721ed6b0eb250976328533ad3cd1a28a274bd263682e7296a6591ff1436d6cbc50fa67463158b062f9d1122013b361cec99a05f84680e06
+  languageName: node
+  linkType: hard
+
+"ws@npm:^8.21.0":
+  version: 8.21.0
+  resolution: "ws@npm:8.21.0"
+  peerDependencies:
+    bufferutil: ^4.0.1
+    utf-8-validate: ">=5.0.2"
+  peerDependenciesMeta:
+    bufferutil:
+      optional: true
+    utf-8-validate:
+      optional: true
+  checksum: 10c0/ef4a243476283fc49bc7550966c4af4aa0eef56273837211e700de3b664e08604a760cdddcb5ba43c049140e74ccfec5b0ee0bb439e08c2adf9138902fdde5f9
   languageName: node
   linkType: hard
 

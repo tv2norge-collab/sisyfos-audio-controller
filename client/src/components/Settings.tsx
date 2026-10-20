@@ -19,6 +19,11 @@ import { ChangeEvent } from 'react'
 import { SOCKET_SAVE_SETTINGS } from '../../../shared/src/constants/SOCKET_IO_DISPATCHERS'
 import { SettingsActionTypes } from '../../../shared/src/actions/settingsActions'
 import { MixerConnectionTypes } from '../../../shared/src/constants/MixerProtocolInterface'
+import { getInputSelectorPluginSettingsRenderer } from '../utils/inputSelectorPluginRegistry'
+import { getFaderLinkPluginSettingsRenderer } from '../utils/faderLinkPluginRegistry'
+import {
+    MixerPluginConfig,
+} from '../../../shared/src/inputSelectorPlugins/InputSelectorPluginConfig'
 
 //Set style for Select dropdown component:
 const selectorColorStyles = {
@@ -114,12 +119,14 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
         this.setState({ settings: settingsCopy })
     }
 
-    handleSelectChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    handleSelectChange = (
+        event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
         const settingsCopy: SettingsInterface = { ...this.state.settings }
         ;(settingsCopy as any)[event.target.name] = Number(event.target.value)
         this.setState({ settings: settingsCopy })
     }
-    
+
     handleNumberOfMixers = (event: ChangeEvent<HTMLInputElement>) => {
         let settingsCopy = Object.assign({}, this.state.settings)
         settingsCopy.numberOfMixers = parseInt(event.target.value) || 1
@@ -182,6 +189,32 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
         this.setState({ settings: settingsCopy })
     }
 
+    handleInputSelectorPluginChange = (
+        mixerIndex: number,
+        pluginConfig: MixerPluginConfig
+    ) => {
+        const settingsCopy = { ...this.state.settings }
+        settingsCopy.mixers = [...settingsCopy.mixers]
+        settingsCopy.mixers[mixerIndex] = {
+            ...settingsCopy.mixers[mixerIndex],
+            inputSelectorPlugin: pluginConfig,
+        }
+        this.setState({ settings: settingsCopy })
+    }
+
+    handleFaderLinkPluginChange = (
+        mixerIndex: number,
+        pluginConfig: MixerPluginConfig
+    ) => {
+        const settingsCopy = { ...this.state.settings }
+        settingsCopy.mixers = [...settingsCopy.mixers]
+        settingsCopy.mixers[mixerIndex] = {
+            ...settingsCopy.mixers[mixerIndex],
+            faderLinkPlugin: pluginConfig,
+        }
+        this.setState({ settings: settingsCopy })
+    }
+
     handleSave = () => {
         let settingsCopy = Object.assign({}, this.state.settings)
         settingsCopy.showSettings = false
@@ -198,6 +231,73 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
 
     handleCancel = () => {
         this.props.dispatch({ type: SettingsActionTypes.TOGGLE_SHOW_SETTINGS })
+    }
+
+    renderFaderLinkPluginSettings = (mixerIndex: number) => {
+        const mixer = this.state.settings.mixers[mixerIndex]
+        const pluginConfig = mixer?.faderLinkPlugin
+        if (!pluginConfig?.enabled || !pluginConfig.pluginId) return null
+
+        const PluginSettingsRenderer = getFaderLinkPluginSettingsRenderer(
+            pluginConfig.pluginId
+        )
+        if (!PluginSettingsRenderer) return null
+
+        const savedConfig =
+            this.props.store.settings[0].mixers[mixerIndex]?.faderLinkPlugin
+        const hasUnsavedChanges =
+            JSON.stringify(pluginConfig) !== JSON.stringify(savedConfig)
+
+        return (
+            <>
+                <div className="settings-header">
+                    FADER LINK PLUGIN - MIXER {mixerIndex + 1}:
+                </div>
+                <PluginSettingsRenderer
+                    config={pluginConfig}
+                    mixerIndex={mixerIndex}
+                    hasUnsavedChanges={hasUnsavedChanges}
+                    onChange={(updated) =>
+                        this.handleFaderLinkPluginChange(mixerIndex, updated)
+                    }
+                />
+            </>
+        )
+    }
+
+    renderInputSelectorPluginSettings = (mixerIndex: number) => {
+        const mixer = this.state.settings.mixers[mixerIndex]
+        const pluginConfig = mixer?.inputSelectorPlugin
+        if (!pluginConfig?.enabled || !pluginConfig.pluginId) return null
+
+        const PluginSettingsRenderer = getInputSelectorPluginSettingsRenderer(
+            pluginConfig.pluginId
+        )
+        if (!PluginSettingsRenderer) return null
+
+        const savedConfig =
+            this.props.store.settings[0].mixers[mixerIndex]?.inputSelectorPlugin
+        const hasUnsavedChanges =
+            JSON.stringify(pluginConfig) !== JSON.stringify(savedConfig)
+
+        return (
+            <>
+                <div className="settings-header">
+                    INPUT SELECTOR PLUGIN - MIXER {mixerIndex + 1}:
+                </div>
+                <PluginSettingsRenderer
+                    config={pluginConfig}
+                    mixerIndex={mixerIndex}
+                    hasUnsavedChanges={hasUnsavedChanges}
+                    onChange={(updated) =>
+                        this.handleInputSelectorPluginChange(
+                            mixerIndex,
+                            updated
+                        )
+                    }
+                />
+            </>
+        )
     }
 
     renderChannelTypeSettings = (mixerIndex: number) => {
@@ -403,27 +503,6 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                     />
                                 </label>
                                 <br />
-                                {window.mixerProtocolPresets[
-                                    mixer.mixerProtocol
-                                ].protocol === MixerConnectionTypes.vMix && (
-                                    <>
-                                        <label className="settings-input-field">
-                                            CHANNEL MATRIX PREFIX :
-                                            <input
-                                                name="channelMatrixPrefix"
-                                                type="text"
-                                                value={mixer.channelMatrixPrefix || ''}
-                                                onChange={(event) =>
-                                                    this.handleMixerChange(
-                                                        event,
-                                                        mixerIndex
-                                                    )
-                                                }
-                                            />
-                                        </label>
-                                        <br />
-                                    </>
-                                )}
                                 {window.mixerProtocol.protocol ===
                                 MixerConnectionTypes.GenericMidi
                                     ? this.renderMixerMidiSettings()
@@ -431,6 +510,167 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                                 <br />
                                 {this.renderChannelTypeSettings(mixerIndex)}
                                 <br />
+                                <div className="settings-subheader">
+                                    INPUT SELECTOR PLUGIN:
+                                </div>
+                                <label className="settings-input-field">
+                                    PLUGIN:
+                                    <select
+                                        value={
+                                            mixer.inputSelectorPlugin
+                                                ?.pluginId ?? ''
+                                        }
+                                        onChange={(event) => {
+                                            const pluginId = event.target.value
+                                            this.handleInputSelectorPluginChange(
+                                                mixerIndex,
+                                                pluginId
+                                                    ? {
+                                                          pluginId,
+                                                          enabled:
+                                                              mixer
+                                                                  .inputSelectorPlugin
+                                                                  ?.enabled ??
+                                                              false,
+                                                          options:
+                                                              mixer
+                                                                  .inputSelectorPlugin
+                                                                  ?.options,
+                                                      }
+                                                    : {
+                                                          pluginId: '',
+                                                          enabled: false,
+                                                      }
+                                            )
+                                        }}
+                                    >
+                                        <option value="">None</option>
+                                        {(
+                                            window.inputSelectorPlugins ?? []
+                                        ).map((p) => (
+                                            <option
+                                                key={p.pluginId}
+                                                value={p.pluginId}
+                                            >
+                                                {p.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                                <br />
+                                {mixer.inputSelectorPlugin?.pluginId && (
+                                    <>
+                                        <label className="settings-input-field">
+                                            ENABLED:
+                                            <input
+                                                type="checkbox"
+                                                checked={
+                                                    mixer.inputSelectorPlugin
+                                                        ?.enabled ?? false
+                                                }
+                                                onChange={(event) =>
+                                                    this.handleInputSelectorPluginChange(
+                                                        mixerIndex,
+                                                        {
+                                                            ...mixer.inputSelectorPlugin!,
+                                                            enabled:
+                                                                event.target
+                                                                    .checked,
+                                                        }
+                                                    )
+                                                }
+                                            />
+                                        </label>
+                                        <br />
+                                        {this.renderInputSelectorPluginSettings(
+                                            mixerIndex
+                                        )}
+                                    </>
+                                )}
+                                <br />
+                                <div className="settings-subheader">
+                                    FADER LINK PLUGIN:
+                                </div>
+                                <label className="settings-input-field">
+                                    PLUGIN:
+                                    <select
+                                        value={
+                                            mixer.faderLinkPlugin?.pluginId ??
+                                            ''
+                                        }
+                                        onChange={(event) => {
+                                            const pluginId = event.target.value
+                                            this.handleFaderLinkPluginChange(
+                                                mixerIndex,
+                                                pluginId
+                                                    ? {
+                                                          pluginId,
+                                                          enabled:
+                                                              mixer
+                                                                  .faderLinkPlugin
+                                                                  ?.enabled ??
+                                                              false,
+                                                          options:
+                                                              mixer
+                                                                  .faderLinkPlugin
+                                                                  ?.options,
+                                                      }
+                                                    : {
+                                                          pluginId: '',
+                                                          enabled: false,
+                                                      }
+                                            )
+                                        }}
+                                    >
+                                        <option value="">None</option>
+                                        {(window.faderLinkPlugins ?? [])
+                                            .filter(
+                                                (p) =>
+                                                    !p.supportedMixers ||
+                                                    p.supportedMixers.includes(
+                                                        mixer.mixerProtocol
+                                                    )
+                                            )
+                                            .map((p) => (
+                                                <option
+                                                    key={p.pluginId}
+                                                    value={p.pluginId}
+                                                >
+                                                    {p.label}
+                                                </option>
+                                            ))}
+                                    </select>
+                                </label>
+                                <br />
+                                {mixer.faderLinkPlugin?.pluginId && (
+                                    <>
+                                        <label className="settings-input-field">
+                                            ENABLED:
+                                            <input
+                                                type="checkbox"
+                                                checked={
+                                                    mixer.faderLinkPlugin
+                                                        ?.enabled ?? false
+                                                }
+                                                onChange={(event) =>
+                                                    this.handleFaderLinkPluginChange(
+                                                        mixerIndex,
+                                                        {
+                                                            ...mixer.faderLinkPlugin!,
+                                                            enabled:
+                                                                event.target
+                                                                    .checked,
+                                                        }
+                                                    )
+                                                }
+                                            />
+                                        </label>
+                                        <br />
+                                        {this.renderFaderLinkPluginSettings(
+                                            mixerIndex
+                                        )}
+                                    </>
+                                )}
                             </React.Fragment>
                         )
                     }
@@ -556,7 +796,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 <div className="settings-header">AUTOMATION</div>
                 <label
                     className="settings-input-field"
-                    title="Using the prefix label, it's possible for a mixer to control the AUTO/MANUAL 
+                    title="Using the prefix label, it's possible for a mixer to control the AUTO/MANUAL
                         state in Sisyfos, this is a two way functionality, so pressing AUTO/MANUAL in UI also sets the label on the connected mixer"
                 >
                     LABEL CONTROLS AUTO/MANUAL:
@@ -582,7 +822,7 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                 <br />
                 <label
                     className="settings-input-field"
-                    title="The default behavior for Sisyfos is to have a target level on the fader, and then use the PGM ON for fading to the target level, 
+                    title="The default behavior for Sisyfos is to have a target level on the fader, and then use the PGM ON for fading to the target level,
                     the PGM ON Follows mixer, makes the fader follow the mixer level and the PGM button becomes a fadeout button"
                 >
                     PGM ON FOLLOWS MIXER :
@@ -603,13 +843,10 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     IN 1.ROW BUTTON :
                     <select
                         name="firstInRowButton"
-                        
                         value={this.state.settings.firstInRowButton}
                         onChange={this.handleSelectChange}
                     >
-                        <option value={FirstInRowButtonType.NONE}>
-                            None
-                        </option>
+                        <option value={FirstInRowButtonType.NONE}>None</option>
                         <option value={FirstInRowButtonType.AUTO_MANUAL}>
                             Auto/Manual
                         </option>
@@ -620,16 +857,11 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     IN 2.ROW BUTTON :
                     <select
                         name="secondInRowButton"
-                        
                         value={this.state.settings.secondInRowButton}
                         onChange={this.handleSelectChange}
                     >
-                        <option value={SecondInRowButtonType.NONE}>
-                            None
-                        </option>
-                        <option value={SecondInRowButtonType.MUTE}>
-                            Mute
-                        </option>
+                        <option value={SecondInRowButtonType.NONE}>None</option>
+                        <option value={SecondInRowButtonType.MUTE}>Mute</option>
                     </select>
                 </label>
                 <br />
@@ -637,16 +869,11 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     IN 3.ROW BUTTON :
                     <select
                         name="thirdInRowButton"
-                        
                         value={this.state.settings.thirdInRowButton}
                         onChange={this.handleSelectChange}
                     >
-                        <option value={ThirdInRowButtonType.NONE}>
-                            None
-                        </option>
-                        <option value={ThirdInRowButtonType.AMIX}>
-                            Amix
-                        </option>
+                        <option value={ThirdInRowButtonType.NONE}>None</option>
+                        <option value={ThirdInRowButtonType.AMIX}>Amix</option>
                         <option value={ThirdInRowButtonType.CHANNEL_OPTIONS}>
                             Channel Options
                         </option>
@@ -661,7 +888,6 @@ class Settings extends React.PureComponent<AppProps & Store, SettingsState> {
                     OUT 2.ROW BUTTON :
                     <select
                         name="secondOutRowButton"
-                        
                         value={this.state.settings.secondOutRowButton}
                         onChange={this.handleSelectChange}
                     >

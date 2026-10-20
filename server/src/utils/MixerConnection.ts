@@ -27,11 +27,21 @@ import { ChannelActionTypes } from '../../../shared/src/actions/channelActions'
 import { FaderActionTypes } from '../../../shared/src/actions/faderActions'
 import { AtemMixerConnection } from './mixerConnections/AtemConnection'
 
-import { ChannelReference } from '../../../shared/src/reducers/fadersReducer'
+import {
+    ChannelReference,
+    Fader,
+} from '../../../shared/src/reducers/fadersReducer'
 import { sendChLevelsToOuputServer } from './outputLevelServer'
 import { MixerConnection } from './mixerConnections'
 import { SecondOutRowButtonType } from '../../../shared/src/reducers/settingsReducer'
 import { LawoMC2Connection } from './mixerConnections/LawoMC2Connection'
+import {
+    createInputSelectorPlugin,
+    registerInputSelectorPlugin,
+    createFaderLinkPlugin,
+    registerFaderLinkPlugin,
+} from './mixerPluginRegistry'
+import { FaderLinkPluginContext } from './faderLinkPlugins/FaderLinkPlugin'
 
 export class MixerGenericConnection {
     mixerProtocol: MixerProtocolGeneric[]
@@ -145,6 +155,8 @@ export class MixerGenericConnection {
             }
         })
 
+        this.setupPlugins()
+
         // Setup timers for fade in & out
         this.initializeTimers()
     }
@@ -164,6 +176,139 @@ export class MixerGenericConnection {
                     }
                 )
             }
+        )
+    }
+
+    private setupPlugins() {
+        this.mixerConnection.forEach((connection, index) => {
+            const mixerSettings = state.settings[0].mixers[index]
+
+            if (
+                connection.setInputSelectorPlugin &&
+                connection.getInputSelectorPluginContext
+            ) {
+                const config = mixerSettings?.inputSelectorPlugin
+                if (config?.enabled && config.pluginId) {
+                    const plugin = createInputSelectorPlugin(
+                        config.pluginId,
+                        (config.options || {}) as Record<string, unknown>,
+                        connection.getInputSelectorPluginContext()
+                    )
+                    connection.setInputSelectorPlugin(plugin)
+                    plugin?.connect()
+                    registerInputSelectorPlugin(index, plugin)
+                }
+            }
+
+            if (
+                connection.setFaderLinkPlugin &&
+                connection.getFaderLinkPluginContext
+            ) {
+                const config = mixerSettings?.faderLinkPlugin
+                if (config?.enabled && config.pluginId) {
+                    const context: FaderLinkPluginContext = {
+                        ...connection.getFaderLinkPluginContext(),
+                        setLinkableCapability: (
+                            channelIndex,
+                            isLinkablePrimary
+                        ) => {
+                            const faderIndex = this.getAssignedFaderIndex(
+                                index,
+                                channelIndex
+                            )
+                            if (faderIndex === -1) return
+                            store.dispatch({
+                                type: FaderActionTypes.SET_CAPABILITY,
+                                faderIndex,
+                                capability: 'isLinkablePrimary',
+                                enabled: isLinkablePrimary,
+                            })
+                            store.dispatch({
+                                type: FaderActionTypes.SET_CAPABILITY,
+                                faderIndex,
+                                capability: 'isLinkableSecondary',
+                                enabled: false,
+                            })
+                            if (isLinkablePrimary) {
+                                const secondaryFaderIndex = faderIndex + 1
+                                if (
+                                    secondaryFaderIndex <
+                                    state.settings[0].numberOfFaders
+                                ) {
+                                    store.dispatch({
+                                        type: FaderActionTypes.SET_CAPABILITY,
+                                        faderIndex: secondaryFaderIndex,
+                                        capability: 'isLinkablePrimary',
+                                        enabled: false,
+                                    })
+                                    store.dispatch({
+                                        type: FaderActionTypes.SET_CAPABILITY,
+                                        faderIndex: secondaryFaderIndex,
+                                        capability: 'isLinkableSecondary',
+                                        enabled: true,
+                                    })
+                                }
+                            }
+                        },
+                        setLinked: (channelIndex, isLinked) => {
+                            const faderIndex = this.getAssignedFaderIndex(
+                                index,
+                                channelIndex
+                            )
+                            if (faderIndex === -1) return
+                            global.mainThreadHandler.setLink(
+                                faderIndex,
+                                isLinked
+                            )
+                        },
+                        clearAllLinkCapabilities: () => {
+                            state.faders[0].fader.forEach(
+                                (fader: Fader, faderIndex: number) => {
+                                    if (fader.isLinked) {
+                                        global.mainThreadHandler.setLink(
+                                            faderIndex,
+                                            false
+                                        )
+                                    }
+                                    if (
+                                        fader.capabilities?.isLinkablePrimary ||
+                                        fader.capabilities?.isLinkableSecondary
+                                    ) {
+                                        store.dispatch({
+                                            type: FaderActionTypes.SET_CAPABILITY,
+                                            faderIndex,
+                                            capability: 'isLinkablePrimary',
+                                            enabled: false,
+                                        })
+                                        store.dispatch({
+                                            type: FaderActionTypes.SET_CAPABILITY,
+                                            faderIndex,
+                                            capability: 'isLinkableSecondary',
+                                            enabled: false,
+                                        })
+                                    }
+                                }
+                            )
+                        },
+                    }
+                    const plugin = createFaderLinkPlugin(config, context)
+                    connection.setFaderLinkPlugin(plugin)
+                    registerFaderLinkPlugin(index, plugin)
+                }
+            }
+        })
+    }
+
+    private getAssignedFaderIndex(
+        mixerIndex: number,
+        channelIndex: number
+    ): number {
+        return state.faders[0].fader.findIndex((fader: Fader) =>
+            fader.assignedChannels?.some(
+                (assigned: ChannelReference) =>
+                    assigned.mixerIndex === mixerIndex &&
+                    assigned.channelIndex === channelIndex
+            )
         )
     }
 
@@ -265,6 +410,17 @@ export class MixerGenericConnection {
                 state.faders[0].fader[faderIndex].faderLevel
             )
         }
+
+        // Propagate to linked secondary
+        if (
+            state.faders[0].fader[faderIndex]?.isLinked &&
+            state.faders[0].fader[faderIndex]?.capabilities?.isLinkablePrimary
+        ) {
+            const secondaryIndex = faderIndex + 1
+            if (state.faders[0].fader[secondaryIndex]) {
+                this.updateOutLevel(secondaryIndex, fadeTime, mixerIndexToSkip)
+            }
+        }
     }
 
     updateInputGain = (faderIndex: number) => {
@@ -277,6 +433,16 @@ export class MixerGenericConnection {
                 ].updateInputGain(assignedChannel.channelIndex, level)
             }
         )
+        // Propagate to linked secondary
+        if (
+            state.faders[0].fader[faderIndex]?.isLinked &&
+            state.faders[0].fader[faderIndex]?.capabilities?.isLinkablePrimary
+        ) {
+            const secondaryIndex = faderIndex + 1
+            if (state.faders[0].fader[secondaryIndex]) {
+                this.updateInputGain(secondaryIndex)
+            }
+        }
     }
 
     updateInputSelector = (faderIndex: number) => {
@@ -292,6 +458,7 @@ export class MixerGenericConnection {
                 )
             }
         )
+        // Don't propagate to linked secondary because input selectors are independent
     }
 
     updatePflState = (faderIndex: number) => {
@@ -302,6 +469,16 @@ export class MixerGenericConnection {
                 )
             }
         )
+        // Propagate to linked secondary
+        if (
+            state.faders[0].fader[faderIndex]?.isLinked &&
+            state.faders[0].fader[faderIndex]?.capabilities?.isLinkablePrimary
+        ) {
+            const secondaryIndex = faderIndex + 1
+            if (state.faders[0].fader[secondaryIndex]) {
+                this.updatePflState(secondaryIndex)
+            }
+        }
     }
 
     updateMuteState = (faderIndex: number, mixerIndexToSkip: number = -1) => {
@@ -317,6 +494,16 @@ export class MixerGenericConnection {
                 }
             }
         )
+        // Propagate to linked secondary
+        if (
+            state.faders[0].fader[faderIndex]?.isLinked &&
+            state.faders[0].fader[faderIndex]?.capabilities?.isLinkablePrimary
+        ) {
+            const secondaryIndex = faderIndex + 1
+            if (state.faders[0].fader[secondaryIndex]) {
+                this.updateMuteState(secondaryIndex, mixerIndexToSkip)
+            }
+        }
     }
 
     updateAMixState = (faderIndex: number) => {
@@ -330,6 +517,16 @@ export class MixerGenericConnection {
                 )
             }
         )
+        // Propagate to linked secondary
+        if (
+            state.faders[0].fader[faderIndex]?.isLinked &&
+            state.faders[0].fader[faderIndex]?.capabilities?.isLinkablePrimary
+        ) {
+            const secondaryIndex = faderIndex + 1
+            if (state.faders[0].fader[secondaryIndex]) {
+                this.updateAMixState(secondaryIndex)
+            }
+        }
     }
 
     updateNextAux = (faderIndex: number) => {
@@ -350,6 +547,16 @@ export class MixerGenericConnection {
                 )
             }
         )
+        // Propagate to linked secondary
+        if (
+            state.faders[0].fader[faderIndex]?.isLinked &&
+            state.faders[0].fader[faderIndex]?.capabilities?.isLinkablePrimary
+        ) {
+            const secondaryIndex = faderIndex + 1
+            if (state.faders[0].fader[secondaryIndex]) {
+                this.updateNextAux(secondaryIndex)
+            }
+        }
     }
 
     updateFx = (fxParam: FxParam, faderIndex: number) => {
@@ -363,6 +570,16 @@ export class MixerGenericConnection {
                 )
             }
         )
+        // Propagate to linked secondary
+        if (
+            state.faders[0].fader[faderIndex]?.isLinked &&
+            state.faders[0].fader[faderIndex]?.capabilities?.isLinkablePrimary
+        ) {
+            const secondaryIndex = faderIndex + 1
+            if (state.faders[0].fader[secondaryIndex]) {
+                this.updateFx(fxParam, secondaryIndex)
+            }
+        }
     }
 
     updateAuxLevel = (channelIndex: number, auxSendIndex: number) => {
