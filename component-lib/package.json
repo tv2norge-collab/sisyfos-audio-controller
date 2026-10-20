@@ -21,6 +21,7 @@
   "types": "./dist/component-lib/src/index.d.ts",
   "dependencies": {
     "@floating-ui/react": "^0.26.20",
+    "@reduxjs/toolkit": "^2.0.0",
     "classnames": "^2.5.1",
     "i18next": "^20.6.1",
     "i18next-browser-languagedetector": "^7.2.0",

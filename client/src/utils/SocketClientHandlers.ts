@@ -1,13 +1,9 @@
-import {
-    FaderActionTypes,
-} from '../../../shared/src/actions/faderActions'
+import { FaderActionTypes } from '../../../shared/src/actions/faderActions'
 import {
     ChannelActions,
     ChannelActionTypes,
 } from '../../../shared/src/actions/channelActions'
-import {
-    SettingsActionTypes,
-} from '../../../shared/src/actions/settingsActions'
+import { SettingsActionTypes } from '../../../shared/src/actions/settingsActions'
 import {
     SOCKET_RETURN_SNAPSHOT_LIST,
     SOCKET_SET_FULL_STORE,
@@ -57,7 +53,6 @@ export const socketClientHandlers = (store: Store) => {
         .on(SOCKET_SET_FULL_STORE, (payload: any) => {
             // console.log('STATE RECEIVED :', payload)
             if (window.mixerProtocol) {
-
                 dispatch({
                     type: ChannelActionTypes.SET_COMPLETE_CH_STATE,
                     numberOfTypeChannels: payload.numberOfChannels,
@@ -97,6 +92,8 @@ export const socketClientHandlers = (store: Store) => {
             window.mixerProtocol = payload.mixerProtocol
             window.mixerProtocolPresets = payload.mixerProtocolPresets
             window.mixerProtocolList = payload.mixerProtocolList
+            window.inputSelectorPlugins = payload.inputSelectorPlugins || []
+            window.faderLinkPlugins = payload.faderLinkPlugins || []
             dispatch({ type: SISYFOS_EXTERNAL_STATE_UPDATED })
         })
         .on(SOCKET_SET_MIXER_ONLINE, (payload: any) => {
@@ -153,8 +150,7 @@ export const socketClientHandlers = (store: Store) => {
                 const reduxState = getSisyfosReduxState()
                 if (
                     reduxState.settings[0].showChanStrip === faderIndex ||
-                    reduxState.settings[0].showChanStripFull ===
-                        faderIndex
+                    reduxState.settings[0].showChanStripFull === faderIndex
                 ) {
                     dispatch({
                         type: FaderActionTypes.SET_VU_REDUCTION_LEVEL,

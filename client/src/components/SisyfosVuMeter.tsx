@@ -1,8 +1,11 @@
 import * as React from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
 import '../assets/css/VuMeter.css'
 
-const FPS_INTERVAL = 1000 / 15
+const PAINT_INTERVAL = 1000 / 15
+const PEAK_WINDOW = 2000
+const BASE_HEIGHT = 400
 
 export interface SisyfosMeterConfig {
     min?: number
@@ -12,13 +15,8 @@ export interface SisyfosMeterConfig {
 }
 
 export interface SisyfosVuMeterProps {
-    level?: number
-    getLevel?: () => number
+    getLevel: () => number
     meterConfig?: SisyfosMeterConfig
-}
-
-interface SisyfosVuMeterState {
-    isVisible: boolean
 }
 
 const COLORS = {
@@ -31,237 +29,177 @@ const COLORS = {
     TOTAL_PEAK_HIGH: 'rgb(255, 0, 0)',
 }
 
-export class SisyfosVuMeter extends React.Component<
-    SisyfosVuMeterProps,
-    SisyfosVuMeterState
-> {
-    private canvas: HTMLCanvasElement | undefined
-    private canvasContext: CanvasRenderingContext2D | undefined
-    private animationFrame: number | undefined
-    private intersectionObserver: IntersectionObserver | null = null
+export function SisyfosVuMeter({
+    getLevel,
+    meterConfig,
+}: SisyfosVuMeterProps) {
+    const canvasRef = useRef<HTMLCanvasElement>(null)
+    const getLevelRef = useRef(getLevel)
+    getLevelRef.current = getLevel
 
-    private totalHeight = 400
-    private totalPeak = 0
-    private windowPeak = 0
-    private windowLast = 0
-    private meterMax = 1
-    private meterMin = 0
-    private range = 1
-    private meterTest = 0.75
-    private meterZero = 0.75
-    private readonly WINDOW = 2000
+    const totalPeakRef = useRef(0)
+    const dirtyRef = useRef(false)
 
-    private previousValue = -1
-    private value = 0
-
-    private lastUpdateTime = Date.now()
-
-    constructor(props: SisyfosVuMeterProps) {
-        super(props)
-        this.state = {
-            isVisible: false,
+    const { totalHeight, range, meterTest, meterZero } = useMemo(() => {
+        const max = meterConfig?.max ?? 1
+        const min = meterConfig?.min ?? 0
+        const range = max - min
+        return {
+            range,
+            totalHeight: BASE_HEIGHT / range,
+            meterTest: meterConfig?.test ?? 0.75,
+            meterZero: meterConfig?.zero ?? 0.75,
         }
-        this.applyMeterConfig(props.meterConfig)
-    }
+    }, [meterConfig])
 
-    componentDidMount() {
-        this.initIntersectionObserver()
-        this.initializeCanvas()
-        this.paintVuMeter()
-    }
+    useEffect(() => {
+        const canvas = canvasRef.current
+        if (!canvas) return
+        const canvasContext = canvas.getContext('2d')
+        if (!canvasContext) return
 
-    componentDidUpdate(prevProps: SisyfosVuMeterProps) {
-        if (prevProps.meterConfig !== this.props.meterConfig) {
-            this.applyMeterConfig(this.props.meterConfig)
-            this.initializeCanvas()
-        }
-    }
+        let animationFrame: number | undefined
+        let previousValue = -1
+        let lastPaintTime = 0
+        let windowPeak = 0
+        let windowLast = 0
 
-    componentWillUnmount() {
-        if (this.animationFrame) {
-            cancelAnimationFrame(this.animationFrame)
-        }
+        const paint = (now: DOMHighResTimeStamp) => {
+            animationFrame = requestAnimationFrame(paint)
 
-        if (this.intersectionObserver && this.canvas) {
-            this.intersectionObserver.unobserve(this.canvas)
-            this.intersectionObserver.disconnect()
-        }
-    }
+            if (now - lastPaintTime < PAINT_INTERVAL) return
 
-    shouldComponentUpdate(): boolean {
-        const currentTime = Date.now()
-        if (currentTime - this.lastUpdateTime < FPS_INTERVAL) {
-            return false
-        }
-        this.lastUpdateTime = currentTime
-        return true
-    }
+            const value = getLevelRef.current()
 
-    private applyMeterConfig(meterConfig?: SisyfosMeterConfig) {
-        this.meterMax = meterConfig?.max ?? 1
-        this.meterMin = meterConfig?.min ?? 0
-        this.range = this.meterMax - this.meterMin
-        this.meterTest = meterConfig?.test ?? 0.75
-        this.meterZero = meterConfig?.zero ?? 0.75
-    }
-
-    private getCurrentLevel() {
-        if (this.props.getLevel) {
-            return this.props.getLevel()
-        }
-        return this.props.level ?? 0
-    }
-
-    private initializeCanvas() {
-        if (!this.canvas) return
-
-        this.canvasContext = this.canvas.getContext('2d', {
-            antialias: false,
-            stencil: false,
-            preserveDrawingBuffer: true,
-        }) as CanvasRenderingContext2D
-
-        this.totalHeight =
-            (this.canvas.height ?? 400) / (this.meterMax - this.meterMin)
-    }
-
-    private initIntersectionObserver() {
-        this.intersectionObserver = new IntersectionObserver(
-            (entries) => {
-                const [entry] = entries
-                this.setState({ isVisible: entry.isIntersecting })
-            },
-            {
-                threshold: 0.1,
+            const windowStale =
+                now - windowLast > PEAK_WINDOW && windowPeak !== value
+            if (
+                value === previousValue &&
+                !windowStale &&
+                !dirtyRef.current
+            ) {
+                return
             }
-        )
+            lastPaintTime = now
+            previousValue = value
+            dirtyRef.current = false
 
-        if (this.canvas) {
-            this.intersectionObserver.observe(this.canvas)
+            if (value > windowPeak || now - windowLast > PEAK_WINDOW) {
+                windowPeak = value
+                windowLast = now
+            }
+            if (value > totalPeakRef.current) {
+                totalPeakRef.current = value
+            }
+            const totalPeak = totalPeakRef.current
+
+            const lower = totalHeight * Math.min(value, meterTest)
+            const middle =
+                totalHeight *
+                    (Math.max(meterTest, Math.min(value, meterZero)) -
+                        meterTest) +
+                1
+            const upper =
+                totalHeight * (Math.max(meterZero, value) - meterZero) + 1
+
+            canvasContext.clearRect(0, 0, canvas.width, canvas.height)
+
+            canvasContext.fillStyle = COLORS.LOWER
+            canvasContext.fillRect(
+                0,
+                totalHeight - lower,
+                canvas.width,
+                lower
+            )
+
+            canvasContext.fillStyle = COLORS.MIDDLE
+            canvasContext.fillRect(
+                0,
+                totalHeight * (range - meterTest) - middle,
+                canvas.width,
+                middle
+            )
+
+            canvasContext.fillStyle = COLORS.UPPER
+            canvasContext.fillRect(
+                0,
+                totalHeight * (range - meterZero) - upper,
+                canvas.width,
+                upper
+            )
+
+            canvasContext.fillStyle =
+                windowPeak < meterZero
+                    ? COLORS.WINDOW_PEAK_LOW
+                    : COLORS.WINDOW_PEAK_HIGH
+            canvasContext.fillRect(
+                0,
+                totalHeight - totalHeight * windowPeak,
+                canvas.width,
+                2
+            )
+
+            canvasContext.fillStyle =
+                totalPeak < meterZero
+                    ? COLORS.TOTAL_PEAK_LOW
+                    : COLORS.TOTAL_PEAK_HIGH
+            canvasContext.fillRect(
+                0,
+                totalHeight - totalHeight * totalPeak,
+                canvas.width,
+                2
+            )
         }
-    }
 
-    private getTotalPeak = () => {
-        if (this.value > this.totalPeak) {
-            this.totalPeak = this.value
+        const start = () => {
+            if (animationFrame === undefined) {
+                animationFrame = requestAnimationFrame(paint)
+            }
         }
-        return this.totalHeight * this.totalPeak
-    }
-
-    private getWindowPeak = () => {
-        if (this.value > this.windowPeak || Date.now() - this.windowLast > this.WINDOW) {
-            this.windowPeak = this.value
-            this.windowLast = Date.now()
-        }
-        return this.totalHeight * this.windowPeak
-    }
-
-    private calcLower = () => {
-        return this.totalHeight * Math.min(this.value, this.meterTest)
-    }
-
-    private calcMiddle = () => {
-        const val = Math.max(this.meterTest, Math.min(this.value, this.meterZero))
-        return this.totalHeight * (val - this.meterTest) + 1
-    }
-
-    private calcUpper = () => {
-        const val = Math.max(this.meterZero, this.value)
-        return this.totalHeight * (val - this.meterZero) + 1
-    }
-
-    private setRef = (el: HTMLCanvasElement) => {
-        this.canvas = el
-        this.initializeCanvas()
-        this.paintVuMeter()
-    }
-
-    private resetTotalPeak = () => {
-        this.totalPeak = 0
-    }
-
-    private paintVuMeter = () => {
-        if (!this.canvas || !this.canvasContext) {
-            this.animationFrame = requestAnimationFrame(this.paintVuMeter)
-            return
+        const stop = () => {
+            if (animationFrame !== undefined) {
+                cancelAnimationFrame(animationFrame)
+                animationFrame = undefined
+            }
         }
 
-        this.value = this.getCurrentLevel()
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    start()
+                } else {
+                    stop()
+                }
+            },
+            { threshold: 0.1 }
+        )
+        observer.observe(canvas)
 
-        if (this.value === this.previousValue) {
-            window.requestAnimationFrame(this.paintVuMeter)
-            return
+        return () => {
+            stop()
+            observer.disconnect()
         }
-        this.previousValue = this.value
+    }, [totalHeight, range, meterTest, meterZero])
 
-        this.canvasContext.clearRect(0, 0, this.canvas.width, this.canvas.height)
-
-        this.canvasContext.fillStyle = COLORS.LOWER
-        this.canvasContext.fillRect(
-            0,
-            this.totalHeight - this.calcLower(),
-            this.canvas.height,
-            this.calcLower()
-        )
-
-        this.canvasContext.fillStyle = COLORS.MIDDLE
-        this.canvasContext.fillRect(
-            0,
-            this.totalHeight * (this.range - this.meterTest) - this.calcMiddle(),
-            this.canvas.width,
-            this.calcMiddle()
-        )
-
-        this.canvasContext.fillStyle = COLORS.UPPER
-        this.canvasContext.fillRect(
-            0,
-            this.totalHeight * (this.range - this.meterZero) - this.calcUpper(),
-            this.canvas.width,
-            this.calcUpper()
-        )
-
-        const windowPeak = this.getWindowPeak()
-        this.canvasContext.fillStyle =
-            this.windowPeak < this.meterZero
-                ? COLORS.WINDOW_PEAK_LOW
-                : COLORS.WINDOW_PEAK_HIGH
-        this.canvasContext.fillRect(
-            0,
-            this.totalHeight - windowPeak,
-            this.canvas.width,
-            2
-        )
-
-        this.canvasContext.fillStyle =
-            this.totalPeak < this.meterZero
-                ? COLORS.TOTAL_PEAK_LOW
-                : COLORS.TOTAL_PEAK_HIGH
-        this.canvasContext.fillRect(
-            0,
-            this.totalHeight - this.getTotalPeak(),
-            this.canvas.width,
-            2
-        )
-
-        window.requestAnimationFrame(this.paintVuMeter)
+    const resetTotalPeak = () => {
+        totalPeakRef.current = 0
+        dirtyRef.current = true
     }
 
-    render() {
-        return (
-            <div className="vumeter-body" onClick={this.resetTotalPeak}>
-                <canvas
-                    className="vumeter-canvas"
-                    style={{
-                        height: this.totalHeight,
-                        top: '10px',
-                    }}
-                    height={this.totalHeight}
-                    width={10}
-                    ref={this.setRef}
-                ></canvas>
-            </div>
-        )
-    }
+    return (
+        <div className="vumeter-body" onClick={resetTotalPeak}>
+            <canvas
+                className="vumeter-canvas"
+                style={{
+                    height: totalHeight,
+                    top: '10px',
+                }}
+                height={totalHeight}
+                width={10}
+                ref={canvasRef}
+            ></canvas>
+        </div>
+    )
 }
 
 export default SisyfosVuMeter

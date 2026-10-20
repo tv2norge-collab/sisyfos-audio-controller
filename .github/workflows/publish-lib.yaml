@@ -2,6 +2,7 @@ name: Publish prerelease
 
 env:
   node-version: 18
+  yarn-version: 4.1.0
   node-package-manager: yarn
 
 on:
@@ -28,6 +29,8 @@ jobs:
           node-version: ${{ env.node-version }}
       - name: Enable Corepack
         run: corepack enable
+      - name: Set Yarn Version
+        run: corepack prepare yarn@${{ env.yarn-version }} --activate
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -58,7 +61,8 @@ jobs:
       - name: Prepare Environment
         if: ${{ steps.do-publish.outputs.publish }}
         run: |
-          yarn install
+          yarn install --mode=update-lockfile
+          yarn install --mode=skip-build
           yarn build
         env:
           CI: true

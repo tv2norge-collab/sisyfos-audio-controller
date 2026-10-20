@@ -13,19 +13,37 @@ export function getSisyfosReduxState(): ReduxStore {
     return activeStore.getState() as ReduxStore
 }
 
+let channelLabelCacheConnections: ReduxStore['channels'][0]['chMixerConnection'] | undefined
+let channelLabelCache: Map<number, string> | undefined
+
+function getChannelLabelsByFader(
+    chMixerConnection: ReduxStore['channels'][0]['chMixerConnection'],
+): Map<number, string> {
+    if (chMixerConnection === channelLabelCacheConnections && channelLabelCache) {
+        return channelLabelCache
+    }
+
+    const labelsByFader = new Map<number, string>()
+    for (const conn of chMixerConnection) {
+        for (const ch of conn.channel) {
+            if (ch.label && !labelsByFader.has(ch.assignedFader)) {
+                labelsByFader.set(ch.assignedFader, ch.label)
+            }
+        }
+    }
+
+    channelLabelCacheConnections = chMixerConnection
+    channelLabelCache = labelsByFader
+    return labelsByFader
+}
+
 export function getChannelLabel(
     state: ReduxStore,
     faderIndex: number,
 ): string | undefined {
-    let label = state.channels[0].chMixerConnection
-        .flatMap((conn) =>
-            conn.channel.map((ch) => ({
-                assignedFader: ch.assignedFader,
-                label: ch.label,
-            })),
-        )
-        .filter((ch) => ch.label && ch.label !== '')
-        .find((ch) => ch.assignedFader === faderIndex)?.label
+    let label = getChannelLabelsByFader(
+        state.channels[0].chMixerConnection,
+    ).get(faderIndex)
     if (
         state.settings[0].labelControlsIgnoreAutomation &&
         label?.startsWith(state.settings[0].labelIgnorePrefix)

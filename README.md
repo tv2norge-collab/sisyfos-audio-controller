@@ -186,15 +186,12 @@ As NEXT has been implemented, and PFL usually only work on on channel at a time,
 -   VMix
     -   TCP API based Protocol
     -   2-way Fader, Mute, PFL, Gain & Channel Matrix control
-    - **Channel Matrix Configuration**:
-        - **Channel Matrix Prefix**: Prefix to identify return feed inputs. When configured, faders with labels matching this prefix + number (like "EXT 1", "RTN 2") use mix-minus presets to prevent feedback loops
-        - **Channel Matrix Preset (lrPreset)**: Preset name used for unlinked linkable inputs (defaults to `LR`)
-        - **Behavior**:
-            - **Linked stereo pair**: two separate vMix inputs sharing one fader. The `L` preset routes all physical channels to the Left bus and the `R` preset routes all to the Right bus; channel volume mixer then activates only the one physical channel carrying audio (primary for `L`, secondary for `R`), silencing the rest
-            - **Unlinked linkable input**: one physical channel active per input; the `LR` preset routes it to both Left and Right buses
-            - **Non-linkable input**: the `{N}L` preset routes channel N to Left and all remaining channels to Right; channel volume mixer then activates exactly two physical channels (left and right of the pair) at 100, silencing the others (e.g. preset `1L` + channels 1 and 2 active)
-            - Return feed variants append the prefix and number: `{PREFIX}{N}_L`, `{PREFIX}{N}_R`, `{PREFIX}{N}_LR`, `{PREFIX}{N}_{N}L`
-        - **Requirements**: `L`, `R`, `LR`, and `{N}L` presets for each non-linkable channel pair (e.g. `1L`, `3L`) must be pre-configured in VMix. Add prefixed variants (e.g. `EXT1_L`) if using a Channel Matrix Prefix
+    - **Fader Link Plugin** (Settings → vMix fader link plugin):
+        - Enables stereo linking of adjacent fader pairs. Each linked pair shares one Sisyfos fader; the primary input carries the Left signal and the secondary carries the Right.
+        - **Channel mappings**: per-channel table mapping a Sisyfos channel index to a preset prefix. Channels without a mapping use the bare preset names (`1L` / `LR`); channels with a prefix use `{PREFIX}_1L` / `{PREFIX}_LR`.
+        - **On link**: applies `1L` (or `{PREFIX}_1L`) to the primary input; sets primary channel volume mixer channels 1 and 2 to 100 and secondary channels 1 and 2 to 0.
+        - **On unlink**: applies `LR` (or `{PREFIX}_LR`) to both inputs; sets primary channel volume mixer to ch1=100/ch2=0 and secondary to ch1=0/ch2=100.
+        - **Requirements**: `1L` and `LR` AudioChannelMatrix presets must be pre-configured in vMix for each linkable input. Add prefixed variants (e.g. `EXT1_1L`, `EXT1_LR`) for inputs that have a channel mapping configured.
 
 ## Skaarhoj panels:
 
