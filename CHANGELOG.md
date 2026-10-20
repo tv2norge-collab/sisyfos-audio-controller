@@ -1,3 +1,30 @@
+## [1.4.0](https://github.com/tv2norge-collab/sisyfos-audio-controller/compare/v1.3.1...v1.4.0) (2026-10-20)
+
+
+### Features
+
+* **EAV-986:** add Digigram ALP input selector plugin ([7f231b6](https://github.com/tv2norge-collab/sisyfos-audio-controller/commit/7f231b6add434c7072ee8cd816d77e51fbe0f4f4))
+* **EAV-986:** add input selector plugin boilerplate ([cf61186](https://github.com/tv2norge-collab/sisyfos-audio-controller/commit/cf611861bf680e242a66ea9107bf91664e8b327c))
+* **EAV-986:** extract vmix fader link plugin ([98efacb](https://github.com/tv2norge-collab/sisyfos-audio-controller/commit/98efacb2faa2a1beba0adf4af2746acd26df6735))
+* **EAV-986:** implement input selector reset ([48fb080](https://github.com/tv2norge-collab/sisyfos-audio-controller/commit/48fb080a35ccd8951b714665cc64deb1c4276c59))
+* **EAV-986:** make linking resettable ([f90f372](https://github.com/tv2norge-collab/sisyfos-audio-controller/commit/f90f3728a8aaa299993941bb6b29268da9ccf06f))
+* **EAV-986:** make vMix connection capable of using input selector plugins ([66487b2](https://github.com/tv2norge-collab/sisyfos-audio-controller/commit/66487b227b6507c4aad19f81ef796408aeaed945))
+
+
+### Bug Fixes
+
+* **EAV-1000:** vu-meter performance ([237c6b7](https://github.com/tv2norge-collab/sisyfos-audio-controller/commit/237c6b76d7baef211c18932a65e72eecd983ea25))
+* **EAV-986:** address claude review comments ([cbd81f8](https://github.com/tv2norge-collab/sisyfos-audio-controller/commit/cbd81f83667babc3763db499cd3a2e37fd745fb3))
+* **EAV-986:** make defaultInput optional ([32996c5](https://github.com/tv2norge-collab/sisyfos-audio-controller/commit/32996c5e4a14d07ea1cb8b3959ee910ca8069212))
+* **EAV-986:** off-by-one error ([2a75811](https://github.com/tv2norge-collab/sisyfos-audio-controller/commit/2a75811ebebf4aff9ed578889262a7243bc0814c))
+
+
+### Code Refactoring
+
+* make fader linking less hackish ([52ac5db](https://github.com/tv2norge-collab/sisyfos-audio-controller/commit/52ac5db6ca78741686e4ceabbea4589eff2a7684))
+* **EAV-986:** move input selector plugin shared file ([5d7694b](https://github.com/tv2norge-collab/sisyfos-audio-controller/commit/5d7694b04ee3f42b6dd6c271ecc194e8eef166c4))
+
+
 ## [4.19.0](https://github.com/tv2/sisyfos-audio-controller/compare/v4.18.1...v4.19.0) (2023-09-08)
 
 
